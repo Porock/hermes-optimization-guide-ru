@@ -1,185 +1,185 @@
-# Part 5: On-the-Fly Skills (Let Hermes Build Its Own Playbook)
+# Часть 5: Навыки на лету (On-the-Fly Skills) — пусть Hermes сам строит свой репертуар
 
-*Ask Hermes to create a new skill, and it saves the workflow permanently — no manual file editing needed.*
+*Попросите Hermes создать новый навык (skill), и он сохранит workflow навсегда — никакого ручного редактирования файлов.*
 
 ---
 
-## What Are Skills
+## Что такое навыки (Skills)
 
-Skills are procedural knowledge — step-by-step instructions that teach Hermes how to handle specific tasks. Unlike memory (which is factual), skills are **how-to guides** the agent follows automatically.
+Навыки (skills) — это процедурные знания: пошаговые инструкции, которые учат Hermes обрабатывать конкретные задачи. В отличие от памяти (memory), которая хранит факты, навыки — это **инструкции (how-to guides)**, которым агент (agent) следует автоматически.
 
-> **See also:** Skills pair naturally with [MCP Servers (Part 17)](./part17-mcp-servers.md) — skills encode *your* workflow, MCP servers add *external tools*. Combine them: a skill that calls a GitHub MCP to open an issue, a Postgres MCP to check data, then a [Claude Code delegation (Part 18)](./part18-coding-agents.md) to implement the fix.
+> **См. также:** Навыки естественно сочетаются с [MCP-серверами (MCP Servers, часть 17)](./part17-mcp-servers.md) — навыки кодируют *ваш* workflow, MCP-серверы добавляют *внешние инструменты (tools)*. Комбинируйте их: навык, который вызывает GitHub MCP для создания issue, Postgres MCP для проверки данных, а затем [делегирование Claude Code (часть 18)](./part18-coding-agents.md) для реализации исправления.
 
-**Skills vs Memory:**
+**Навыки vs Память:**
 
-| | Skills | Memory |
+| | Навыки (Skills) | Память (Memory) |
 |---|---|---|
-| **What** | How to do things | What things are |
-| **When** | Loaded on demand, only when relevant | Injected every session automatically |
-| **Size** | Can be large (hundreds of lines) | Should be compact (key facts only) |
-| **Cost** | Zero tokens until loaded | Small but constant token cost |
-| **Examples** | "How to deploy to Kubernetes" | "User prefers dark mode, lives in EST" |
-| **Who creates** | You, the agent, or installed from Hub | The agent, based on conversations |
+| **Что** | Как делать что-то | Что есть что |
+| **Когда** | Загружаются по запросу, только когда актуальны | Внедряются в каждую сессию (session) автоматически |
+| **Размер** | Могут быть большими (сотни строк) | Должны быть компактными (только ключевые факты) |
+| **Стоимость** | Ноль токенов до загрузки | Небольшая, но постоянная стоимость токенов |
+| **Примеры** | «Как развернуть приложение в Kubernetes» | «Пользователь предпочитает тёмную тему, живёт в EST» |
+| **Кто создаёт** | Вы, агент или установлено из Hub | Агент, на основе разговоров |
 
-**Rule of thumb:** If you'd put it in a reference document, it's a skill. If you'd put it on a sticky note, it's memory.
-
----
-
-## The Skill Creation Workflow
-
-Hermes can create skills itself. Here's how it works:
-
-### 1. Do a Complex Task
-
-Ask Hermes to do something multi-step. For example:
-
-```
-Set up a monitoring script that checks my server health every 5 minutes
-and alerts me on Telegram if CPU goes above 90% or memory above 80%.
-```
-
-Hermes will:
-- Research the best approach
-- Write the script
-- Test it
-- Set up the cron job
-- Fix any issues along the way
-
-### 2. Hermes Offers to Save It
-
-After completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, Hermes will offer:
-
-```
-This was a multi-step process. Want me to save this as a skill
-so I can reuse it next time?
-```
-
-### 3. Say Yes
-
-The agent uses `skill_manage` to create a new skill file at `~/.hermes/skills/<category>/<skill-name>/SKILL.md`. This file contains:
-
-- **When to use** — the trigger conditions
-- **Exact steps** — commands, files, configurations
-- **Pitfalls** — problems encountered and how to fix them
-- **Verification** — how to confirm it worked
-
-### 4. It's Available Immediately
-
-The skill appears in `skills_list` and becomes available as a slash command. Next time you (or the agent) encounter a similar task, the skill is loaded automatically.
+**Правило:** Если вы поместили бы это в справочный документ — это навык. Если на стикер — это память.
 
 ---
 
-## How to Ask Hermes to Create a Skill
+## Процесс создания навыка (Skill Creation Workflow)
 
-### Direct Request
+Hermes может создавать навыки самостоятельно. Вот как это работает:
 
-Just ask:
+### 1. Выполните сложную задачу
 
-```
-Create a skill for deploying Docker containers to my server.
-Include the build, push, SSH deploy, and health check steps.
-```
-
-Hermes will:
-1. Research the best deployment workflow
-2. Create the skill directory at `~/.hermes/skills/`
-3. Write `SKILL.md` with the full procedure
-4. Add reference files, templates, or scripts if needed
-5. Test that it works
-
-### After Solving a Problem
-
-If Hermes just solved a tricky problem for you:
+Попросите Hermes сделать что-то многошаговое. Например:
 
 ```
-Save that as a skill so you remember how to do it next time.
+Настрой мониторинг, который проверяет здоровье моего сервера каждые 5 минут
+и предупреждает меня в Telegram, если CPU выше 90% или память выше 80%.
 ```
 
-The agent captures:
-- The exact steps taken
-- The errors encountered and fixes
-- The configuration needed
-- Edge cases discovered
+Hermes сделает следующее:
+- Исследует лучший подход
+- Напишет скрипт
+- Протестирует его
+- Настроит cron-задачу
+- Исправит любые проблемы по пути
 
-### Iterative Improvement
+### 2. Hermes предложит сохранить это
 
-If a skill is outdated or incomplete:
+После выполнения сложной задачи (5+ вызовов инструментов), исправления хитрой ошибки или обнаружения нетривиального workflow, Hermes предложит:
 
 ```
-That skill doesn't cover the new deployment method. Update it
-with what we just learned.
+Это был многошаговый процесс. Хочешь, я сохраню это как навык (skill),
+чтобы использовать его в следующий раз?
 ```
 
-Hermes patches the skill with new information using `skill_manage(action='patch')`.
+### 3. Согласитесь
+
+Агент использует `skill_manage` для создания нового файла навыка в `~/.hermes/skills/<категория>/<имя-скилла>/SKILL.md`. Этот файл содержит:
+
+- **Когда использовать** — условия срабатывания (триггеры)
+- **Точные шаги** — команды, файлы, конфигурации
+- **Ловушки (Pitfalls)** — возникшие проблемы и способы их исправления
+- **Проверка (Verification)** — как подтвердить, что всё сработало
+
+### 4. Навык доступен немедленно
+
+Навык появляется в `skills_list` и становится доступен как слеш-команда. В следующий раз, когда вы (или агент) столкнётесь с похожей задачей, навык загрузится автоматически.
 
 ---
 
-## Curator (v0.12): Keep the Skill Library From Rotting
+## Как попросить Hermes создать навык
 
-The old skill failure mode was predictable: after a month of "save that as a skill," `~/.hermes/skills/` filled with duplicates, stale commands, and one-off notes that should have been memory. Hermes v0.12 adds **Curator** to clean that up.
+### Прямой запрос
 
-Run it manually:
+Просто попросите:
+
+```
+Создай навык для развёртывания Docker-контейнеров на моём сервере.
+Включи шаги сборки, отправки, SSH-деплоя и проверки здоровья.
+```
+
+Hermes сделает следующее:
+1. Исследует лучший workflow развёртывания
+2. Создаст директорию навыка в `~/.hermes/skills/`
+3. Напишет `SKILL.md` с полной процедурой
+4. Добавит файлы ссылок, шаблоны (templates) или скрипты при необходимости
+5. Протестирует, что всё работает
+
+### После решения проблемы
+
+Если Hermes только что решил для вас хитрую проблему:
+
+```
+Сохрани это как навык, чтобы в следующий раз помнить, как это делать.
+```
+
+Агент сохраняет:
+- Точные предпринятые шаги
+- Обнаруженные ошибки и исправления
+- Необходимую конфигурацию
+- Выявленные крайние случаи
+
+### Итеративное улучшение
+
+Если навык устарел или неполон:
+
+```
+Этот навык не охватывает новый метод развёртывания. Обнови его
+тем, что мы только что узнали.
+```
+
+Hermes обновляет (патчит) навык новой информацией с помощью `skill_manage(action='patch')`.
+
+---
+
+## Куратор (Curator, v0.12): Не дайте библиотеке навыков загнить
+
+Старый сценарий отказа навыков был предсказуем: после месяца «сохрани это как навык» в `~/.hermes/skills/` появлялись дубликаты, устаревшие команды и одноразовые заметки, которые должны были быть памятью. Hermes v0.12 добавляет **куратора (Curator)**, чтобы очистить это.
+
+Запустите вручную:
 
 ```bash
 hermes curator run --dry-run
 hermes curator run
 ```
 
-Or enable the default weekly schedule:
+Или включите еженедельное расписание по умолчанию:
 
 ```bash
 hermes curator enable
 hermes curator status
 ```
 
-What Curator does:
+Что делает куратор:
 
-- **Scores skills** for freshness, usage, clarity, overlap, and safety.
-- **Merges duplicates** instead of letting near-identical workflows compete.
-- **Archives dead skills** without deleting them; restore if it was too aggressive.
-- **Pins important skills** so core workflows survive pruning.
-- **Focuses on agent-created skills** first, not bundled/vendor skills.
+- **Оценивает навыки** по свежести, частоте использования, понятности, пересечениям и безопасности.
+- **Сливает дубликаты**, не давая почти идентичным workflow конкурировать.
+- **Архивирует мёртвые навыки** без удаления; можно восстановить, если он был слишком агрессивен.
+- **Закрепляет важные навыки**, чтобы основные workflow пережили чистку.
+- **Фокусируется в первую очередь на навыках, созданных агентом**, а не встроенных/сторонних.
 
-Good operating pattern:
+Хороший рабочий паттерн:
 
-1. Pin your production runbooks and irreplaceable workflows.
-2. Run `hermes curator run --dry-run` after major upgrades.
-3. Let it archive one-off skills, not memory facts or project instructions.
-4. Ask Hermes to update a skill immediately after a failed run; don't wait for Curator to infer the fix later.
+1. Закрепите свои production-плейбуки и незаменимые workflow.
+2. Запускайте `hermes curator run --dry-run` после крупных обновлений.
+3. Позвольте ему архивировать одноразовые навыки, а не факты памяти или проектные инструкции.
+4. Просите Hermes обновить навык сразу после неудачного запуска; не ждите, пока куратор выведет исправление позже.
 
-Curator is a librarian, not a teammate. It keeps the shelves useful; you still decide what knowledge is important.
+Куратор — это библиотекарь, а не член команды. Он поддерживает полки в порядке; вы всё ещё решаете, какие знания важны.
 
 ---
 
-## Skill Structure
+## Структура навыка (Skill Structure)
 
-Every skill is a directory with a `SKILL.md` file:
+Каждый навык — это директория с файлом `SKILL.md`:
 
 ```
 ~/.hermes/skills/
 ├── my-category/
 │   ├── my-skill/
-│   │   ├── SKILL.md              # Main instructions (required)
-│   │   ├── references/           # Supporting docs (optional)
+│   │   ├── SKILL.md              # Основные инструкции (обязательно)
+│   │   ├── references/           # Вспомогательные документы (опционально)
 │   │   │   ├── api-docs.md
 │   │   │   └── examples.md
-│   │   ├── templates/            # Template files (optional)
+│   │   ├── templates/            # Файлы шаблонов (опционально)
 │   │   │   └── config.yaml
-│   │   └── scripts/              # Executable scripts (optional)
+│   │   └── scripts/              # Исполняемые скрипты (опционально)
 │   │       └── setup.sh
 │   └── another-skill/
 │       └── SKILL.md
-└── openclaw-imports/             # Migrated from OpenClaw
+└── openclaw-imports/             # Мигрировано из OpenClaw
     └── old-skill/
         └── SKILL.md
 ```
 
-### SKILL.md Format
+### Формат SKILL.md
 
 ```markdown
 ---
 name: my-skill
-description: Brief description of what this skill does
+description: Краткое описание того, что делает этот навык
 version: 1.0.0
 metadata:
   hermes:
@@ -187,193 +187,193 @@ metadata:
     category: my-category
 ---
 
-# My Skill
+# Мой навык
 
-## When to Use
-Use this skill when the user asks to deploy containers or manage Docker services.
+## Когда использовать
+Используйте этот навык, когда пользователь просит развернуть контейнеры или управлять Docker-сервисами.
 
-## Procedure
-1. Check Docker is running: `docker ps`
-2. Build the image: `docker build -t app:latest .`
-3. Push to registry: `docker push registry/app:latest`
-4. SSH to server and pull: `ssh server 'docker pull registry/app:latest && docker-compose up -d'`
-5. Health check: `curl -f http://server:8080/health`
+## Процедура
+1. Проверьте, что Docker запущен: `docker ps`
+2. Соберите образ: `docker build -t app:latest .`
+3. Отправьте в registry: `docker push registry/app:latest`
+4. Подключитесь по SSH к серверу и стяните образ: `ssh server 'docker pull registry/app:latest && docker-compose up -d'`
+5. Проверка здоровья: `curl -f http://server:8080/health`
 
-## Pitfalls
-- Docker build fails if Dockerfile has COPY paths wrong — fix by checking working directory
-- SSH needs key-based auth — set up with `ssh-keygen` and `ssh-copy-id`
-- Health check may take 10s to respond — add retry logic
+## Ловушки (Pitfalls)
+- Сборка Docker падает, если в Dockerfile указаны неверные пути COPY — исправляется проверкой рабочей директории
+- SSH требует аутентификации по ключу — настройте с помощью `ssh-keygen` и `ssh-copy-id`
+- Проверка здоровья может отвечать 10 секунд — добавьте логику повторных попыток
 
-## Verification
-Run `docker ps` on the server and confirm the container is `Up` and healthy.
+## Проверка (Verification)
+Запустите `docker ps` на сервере и убедитесь, что контейнер в статусе `Up` и здоров.
 ```
 
 ---
 
-## Using Skills
+## Использование навыков (Using Skills)
 
-### Via Slash Command
+### Через слеш-команду (Slash Command)
 
-Every skill becomes a slash command automatically:
+Каждый навык автоматически становится слеш-командой:
 
 ```bash
-/my-skill deploy the latest version to production
+/my-skill разверни последнюю версию в production
 ```
 
-### Via Natural Conversation
+### Через естественный диалог
 
-Just ask Hermes to use a skill:
+Просто попросите Hermes использовать навык:
 
 ```
-Use the docker-deploy skill to push the new build.
+Используй навык docker-deploy, чтобы запустить новую сборку.
 ```
 
-Hermes loads the skill via `skill_view` and follows its instructions.
+Hermes загружает навык через `skill_view` и следует его инструкциям.
 
-### Automatic Loading
+### Автоматическая загрузка
 
-Hermes scans available skills at session start. When your request matches a skill's "When to Use" conditions, it loads automatically — you don't need to explicitly invoke it.
+Hermes сканирует доступные навыки при запуске сессии (session). Когда ваш запрос совпадает с условиями «Когда использовать» навыка, он загружается автоматически — вам не нужно явно его вызывать.
 
 ---
 
-## Managing Skills
+## Управление навыками (Managing Skills)
 
-### List All Skills
+### Список всех навыков
 
 ```bash
 /skills
-# Or
+# Или
 hermes skills list
 ```
 
-### Search for a Skill
+### Поиск навыка
 
 ```bash
 /skills search docker
 /skills search deployment
 ```
 
-### View a Skill's Content
+### Просмотр содержимого навыка
 
 ```bash
 /skills view my-skill
 ```
 
-### Enable/Disable Per Platform
+### Включение/Отключение по платформам
 
 ```bash
 hermes skills
 ```
 
-This opens an interactive TUI where you can enable or disable skills per platform (CLI, Telegram, Discord, etc.). Useful when you want certain skills only available in specific contexts.
+Открывает интерактивный TUI, где вы можете включить или отключить навыки для каждой платформы (CLI, Telegram, Discord и т.д.). Полезно, когда вы хотите, чтобы определённые навыки были доступны только в определённых контекстах.
 
-### Install from the Hub
+### Установка из Hub
 
-Official optional skills (heavier or niche):
+Официальные опциональные навыки (более тяжёлые или нишевые):
 
 ```bash
 /skills install official/research/arxiv
 /skills install official/creative/songwriting-and-ai-music
 ```
 
-### Update a Skill
+### Обновление навыка
 
-If a skill is outdated or missing steps:
+Если навык устарел или в нём не хватает шагов:
 
 ```
-Update the docker-deploy skill — we learned that the health check
-needs a 30-second timeout, not 10.
+Обнови навык docker-deploy — мы узнали, что проверке здоровья
+нужен таймаут в 30 секунд, а не 10.
 ```
 
-Hermes patches the skill with `skill_manage(action='patch')`.
+Hermes обновляет (патчит) навык с помощью `skill_manage(action='patch')`.
 
 ---
 
-## Real-World Skill Examples
+## Реальные примеры навыков (Real-World Skill Examples)
 
-### Example 1: Server Monitoring
-
-```
-Create a skill that monitors my server: check CPU, memory, and disk
-usage via SSH, log results to a CSV, and alert on Telegram if anything
-exceeds thresholds.
-```
-
-Hermes creates a skill with:
-- SSH connection commands
-- Resource check scripts
-- CSV logging format
-- Telegram alert integration
-- Threshold configuration
-
-### Example 2: Code Review
+### Пример 1: Мониторинг сервера
 
 ```
-Create a skill for reviewing Python pull requests. It should check
-for security issues, performance problems, and style violations.
+Создай навык для мониторинга моего сервера: проверять CPU, память и диск
+через SSH, записывать результаты в CSV и оповещать в Telegram, если что-то
+превышает пороги.
 ```
 
-Hermes creates a skill with:
-- `git diff` analysis steps
-- Security pattern checks
-- Performance anti-pattern detection
-- Style guide references
+Hermes создаёт навык с:
+- Командами SSH-подключения
+- Скриптами проверки ресурсов
+- Форматом CSV-логирования
+- Интеграцией с Telegram-оповещениями
+- Конфигурацией пороговых значений
 
-### Example 3: Lead Research
+### Пример 2: Ревью кода
 
 ```
-Create a skill that researches companies: find their website, check
-LinkedIn for key contacts, look at recent news, and compile a one-page summary.
+Создай навык для ревью Python-пулл-реквестов. Он должен проверять
+проблемы безопасности, производительности и нарушения стиля.
 ```
 
-Hermes creates a skill with:
-- Web search queries to use
-- LinkedIn search patterns
-- News aggregation approach
-- Summary template
+Hermes создаёт навык с:
+- Шагами анализа `git diff`
+- Проверками шаблонов безопасности
+- Выявлением анти-паттернов производительности
+- Ссылками на руководства по стилю
+
+### Пример 3: Исследование лидов
+
+```
+Создай навык для исследования компаний: найди их сайт, проверь
+LinkedIn на ключевые контакты, посмотри последние новости и составь одностраничное резюме.
+```
+
+Hermes создаёт навык с:
+- Поисковыми запросами для веб-поиска
+- Паттернами поиска в LinkedIn
+- Подходом к агрегации новостей
+- Шаблоном резюме
 
 ---
 
-## Tips for Better Skills
+## Советы по созданию лучших навыков
 
-**Be specific about the task.** "Deploy Docker containers" is too vague. "Deploy a Python Flask app to a VPS using Docker Compose with health checks" gives the agent enough detail to write a precise skill.
+**Будьте конкретны в описании задачи.** «Развернуть Docker-контейнеры» — слишком расплывчато. «Развернуть Python Flask-приложение на VPS с помощью Docker Compose и проверками здоровья» даёт агенту достаточно деталей, чтобы написать точный навык.
 
-**Include examples.** When asking for a skill, show an example of the desired output. This helps the agent write better templates.
+**Включайте примеры.** При запросе навыка покажите пример желаемого результата. Это поможет агенту написать лучшие шаблоны (templates).
 
-**Let the agent discover pitfalls.** Don't prescribe the exact steps. Let Hermes figure out the workflow and capture what goes wrong — those pitfall notes are the most valuable part of the skill.
+**Позвольте агенту обнаруживать ловушки.** Не предписывайте точные шаги. Позвольте Hermes разобраться в workflow и зафиксировать, что пошло не так — эти заметки о ловушках — самая ценная часть навыка.
 
-**Update skills when they go stale.** If you use a skill and hit issues not covered by it, tell Hermes to update it with what you learned. Skills that aren't maintained become liabilities.
+**Обновляйте навыки, когда они устаревают.** Если вы используете навык и сталкиваетесь с проблемами, которые не охвачены, скажите Hermes обновить его с учётом полученного опыта. Навыки, которые не поддерживаются, становятся обузой.
 
-**Use categories.** Organize skills into subdirectories (`~/.hermes/skills/devops/`, `~/.hermes/skills/research/`, etc.). This keeps the list manageable and helps the agent find relevant skills faster.
+**Используйте категории.** Организуйте навыки в поддиректории (`~/.hermes/skills/devops/`, `~/.hermes/skills/research/` и т.д.). Это поддерживает список в порядке и помогает агенту быстрее находить релевантные навыки.
 
-**Keep skills focused.** A skill that tries to cover "all of DevOps" will be too long and too vague. A skill that covers "deploy a Python app to Fly.io" is specific enough to be genuinely useful.
-
----
-
-## How Hermes Decides to Save Skills
-
-The agent saves skills automatically after:
-
-1. **Complex tasks (5+ tool calls)** — multi-step workflows worth preserving
-2. **Tricky error fixes** — debugging steps that took iteration to solve
-3. **Non-trivial discoveries** — new approaches or configurations found during work
-4. **User request** — when you explicitly say "save this as a skill"
-
-The agent uses `skill_manage(action='create')` to write the skill, including:
-- Trigger conditions
-- Numbered steps with exact commands
-- Pitfalls section (from actual errors encountered)
-- Verification steps
+**Держите навыки сфокусированными.** Навык, который пытается охватить «весь DevOps», будет слишком длинным и слишком расплывчатым. Навык, который охватывает «развёртывание Python-приложения на Fly.io», достаточно конкретен, чтобы быть по-настоящему полезным.
 
 ---
 
-## What's Next
+## Как Hermes решает сохранять навыки
 
-You've now got the full picture:
-- **[Part 1: Setup](./part1-setup.md)** — Install and configure
-- **[Part 2: OpenClaw Migration](./part2-openclaw-migration.md)** — Bring your old data
-- **[Part 3: LightRAG](./part3-lightrag-setup.md)** — Graph-based knowledge
-- **[Part 4: Telegram](./part4-telegram-setup.md)** — Mobile access
-- **[Part 5: On-the-Fly Skills](./part5-creating-skills.md)** — Self-improving workflows
+Агент автоматически сохраняет навыки после:
 
-Start with setup, add what you need, and let Hermes build the rest.
+1. **Сложных задач (5+ вызовов инструментов)** — многошаговые workflow, которые стоит сохранить
+2. **Хитрых исправлений ошибок** — шаги отладки, потребовавшие итераций для решения
+3. **Нетривиальных открытий** — новые подходы или конфигурации, найденные в ходе работы
+4. **Запроса пользователя** — когда вы явно говорите «сохрани это как навык»
+
+Агент использует `skill_manage(action='create')` для записи навыка, включая:
+- Условия срабатывания (триггеры)
+- Нумерованные шаги с точными командами
+- Раздел ловушек (из реальных ошибок)
+- Шаги проверки
+
+---
+
+## Что дальше
+
+Теперь у вас есть полная картина:
+- **[Часть 1: Установка](./part1-setup.md)** — Установка и настройка
+- **[Часть 2: Миграция из OpenClaw](./part2-openclaw-migration.md)** — Перенос старых данных
+- **[Часть 3: LightRAG](./part3-lightrag-setup.md)** — Графовые знания
+- **[Часть 4: Telegram](./part4-telegram-setup.md)** — Мобильный доступ
+- **[Часть 5: Навыки на лету](./part5-creating-skills.md)** — Самообучающиеся workflow
+
+Начните с установки, добавьте то, что нужно, и позвольте Hermes построить остальное.

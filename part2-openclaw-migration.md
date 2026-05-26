@@ -1,180 +1,180 @@
-# Part 2: OpenClaw Migration (Don't Leave Your Knowledge Behind)
+# Часть 2: Миграция (Migration) из OpenClaw (не оставляйте свои знания позади)
 
-*Transfer your skills, memory, config, and personality from OpenClaw to Hermes in one command.*
+*Перенесите свои навыки (skills), память (memory), конфигурацию и личность из OpenClaw в Hermes одной командой.*
 
 ---
 
-## Why Migrate
+## Зачем мигрировать
 
-Hermes is the successor to OpenClaw. If you've spent weeks or months building up skills, memory files, and configuration in OpenClaw, the migration tool brings all of it over automatically.
+Hermes — преемник OpenClaw. Если вы потратили недели или месяцы на создание навыков (skills), файлов памяти (memory) и конфигурации в OpenClaw, инструмент миграции (migration) перенесёт всё это автоматически.
 
-**What transfers:**
+**Что переносится (transfers):**
 
-| What | OpenClaw Location | Hermes Destination |
+| Что | Расположение в OpenClaw | Назначение в Hermes |
 |------|------------------|-------------------|
-| Personality | `workspace/SOUL.md` | `~/.hermes/SOUL.md` |
-| Instructions | `workspace/AGENTS.md` | Your specified workspace target |
-| Memory | `workspace/MEMORY.md` + `workspace/memory/*.md` | `~/.hermes/memories/MEMORY.md` (merged, deduped) |
-| User profile | `workspace/USER.md` | `~/.hermes/memories/USER.md` |
-| Skills | `workspace/skills/`, `~/.openclaw/skills/` | `~/.hermes/skills/openclaw-imports/` |
-| Model config | `agents.defaults.model` | `config.yaml` |
-| Provider keys | `models.providers.*.apiKey` | `~/.hermes/.env` (with `--migrate-secrets`) |
-| Custom providers | `models.providers.*` | `config.yaml → custom_providers` |
-| Max turns | `agents.defaults.timeoutSeconds` | `agent.max_turns` (timeoutSeconds / 10) |
+| Личность | `workspace/SOUL.md` | `~/.hermes/SOUL.md` |
+| Инструкции | `workspace/AGENTS.md` | Указанная директория workspace |
+| Память (Memory) | `workspace/MEMORY.md` + `workspace/memory/*.md` | `~/.hermes/memories/MEMORY.md` (объединено, без дубликатов) |
+| Профиль пользователя | `workspace/USER.md` | `~/.hermes/memories/USER.md` |
+| Навыки (Skills) | `workspace/skills/`, `~/.openclaw/skills/` | `~/.hermes/skills/openclaw-imports/` |
+| Конфигурация модели | `agents.defaults.model` | `config.yaml` |
+| Ключи провайдеров (providers) | `models.providers.*.apiKey` | `~/.hermes/.env` (с `--migrate-secrets`) |
+| Кастомные провайдеры (providers) | `models.providers.*` | `config.yaml → custom_providers` |
+| Максимум ходов | `agents.defaults.timeoutSeconds` | `agent.max_turns` (timeoutSeconds / 10) |
 
-> **Note:** Session transcripts, cron job definitions, and plugin-specific data do not transfer. Those are OpenClaw-specific and have different formats in Hermes.
+> **Примечание:** Транскрипты сессий (sessions), определения cron-задач и данные плагинов (plugins) не переносятся. Они специфичны для OpenClaw и имеют другие форматы в Hermes.
 
 ---
 
-## Quick Migration
+## Быстрая миграция (Migration)
 
 ```bash
-# Preview what would happen (no files changed)
+# Предпросмотр того, что произойдёт (файлы не изменяются)
 hermes claw migrate --dry-run
 
-# Run the full migration (includes API keys)
+# Запуск полной миграции (включая API-ключи)
 hermes claw migrate
 
-# Exclude API keys (safer for shared machines)
+# Исключить API-ключи (безопаснее для общих машин)
 hermes claw migrate --preset user-data
 ```
 
-The migration reads from `~/.openclaw/` by default. If you have legacy `~/.clawdbot/` or `~/.moldbot/` directories, those are detected automatically.
+По умолчанию миграция (migration) читает данные из `~/.openclaw/`. Если у вас есть устаревшие директории `~/.clawdbot/` или `~/.moldbot/`, они обнаруживаются автоматически.
 
 ---
 
-## Migration Options
+## Параметры миграции (Migration Options)
 
-| Option | What It Does | Default |
+| Параметр | Что делает | По умолчанию |
 |--------|-------------|---------|
-| `--dry-run` | Preview without writing anything | off |
-| `--preset full` | Include API keys and secrets | yes |
-| `--preset user-data` | Exclude API keys | no |
-| `--overwrite` | Overwrite existing Hermes files on conflicts | skip |
-| `--migrate-secrets` | Include API keys explicitly | on with `--preset full` |
-| `--source <path>` | Custom OpenClaw directory | `~/.openclaw/` |
-| `--workspace-target <path>` | Where to place `AGENTS.md` | current directory |
-| `--skill-conflict <mode>` | `skip`, `overwrite`, or `rename` | `skip` |
-| `--yes` | Skip confirmation prompt | off |
+| `--dry-run` | Предпросмотр без записи | off |
+| `--preset full` | Включает API-ключи и секреты | yes |
+| `--preset user-data` | Исключает API-ключи | no |
+| `--overwrite` | Перезаписывает существующие файлы Hermes при конфликтах | skip |
+| `--migrate-secrets` | Явно включает API-ключи | on с `--preset full` |
+| `--source <path>` | Кастомная директория OpenClaw | `~/.openclaw/` |
+| `--workspace-target <path>` | Куда поместить `AGENTS.md` | текущая директория |
+| `--skill-conflict <mode>` | `skip`, `overwrite` или `rename` | `skip` |
+| `--yes` | Пропустить подтверждение | off |
 
 ---
 
-## Step-by-Step Walkthrough
+## Пошаговое руководство
 
-### 1. Dry Run First
+### 1. Сначала сухой прогон (Dry Run)
 
-Always preview before committing:
+Всегда просматривайте предпросмотр перед применением:
 
 ```bash
 hermes claw migrate --dry-run
 ```
 
-This shows you exactly what files would be created, overwritten, or skipped. Review the output carefully.
+Это покажет, какие файлы будут созданы, перезаписаны или пропущены. Внимательно изучите вывод.
 
-### 2. Run the Migration
+### 2. Запустите миграцию (Migration)
 
 ```bash
 hermes claw migrate
 ```
 
-The tool will:
-1. Detect your OpenClaw installation
-2. Map config keys to Hermes equivalents
-3. Merge memory files (deduplicating entries)
-4. Copy skills to `~/.hermes/skills/openclaw-imports/`
-5. Migrate API keys (if `--preset full`)
-6. Report what was done
+Инструмент (tool) выполнит:
+1. Обнаружение вашей установки OpenClaw
+2. Сопоставление ключей конфигурации с аналогами в Hermes
+3. Объединение файлов памяти (memory) (дедупликация записей)
+4. Копирование навыков (skills) в `~/.hermes/skills/openclaw-imports/`
+5. Перенос API-ключей (если `--preset full`)
+6. Отчёт о выполненной работе
 
-### 3. Handle Conflicts
+### 3. Обработка конфликтов
 
-If a skill already exists in Hermes with the same name:
+Если навык (skill) с таким же именем уже существует в Hermes:
 
-- **`--skill-conflict skip`** (default): Leaves the Hermes version, skips the import
-- **`--skill-conflict overwrite`**: Replaces the Hermes version with the OpenClaw version
-- **--skill-conflict rename`**: Creates a `-imported` copy alongside the Hermes version
+- **`--skill-conflict skip`** (по умолчанию): Оставляет версию Hermes, пропускает импорт
+- **`--skill-conflict overwrite`**: Заменяет версию Hermes версией из OpenClaw
+- **`--skill-conflict rename`**: Создаёт копию с суффиксом `-imported` рядом с версией Hermes
 
 ```bash
-# Example: rename on conflict so you can compare
+# Пример: переименовать при конфликте, чтобы можно было сравнить
 hermes claw migrate --skill-conflict rename
 ```
 
-### 4. Verify After Migration
+### 4. Проверка после миграции (Migration)
 
 ```bash
-# Check your personality loaded
+# Проверьте, загрузилась ли личность
 cat ~/.hermes/SOUL.md
 
-# Check memory entries merged
+# Проверьте, объединились ли записи памяти (memory)
 cat ~/.hermes/memories/MEMORY.md | head -50
 
-# Check skills imported
+# Проверьте импортированные навыки (skills)
 ls ~/.hermes/skills/openclaw-imports/
 
-# Test the agent
-hermes chat -q "What do you remember about me?"
+# Протестируйте агента (agent)
+hermes chat -q "Что ты обо мне помнишь?"
 ```
 
 ---
 
-## What Doesn't Transfer
+## Что не переносится
 
-| Item | Why | What to Do |
+| Элемент | Почему | Что делать |
 |------|-----|-----------|
-| Session transcripts | Different format | Archive manually if needed |
-| Cron job definitions | Different scheduler | Recreate with `hermes cron` |
-| Plugin configs | Plugin system changed | Reconfigure in Hermes |
-| OpenClaw-specific features | May not exist yet | Check Hermes docs for equivalents |
+| Транскрипты сессий (sessions) | Другой формат | Заархивировать вручную при необходимости |
+| Определения cron-задач | Другой планировщик | Создать заново через `hermes cron` |
+| Конфигурации плагинов (plugins) | Система плагинов (plugins) изменилась | Перенастроить в Hermes |
+| Функции, специфичные для OpenClaw | Могут ещё отсутствовать | Проверьте документацию Hermes на наличие аналогов |
 
 ---
 
-## Config Key Mapping
+## Сопоставление ключей конфигурации (Config Key Mapping)
 
-For reference, here's how OpenClaw config maps to Hermes:
+Для справки — как конфигурация OpenClaw сопоставляется с Hermes:
 
-| OpenClaw Config | Hermes Config | Notes |
+| OpenClaw Config | Hermes Config | Примечания |
 |----------------|---------------|-------|
-| `agents.defaults.model` | `model` | String or `{primary, fallbacks}` |
-| `agents.defaults.timeoutSeconds` | `agent.max_turns` | Divided by 10, capped at 200 |
+| `agents.defaults.model` | `model` | Строка или `{primary, fallbacks}` |
+| `agents.defaults.timeoutSeconds` | `agent.max_turns` | Делится на 10, максимум 200 |
 | `agents.defaults.verboseDefault` | `agent.verbose` | off / on / full |
 | `agents.defaults.thinkingDefault` | `reasoning.mode` | off / low / high |
-| `models.providers.*.baseUrl` | `custom_providers.*.base_url` | Direct mapping |
+| `models.providers.*.baseUrl` | `custom_providers.*.base_url` | Прямое сопоставление |
 | `models.providers.*.apiType` | `custom_providers.*.api_type` | openai → chat_completions, anthropic → anthropic_messages |
 
 ---
 
-## Troubleshooting
+## Устранение неполадок (Troubleshooting)
 
-### "No OpenClaw installation found"
+### «Установка OpenClaw не найдена»
 
-Make sure your OpenClaw data is at `~/.openclaw/`. If it's elsewhere:
+Убедитесь, что данные OpenClaw находятся в `~/.openclaw/`. Если они в другом месте:
 
 ```bash
-hermes claw migrate --source /path/to/your/openclaw
+hermes claw migrate --source /путь/к/вашему/openclaw
 ```
 
-### Memory entries look duplicated
+### Записи памяти (memory) выглядят дублированными
 
-The migration deduplicates by content similarity, but if your OpenClaw memory had near-duplicates, they might not merge perfectly. Clean up manually:
+Миграция (migration) дедуплицирует по схожести содержимого, но если в памяти OpenClaw были почти дубликаты, они могут объединиться неидеально. Очистите вручную:
 
 ```bash
-# Edit memory directly
+# Отредактируйте память (memory) напрямую
 nano ~/.hermes/memories/MEMORY.md
 ```
 
-### Skills have import errors
+### Ошибки импорта навыков (skills)
 
-OpenClaw skills may reference modules or patterns that don't exist in Hermes. Open the skill file and check the imports:
+Навыки (skills) OpenClaw могут ссылаться на модули или шаблоны, которых нет в Hermes. Откройте файл навыка (skill) и проверьте импорты:
 
 ```bash
-cat ~/.hermes/skills/openclaw-imports/skill-name/SKILL.md
+cat ~/.hermes/skills/openclaw-imports/имя-навыка/SKILL.md
 ```
 
-Most skills work as-is since they're markdown-based instructions. Skills with code that imports OpenClaw-specific modules need manual updating.
+Большинство навыков (skills) работают как есть, поскольку это инструкции в формате Markdown. Навыки (skills) с кодом, импортирующим специфичные для OpenClaw модули, требуют ручного обновления.
 
 ---
 
-## What's Next
+## Что дальше
 
-- **Want smarter memory?** → [Part 3: LightRAG Setup](./part3-lightrag-setup.md)
-- **Need mobile access?** → [Part 4: Telegram Setup](./part4-telegram-setup.md)
-- **Want the agent to self-improve?** → [Part 5: On-the-Fly Skills](./part5-creating-skills.md)
+- **Хотите более умную память (memory)?** → [Часть 3: Настройка LightRAG](./part3-lightrag-setup.md)
+- **Нужен мобильный доступ?** → [Часть 4: Настройка Telegram](./part4-telegram-setup.md)
+- **Хотите, чтобы агент (agent) саморазвивался?** → [Часть 5: Навыки (Skills) на лету](./part5-creating-skills.md)

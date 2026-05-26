@@ -1,141 +1,141 @@
-# Part 4: Telegram Setup (Chat From Anywhere)
+# Часть 4: Настройка Telegram (Чат откуда угодно)
 
-*Connect Hermes to Telegram for mobile access, voice memos, group chats, and scheduled task delivery. This is the most battle-tested of the 20+ messaging adapters — start here, branch out to the others as needed.*
+*Подключите Hermes к Telegram для мобильного доступа, голосовых сообщений, групповых чатов и доставки запланированных задач. Это самый проверенный из 20+ мессенджер-адаптеров — начните с него, переходите к другим по мере необходимости.*
 
 ---
 
-## The 20+ Platform Gateway
+## Шлюз (Gateway) на 20+ платформ
 
-As of v0.13.0 (May 2026), the Hermes gateway ships adapters/plugins for **20+ platforms**. They all share the same session DB, the same `/fast` toggle, the same Tool Gateway plumbing, and the same cron delivery mechanism:
+Начиная с v0.13.0 (Май 2026), шлюз (gateway) Hermes поставляет адаптеры/плагины (plugins) для **20+ платформ**. Все они используют одну и ту же базу данных сессий (session DB), один и тот же переключатель `/fast`, одну и ту же инфраструктуру Tool Gateway и один и тот же механизм доставки cron:
 
-| Flagship | New in v0.9 | Enterprise / regional | Self-hosted / generic |
-|----------|-------------|-----------------------|-----------------------|
-| Telegram (this part) | iMessage (BlueBubbles) | DingTalk | Signal |
+| Флагманские | Новые в v0.9 | Корпоративные / региональные | Самостоятельный хостинг / универсальные |
+|-------------|--------------|------------------------------|----------------------------------------|
+| Telegram (эта часть) | iMessage (BlueBubbles) | DingTalk | Signal |
 | Discord | WeChat / Weixin | Feishu / Lark | Matrix |
 | Slack | WeCom | Mattermost | SMS (Twilio) |
 | Google Chat | QQBot | Microsoft Teams | Email (IMAP+SMTP) |
 | WhatsApp | | | |
 | | Tencent Yuanbao | | Home Assistant |
-| | | | Webhook (generic) |
+| | | | Webhook (универсальный) |
 
-- For **iMessage, WeChat, and Android/Termux**, see [Part 15](./part15-new-platforms.md).
-- For **gateway crash recovery** and health checks across all platforms, see [Part 11](./part11-gateway-recovery.md).
-- For the browser UI that manages every platform's state, see [Part 12](./part12-web-dashboard.md).
-
----
-
-## Why Telegram First
-
-Your agent is only useful if you can access it. Sitting at a terminal works until you need to:
-
-- Check something from your phone while away from your desk
-- Get notified when a long-running task finishes
-- Use Hermes in a group chat with your team
-- Send voice memos that get auto-transcribed and processed
-- Receive scheduled task results (cron jobs) on mobile
-
-Telegram is the best messaging platform for Hermes bots — it supports text, voice, images, files, inline buttons, and group chats with minimal setup.
+- Об **iMessage, WeChat и Android/Termux** см. [Часть 15](./part15-new-platforms.md).
+- О **восстановлении после сбоев шлюза (gateway)** и проверках работоспособности на всех платформах см. [Часть 11](./part11-gateway-recovery.md).
+- О веб-интерфейсе для управления состоянием каждой платформы см. [Часть 12](./part12-web-dashboard.md).
 
 ---
 
-## Step 1: Create a Bot via BotFather
+## Почему Telegram в первую очередь
 
-Every Telegram bot requires an API token from [@BotFather](https://t.me/BotFather), Telegram's official bot management tool.
+Ваш агент (agent) полезен только если вы можете к нему обратиться. Сидеть за терминалом работает, пока не понадобится:
 
-1. Open Telegram and search for **@BotFather**, or visit [t.me/BotFather](https://t.me/BotFather)
-2. Send `/newbot`
-3. Choose a **display name** (e.g., "Hermes Agent") — this can be anything
-4. Choose a **username** — this must be unique and end in `bot` (e.g., `my_hermes_bot`)
-5. BotFather replies with your **API token**. It looks like this:
+- Проверить что-то с телефона вдали от рабочего места
+- Получить уведомление о завершении долгой задачи
+- Использовать Hermes в групповом чате с командой
+- Отправить голосовое сообщение для авторасшифровки и обработки
+- Получать результаты запланированных задач (cron) на мобильный
+
+Telegram — лучшая мессенджер-платформа для ботов (bots) Hermes — он поддерживает текст, голос, изображения, файлы, инлайн-кнопки и групповые чаты с минимальной настройкой.
+
+---
+
+## Шаг 1: Создание бота через BotFather
+
+Каждый Telegram-бот (bot) требует API-токен от [@BotFather](https://t.me/BotFather) — официального инструмента управления ботами Telegram.
+
+1. Откройте Telegram и найдите **@BotFather** или перейдите по ссылке [t.me/BotFather](https://t.me/BotFather)
+2. Отправьте `/newbot`
+3. Выберите **отображаемое имя** (например, "Hermes Agent") — может быть любым
+4. Выберите **username** — должен быть уникальным и заканчиваться на `bot` (например, `my_hermes_bot`)
+5. BotFather отвечает **API-токеном**. Выглядит он так:
 
 ```
 123456789:ABCdefGHIjklMNOpqrSTUvwxYZ
 ```
 
-> **Keep your bot token secret.** Anyone with this token can control your bot. If it leaks, revoke it immediately via `/revoke` in BotFather.
+> **Храните токен бота в секрете.** Любой, у кого есть этот токен, может управлять вашим ботом. Если произошла утечка, немедленно отзовите его через `/revoke` в BotFather.
 
 ---
 
-## Step 2: Customize Your Bot (Optional)
+## Шаг 2: Настройка бота (Опционально)
 
-These BotFather commands improve the user experience:
+Эти команды BotFather улучшают пользовательский опыт:
 
-| Command | Purpose |
-|---------|---------|
-| `/setdescription` | The "What can this bot do?" text shown before chatting |
-| `/setabouttext` | Short text on the bot's profile page |
-| `/setuserpic` | Upload an avatar for your bot |
-| `/setcommands` | Define the command menu (the `/` button in chat) |
+| Команда | Назначение |
+|---------|------------|
+| `/setdescription` | Текст "Что умеет этот бот?" перед началом общения |
+| `/setabouttext` | Краткий текст на странице профиля бота |
+| `/setuserpic` | Загрузка аватара для бота |
+| `/setcommands` | Определение меню команд (кнопка `/` в чате) |
 
-For `/setcommands`, a useful starting set:
+Для `/setcommands` полезный начальный набор:
 
 ```
-help - Show help information
-new - Start a new conversation
-sethome - Set this chat as the home channel
-status - Show agent status
+help - Показать справку
+new - Начать новый разговор
+sethome - Установить этот чат как домашний канал
+status - Показать статус агента
 ```
 
 ---
 
-## Step 3: Privacy Mode (Critical for Groups)
+## Шаг 3: Приватный режим (Критически важно для групп)
 
-Telegram bots have **privacy mode** enabled by default. This is the single most common source of confusion.
+У Telegram-ботов **приватный режим** включён по умолчанию. Это самый частый источник путаницы.
 
-**With privacy mode ON**, your bot can only see:
-- Messages that start with a `/` command
-- Replies directly to the bot's own messages
-- Service messages (member joins/leaves, pinned messages)
+**Когда приватный режим ВКЛЮЧЁН**, ваш бот видит только:
+- Сообщения, начинающиеся с команды `/`
+- Ответы на собственные сообщения бота
+- Служебные сообщения (вход/выход участников, закреплённые сообщения)
 
-**With privacy mode OFF**, the bot receives every message in the group.
+**Когда приватный режим ВЫКЛЮЧЕН**, бот получает все сообщения в группе.
 
-### How to Disable Privacy Mode
+### Как отключить приватный режим
 
-1. Message **@BotFather**
-2. Send `/mybots`
-3. Select your bot
-4. Go to **Bot Settings → Group Privacy → Turn off**
+1. Напишите **@BotFather**
+2. Отправьте `/mybots`
+3. Выберите своего бота
+4. Перейдите в **Bot Settings → Group Privacy → Turn off**
 
-> **You must remove and re-add the bot to any group** after changing the privacy setting. Telegram caches the privacy state when a bot joins a group — it won't update until removed and re-added.
+> **После изменения настройки приватности необходимо удалить и повторно добавить бота в группу.** Telegram кэширует состояние приватности при добавлении бота в группу — оно не обновится, пока бот не будет удалён и добавлен заново.
 
-> **Alternative:** Promote the bot to **group admin**. Admin bots always receive all messages regardless of privacy settings.
-
----
-
-## Step 4: Find Your User ID
-
-Hermes uses numeric Telegram user IDs to control access. Your user ID is **not** your username — it's a number like `123456789`.
-
-**Method 1 (recommended):** Message [@userinfobot](https://t.me/userinfobot) — it instantly replies with your user ID.
-
-**Method 2:** Message [@get_id_bot](https://t.me/get_id_bot) — another reliable option.
-
-Save this number; you'll need it for the next step.
+> **Альтернатива:** Назначьте бота **администратором группы**. Боты-администраторы всегда получают все сообщения независимо от настроек приватности.
 
 ---
 
-## Step 5: Configure Hermes
+## Шаг 4: Поиск вашего User ID
 
-### Option A: Interactive Setup (Recommended)
+Hermes использует числовые Telegram User ID для контроля доступа. Ваш User ID — **это не ваш username** — это число вида `123456789`.
+
+**Метод 1 (рекомендуется):** Напишите [@userinfobot](https://t.me/userinfobot) — он мгновенно отвечает вашим User ID.
+
+**Метод 2:** Напишите [@get_id_bot](https://t.me/get_id_bot) — ещё один надёжный вариант.
+
+Сохраните это число; оно понадобится на следующем шаге.
+
+---
+
+## Шаг 5: Настройка Hermes
+
+### Вариант A: Интерактивная настройка (Рекомендуется)
 
 ```bash
 hermes gateway setup
 ```
 
-Select **Telegram** when prompted. The wizard asks for your bot token and allowed user IDs, then writes the configuration for you.
+Выберите **Telegram** при появлении запроса. Мастер запросит токен бота и разрешённые User ID, после чего запишет конфигурацию за вас.
 
-### Option B: Manual Configuration
+### Вариант B: Ручная настройка
 
-Add the following to `~/.hermes/.env`:
+Добавьте следующее в `~/.hermes/.env`:
 
 ```bash
-TELEGRAM_BOT_TOKEN=<your-bot-token-from-botfather>
-TELEGRAM_ALLOWED_USERS=<your-numeric-user-id>    # Comma-separated for multiple users
+TELEGRAM_BOT_TOKEN=<ваш-токен-бота-от-botfather>
+TELEGRAM_ALLOWED_USERS=<ваш-числовой-user-id>    # Через запятую для нескольких пользователей
 ```
 
-> **Security tip:** After editing, run `chmod 600 ~/.hermes/.env` to restrict file access to your user only.
+> **Совет по безопасности:** После редактирования выполните `chmod 600 ~/.hermes/.env`, чтобы ограничить доступ к файлу только вашим пользователем.
 
-For groups, also add the group chat ID (negative number, like `-1001234567890`):
+Для групп также добавьте ID группового чата (отрицательное число, например `-1001234567890`):
 
 ```bash
 TELEGRAM_ALLOWED_CHATS=-1001234567890
@@ -143,140 +143,140 @@ TELEGRAM_ALLOWED_CHATS=-1001234567890
 
 ---
 
-## Step 6: Start the Gateway
+## Шаг 6: Запуск шлюза (Gateway)
 
 ```bash
 hermes gateway
 ```
 
-The bot should come online within seconds. Send it a message on Telegram to verify.
+Бот должен подключиться в течение нескольких секунд. Отправьте ему сообщение в Telegram для проверки.
 
 ---
 
-## Gateway Management
+## Управление шлюзом (Gateway)
 
 ```bash
-# Check gateway status
+# Проверка статуса шлюза
 hermes gateway status
 
-# Stop the gateway
+# Остановка шлюза
 hermes gateway stop
 
-# Restart after config changes
+# Перезапуск после изменений конфигурации
 hermes gateway restart
 
-# Run as a system service (auto-start on boot)
-hermes gateway install   # Sets up systemd/launchd service
+# Запуск как системная служба (автозапуск при загрузке)
+hermes gateway install   # Настраивает systemd/launchd службу
 ```
 
 ---
 
-## Features Available on Telegram
+## Возможности Telegram
 
-### Text Chat
-Full conversation support — the bot processes your messages the same as the CLI.
+### Текстовый чат
+Полноценная поддержка диалогов — бот обрабатывает ваши сообщения так же, как и CLI.
 
-### Voice Messages
-Send a voice memo and Hermes:
-1. Auto-transcribes it using Whisper
-2. Processes the transcription as a text message
-3. Responds with text (or voice via TTS)
+### Голосовые сообщения
+Отправьте голосовое сообщение, и Hermes:
+1. Авторасшифровывает его с помощью Whisper
+2. Обрабатывает расшифровку как текстовое сообщение
+3. Отвечает текстом (или голосом через TTS)
 
-### Image Analysis
-Send a photo and Hermes analyzes it using vision models. Describe what you want to know about the image in the caption.
+### Анализ изображений
+Отправьте фото, и Hermes проанализирует его с помощью vision-моделей. Опишите в подписи, что хотите узнать об изображении.
 
-### File Attachments
-Send documents, code files, or data files — Hermes can read and process them.
+### Вложения файлов
+Отправляйте документы, файлы с кодом или файлы данных — Hermes может читать и обрабатывать их.
 
-### Inline Buttons
-For dangerous commands, Hermes shows confirmation buttons instead of executing immediately.
+### Инлайн-кнопки
+Для опасных команд Hermes показывает кнопки подтверждения вместо немедленного выполнения.
 
-### Slash Commands
-The bot supports Telegram's native command menu (the `/` button in chat).
+### Слэш-команды
+Бот поддерживает нативное меню команд Telegram (кнопка `/` в чате).
 
-### Scheduled Messages
-Cron job results are delivered directly to your Telegram chat:
+### Запланированные сообщения
+Результаты cron-задач доставляются напрямую в ваш Telegram-чат:
 
 ```bash
-# Deliver cron results to Telegram
-hermes cron create --deliver telegram "Check server status every hour" --schedule "every 1h"
+# Доставка результатов cron в Telegram
+hermes cron create --deliver telegram "Проверять статус сервера каждый час" --schedule "every 1h"
 ```
 
 ---
 
-## Webhook Mode (For Cloud Deployments)
+## Режим Webhook (Для облачных развёртываний)
 
-By default, Hermes uses **long polling** — the gateway makes outbound requests to Telegram. This works for local and always-on servers.
+По умолчанию Hermes использует **long polling** — шлюз (gateway) отправляет исходящие запросы к Telegram. Это работает для локальных и постоянно включённых серверов.
 
-For **cloud deployments** (Fly.io, Railway, Render), **webhook mode** is better. These platforms auto-wake on inbound HTTP traffic but not on outbound connections.
+Для **облачных развёртываний** (Fly.io, Railway, Render) **режим webhook** лучше. Эти платформы автоматически пробуждаются при входящем HTTP-трафике, но не при исходящих соединениях.
 
-### Configuration
+### Конфигурация
 
-Add to `~/.hermes/.env`:
+Добавьте в `~/.hermes/.env`:
 
 ```bash
 TELEGRAM_WEBHOOK_URL=https://your-app.fly.dev
-TELEGRAM_WEBHOOK_SECRET=<generate-with-command-below>
+TELEGRAM_WEBHOOK_SECRET=<сгенерируйте-командой-ниже>
 ```
 
-Generate a strong secret — never use a guessable value:
+Сгенерируйте надёжный секрет — никогда не используйте угадываемое значение:
 
 ```bash
 openssl rand -hex 32
 ```
 
-Copy the output and paste it as your `TELEGRAM_WEBHOOK_SECRET` value.
+Скопируйте вывод и вставьте его как значение `TELEGRAM_WEBHOOK_SECRET`.
 
-> **Warning:** A weak or default webhook secret lets attackers forge Telegram webhook requests and inject messages into your agent. Always use a cryptographically random value.
+> **Предупреждение:** Слабый или стандартный секрет вебхука позволяет злоумышленникам подделывать запросы вебхука Telegram и внедрять сообщения в вашего агента. Всегда используйте криптографически случайное значение.
 
-| | Polling (default) | Webhook |
+| | Polling (по умолчанию) | Webhook |
 |---|---|---|
-| Direction | Gateway → Telegram | Telegram → Gateway |
-| Best for | Local, always-on servers | Cloud platforms |
-| Extra config | None | `TELEGRAM_WEBHOOK_URL` |
-| Idle cost | Machine must stay on | Machine can sleep |
+| Направление | Gateway → Telegram | Telegram → Gateway |
+| Лучше всего для | Локальные, постоянно включённые серверы | Облачные платформы |
+| Дополнительная настройка | Нет | `TELEGRAM_WEBHOOK_URL` |
+| Стоимость простоя | Машина должна оставаться включённой | Машина может спать |
 
 ---
 
-## Multi-User Setup
+## Настройка нескольких пользователей
 
-To allow multiple users to interact with the bot:
+Чтобы разрешить нескольким пользователям взаимодействовать с ботом:
 
 ```bash
 TELEGRAM_ALLOWED_USERS=123456789,987654321,555555555
 ```
 
-Each user gets their own conversation session. The bot tracks sessions per user ID.
+Каждый пользователь получает собственную сессию (session) разговора. Бот отслеживает сессии по User ID.
 
 ---
 
-## Troubleshooting
+## Устранение неполадок
 
-### Bot not responding
+### Бот не отвечает
 
-1. Check the token is correct: `echo $TELEGRAM_BOT_TOKEN`
-2. Verify the gateway is running: `hermes gateway status`
-3. Check logs: `hermes gateway logs`
+1. Проверьте корректность токена: `echo $TELEGRAM_BOT_TOKEN`
+2. Убедитесь, что шлюз (gateway) запущен: `hermes gateway status`
+3. Проверьте логи: `hermes gateway logs`
 
-### Bot in group but not seeing messages
+### Бот в группе, но не видит сообщения
 
-Privacy mode is still on. You must:
-1. Disable privacy in BotFather (`/mybots` → Bot Settings → Group Privacy → Turn off)
-2. **Remove the bot from the group**
-3. **Re-add the bot to the group**
+Приватный режим всё ещё включён. Необходимо:
+1. Отключить приватность в BotFather (`/mybots` → Bot Settings → Group Privacy → Turn off)
+2. **Удалить бота из группы**
+3. **Повторно добавить бота в группу**
 
-### Voice messages not transcribed
+### Голосовые сообщения не расшифровываются
 
-Hermes needs `ffmpeg` for audio conversion. The installer includes it, but if you installed manually:
+Hermes требует `ffmpeg` для конвертации аудио. Установщик включает его, но если вы устанавливали вручную:
 
 ```bash
 sudo apt install ffmpeg   # Ubuntu/Debian
 brew install ffmpeg        # macOS
 ```
 
-### Rate limiting
+### Ограничение частоты запросов (Rate limiting)
 
-Telegram limits bots to 30 messages/second to different chats and 20 messages/minute to the same group. If you're hitting limits, add a delay:
+Telegram ограничивает ботов до 30 сообщений/сек в разные чаты и до 20 сообщений/мин в одну группу. Если вы упираетесь в лимиты, добавьте задержку:
 
 ```bash
 hermes config set telegram.rate_limit_delay 1
@@ -284,6 +284,6 @@ hermes config set telegram.rate_limit_delay 1
 
 ---
 
-## What's Next
+## Что дальше
 
-- **Want the agent to self-improve?** → [Part 5: On-the-Fly Skills](./part5-creating-skills.md)
+- **Хотите, чтобы агент самосовершенствовался?** → [Часть 5: Навыки на лету](./part5-creating-skills.md)

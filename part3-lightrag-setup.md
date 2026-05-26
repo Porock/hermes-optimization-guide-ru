@@ -1,291 +1,291 @@
-# Part 3: LightRAG — Graph RAG That Actually Works
+# Часть 3: LightRAG — Graph RAG, который действительно работает
 
-*From "find similar text" to "reason about relationships." The single biggest intelligence upgrade you can make.*
+*От «найди похожий текст» до «порассуждай о связях». Самое большое улучшение интеллекта, которое вы можете сделать.*
 
 ---
 
-> **See also:** LightRAG is the *knowledge* layer. Combine with [Part 17: MCP Servers](./part17-mcp-servers.md) (memory-MCP + mem0 for cross-device memory), [Part 18: Coding Agents](./part18-coding-agents.md) (let Gemini's 1M context ingest the whole LightRAG dump for synthesis), and [Part 20: Observability](./part20-observability.md) (trace embedding calls).
+> **См. также:** LightRAG — это слой *знаний*. Комбинируйте с [Частью 17: MCP-серверы](./part17-mcp-servers.md) (память-MCP + mem0 для кроссплатформенной памяти (memory)), [Частью 18: Агенты для кодинга](./part18-coding-agents.md) (пусть Gemini с 1M контекстом проглотит весь дамп LightRAG для синтеза) и [Частью 20: Наблюдаемость](./part20-observability.md) (трассировка вызовов эмбеддингов).
 
-## The Problem With Basic Memory
+## Проблема базовой памяти (memory)
 
-Hermes ships with vector-based memory search. It finds documents that are textually similar to your query. That works for simple lookups, but it has a fundamental ceiling: **it finds what's similar, not what's connected.**
+Hermes поставляется с векторным поиском по памяти (memory). Он находит документы, текстуально похожие на ваш запрос. Это работает для простых поисков, но имеет фундаментальный потолок: **он находит то, что похоже, а не то, что связано.**
 
-Ask "what hardware decisions were made and why?" and vector search returns files that all mention GPUs. It can't traverse from a decision → the person who made it → the project it affected → the lesson learned afterward.
+Спросите «какие аппаратные решения были приняты и почему?» — и векторный поиск вернёт файлы, в которых упоминаются GPU. Он не может пройти от решения → к человеку, который его принял → к проекту, на который это повлияло → к уроку, извлечённому впоследствии.
 
-**Graph RAG fixes this.** It builds a knowledge graph (entities + relationships) alongside your vector database, then searches both simultaneously.
+**Graph RAG это исправляет.** Он строит граф (graph) знаний (сущности + связи) параллельно с векторной базой данных (vector database), а затем ищет в обоих одновременно.
 
-### Naive RAG vs Graph RAG
+### Наивный RAG vs Graph RAG
 
-| | Naive RAG (Default) | Graph RAG (LightRAG) |
+| | Наивный RAG (по умолчанию) | Graph RAG (LightRAG) |
 |---|---|---|
-| **Indexes** | Text chunks as vectors | Entities, relationships, AND text chunks |
-| **Retrieves** | Similar text (cosine similarity) | Connected knowledge (graph traversal + similarity) |
-| **Answers** | "Here's what the docs say about X" | "Here's how X relates to Y, who decided Z, and why" |
-| **Scales** | Degrades at 500+ docs (too many partial matches) | Improves with more docs (richer graph) |
-| **Cost** | Cheap (embedding only) | More expensive upfront (LLM extracts entities) but cheaper at query time |
+| **Индексирует** | Фрагменты текста как векторы | Сущности, связи И фрагменты текста |
+| **Извлекает** | Похожий текст (косинусная близость) | Связанные знания (обход графа + близость) |
+| **Отвечает** | «Вот что документация говорит об X» | «Вот как X связан с Y, кто решил Z и почему» |
+| **Масштабируется** | Деградирует при 500+ документах (слишком много частичных совпадений) | Улучшается с ростом числа документов (богаче граф) |
+| **Стоимость** | Дешёво (только эмбеддинги) | Дороже на старте (LLM извлекает сущности), но дешевле во время запросов |
 
 ---
 
-## LightRAG: The Best Graph RAG For Personal Use
+## LightRAG: лучший Graph RAG для личного использования
 
-[LightRAG](https://github.com/HKUDS/LightRAG) is an open-source graph RAG framework from HKU (EMNLP 2025 paper). It competes with Microsoft's GraphRAG at a fraction of the cost.
+[LightRAG](https://github.com/HKUDS/LightRAG) — это опенсорсный Graph RAG-фреймворк от HKU (статья EMNLP 2025). Он конкурирует с GraphRAG от Microsoft при значительно меньших затратах.
 
-**Why LightRAG over alternatives:**
+**Почему LightRAG лучше альтернатив:**
 
-| Tool | Graph | Vector | Web UI | Self-Hosted | API | Cost |
+| Инструмент (Tool) | Граф (Graph) | Векторы | Веб-интерфейс | Self-Hosted | API | Стоимость |
 |------|-------|--------|--------|-------------|-----|------|
-| **LightRAG** | Yes | Yes | Yes | Yes | REST API | Free |
-| Microsoft GraphRAG | Yes | Yes | No | Yes | No | 10-50x more |
-| Graphiti + Neo4j | Yes | No (separate) | No (Neo4j browser) | Yes | Build your own | Free but manual |
-| Plain vector search | No | Yes | No | Yes | Yes | Free |
+| **LightRAG** | Да | Да | Да | Да | REST API | Бесплатно |
+| Microsoft GraphRAG | Да | Да | Нет | Да | Нет | в 10–50 раз дороже |
+| Graphiti + Neo4j | Да | Нет (отдельно) | Нет (браузер Neo4j) | Да | Создавайте свой | Бесплатно, но вручную |
+| Простой векторный поиск | Нет | Да | Нет | Да | Да | Бесплатно |
 
-LightRAG does vector DB + knowledge graph **in parallel** during ingestion. One system, both capabilities.
+LightRAG выполняет векторную базу данных + граф знаний **параллельно** при ингестии. Одна система — обе возможности.
 
 ---
 
-## Installation
+## Установка
 
-### Prerequisites
+### Предварительные требования
 
 - Python 3.11+
-- An LLM API key (for entity extraction during ingestion — OpenAI, Anthropic, or any OpenAI-compatible provider)
-- An embedding API key (Fireworks recommended for high-quality 4096-dim embeddings, or use local Ollama)
+- API-ключ LLM (для извлечения сущностей при ингестии — OpenAI, Anthropic или любой совместимый с OpenAI провайдер (provider))
+- API-ключ эмбеддингов (Fireworks рекомендуется для качественных 4096-мерных эмбеддингов или используйте локальный Ollama)
 
-### Install LightRAG
+### Установка LightRAG
 
 ```bash
-# Create a dedicated directory
+# Создайте выделенную директорию
 mkdir -p ~/.hermes/lightrag
 cd ~/.hermes/lightrag
 
-# Clone LightRAG
+# Клонируйте LightRAG
 git clone https://github.com/HKUDS/LightRAG.git
 cd LightRAG
 
-# Install dependencies
+# Установите зависимости
 pip install -e ".[api]"
 ```
 
-### Set Up Environment
+### Настройка окружения
 
-Create `~/.hermes/lightrag/.env`:
+Создайте `~/.hermes/lightrag/.env`:
 
 ```bash
-# LLM for entity extraction (during ingestion)
+# LLM для извлечения сущностей (при ингестии)
 LLM_BINDING=openai
 LLM_MODEL=gpt-4.1-mini
-LLM_BINDING_API_KEY=<your-openai-api-key>
+LLM_BINDING_API_KEY=<ваш-api-ключ-openai>
 
-# Embedding model (for vector storage)
+# Модель эмбеддингов (для векторного хранения)
 EMBEDDING_BINDING=fireworks
 EMBEDDING_MODEL=accounts/fireworks/models/qwen3-embedding-8b
-EMBEDDING_API_KEY=<your-fireworks-api-key>
+EMBEDDING_API_KEY=<ваш-api-ключ-fireworks>
 
-# Or use local Ollama (free, no API key needed):
+# Или используйте локальный Ollama (бесплатно, без API-ключа):
 # EMBEDDING_BINDING=ollama
 # EMBEDDING_MODEL=nomic-embed-text
 ```
 
-> **Security tip:** Set restrictive permissions on this file: `chmod 600 ~/.hermes/lightrag/.env`
+> **Совет по безопасности:** Установите строгие права на этот файл: `chmod 600 ~/.hermes/lightrag/.env`
 
-> **Tip:** Use a cheap GPT-5.5-mini/Gemini Flash-class model for entity extraction. It doesn't need to be your smartest model — it just needs to reliably identify entities and relationships. Cheaper models save money on ingestion.
+> **Совет:** Используйте дешёвую модель класса GPT-4.1-mini/Gemini Flash для извлечения сущностей. Это не должна быть ваша самая умная модель — ей нужно лишь надёжно идентифицировать сущности и связи. Дешёвые модели экономят деньги на ингестии.
 
-> **Embedding quality matters.** If you have a GPU with 8GB+ VRAM, run `nomic-embed-text` locally via Ollama for free. If you want the best quality, use Fireworks' Qwen3-Embedding-8B (4096 dimensions) — the search accuracy difference is dramatic.
+> **Качество эмбеддингов имеет значение.** Если у вас есть GPU с 8+ ГБ VRAM, запустите `nomic-embed-text` локально через Ollama бесплатно. Если нужно наилучшее качество, используйте Fireworks' Qwen3-Embedding-8B (4096 измерений) — разница в точности поиска огромна.
 
 ---
 
-## Running the Server
+## Запуск сервера
 
-### Start the REST API
+### Запуск REST API
 
 ```bash
 cd ~/.hermes/lightrag/LightRAG
 
-# Start the API server (binds to localhost by default)
+# Запуск API-сервера (по умолчанию привязывается к localhost)
 lightrag-server --host 127.0.0.1 --port 9623
 ```
 
-The server starts on `http://localhost:9623` with:
-- **REST API** for ingestion and querying
-- **Web UI** at `http://localhost:9623/webui` for browsing the knowledge graph
-- **Health check** at `http://localhost:9623/health`
+Сервер запускается на `http://localhost:9623` и предоставляет:
+- **REST API** для ингестии и запросов
+- **Веб-интерфейс** по адресу `http://localhost:9623/webui` для просмотра графа знаний
+- **Проверку здоровья** по адресу `http://localhost:9623/health`
 
-> **Security warning:** The LightRAG REST API has **no built-in authentication**. Always bind to `127.0.0.1` (localhost only) — never `0.0.0.0`. If you need remote access, put it behind a reverse proxy (nginx, Caddy) with authentication, or use SSH tunneling. Anyone who can reach this port can query, ingest, or delete your knowledge graph data.
+> **Предупреждение безопасности:** REST API LightRAG **не имеет встроенной аутентификации**. Всегда привязывайтесь к `127.0.0.1` (только localhost) — никогда к `0.0.0.0`. Если нужен удалённый доступ, поместите сервер за обратный прокси-сервер (nginx, Caddy) с аутентификацией или используйте SSH-туннелирование. Любой, кто может достучаться до этого порта, сможет запрашивать, загружать или удалять данные вашего графа знаний.
 
-### Run as a Background Service
+### Запуск как фоновый сервис
 
 ```bash
-# Using nohup
+# Через nohup
 nohup lightrag-server --port 9623 > ~/.hermes/lightrag/server.log 2>&1 &
 
-# Or use hermes to manage it
+# Или используйте hermes для управления
 hermes background "cd ~/.hermes/lightrag/LightRAG && lightrag-server --port 9623"
 ```
 
 ---
 
-## Ingesting Your Knowledge
+## Ингестия ваших знаний
 
-### How Ingestion Works
+### Как работает ингестия
 
 ```
-Document (markdown, text, PDF, etc.)
+Документ (markdown, text, PDF и т.д.)
     ↓
-Chunking (text split into segments)
+Разбивка на чанки (текст делится на сегменты)
     ↓
-┌─────────────────┐    ┌──────────────────┐
-│ Embedding Model │    │ LLM Entity       │
-│ (vector storage)│    │ Extraction       │
-└────────┬────────┘    └────────┬─────────┘
-         ↓                      ↓
-   Vector Database       Knowledge Graph
-   (similarity search)   (entity relationships)
+┌─────────────────────────┐    ┌──────────────────────────┐
+│ Модель эмбеддингов      │    │ LLM-извлечение           │
+│ (векторное хранение)     │    │ сущностей                │
+└──────────┬──────────────┘    └────────────┬─────────────┘
+           ↓                                ↓
+    Векторная база данных             Граф знаний
+    (поиск по сходству)               (связи сущностей)
 ```
 
-For each document, LightRAG:
-1. Chunks the text and embeds it (standard vector RAG)
-2. Uses an LLM to extract **entities** (people, tools, projects, concepts) and **relationships** (who decided what, what depends on what)
-3. Stores both in parallel — vectors for similarity, graph for structure
+Для каждого документа LightRAG:
+1. Разбивает текст на чанки и создаёт эмбеддинги (стандартный векторный RAG)
+2. Использует LLM для извлечения **сущностей** (люди, инструменты, проекты, концепции) и **связей** (кто что решил, от чего что зависит)
+3. Сохраняет и то, и другое параллельно — векторы для поиска по сходству, граф для структуры
 
-### Ingest Documents via API
+### Ингестия документов через API
 
 ```bash
-# Ingest a single file
+# Загрузка одного файла
 curl -X POST http://localhost:9623/documents/upload \
-  -F "file=@/path/to/your/document.md"
+  -F "file=@/путь/к/вашему/документу.md"
 
-# Ingest a text string directly
+# Загрузка текстовой строки напрямую
 curl -X POST http://localhost:9623/documents/text \
   -H "Content-Type: application/json" \
-  -d '{"text": "Your knowledge content here...", "description": "Source description"}'
+  -d '{"text": "Ваше знание здесь...", "description": "Описание источника"}'
 
-# Ingest all files in a directory
+# Загрузка всех файлов из директории
 for file in ~/.hermes/memories/*.md; do
   curl -X POST http://localhost:9623/documents/upload -F "file=@$file"
-  echo "Ingested: $file"
+  echo "Загружено: $file"
 done
 ```
 
-### What to Ingest
+### Что загружать
 
-Feed LightRAG everything your agent needs to "know":
+Кормите LightRAG всем, что ваш агент (agent) должен «знать»:
 
-- **Memory files** — `~/.hermes/memories/*.md`
-- **Project docs** — README files, design docs, decision logs
-- **Chat summaries** — Exported conversation summaries
-- **Notes** — Any markdown/text knowledge you want searchable
-- **Code comments** — Extracted from important codebases
+- **Файлы памяти** — `~/.hermes/memories/*.md`
+- **Документацию проектов** — README-файлы, дизайн-документы, журналы решений
+- **Сводки чатов** — экспортированные сводки разговоров
+- **Заметки** — любые markdown/текстовые знания, которые должны быть доступны для поиска
+- **Комментарии в коде** — извлечённые из важных кодовых баз
 
-> **Start with your memory files and project docs.** These give the graph the most value — decisions, people, projects, and their relationships.
+> **Начните с файлов памяти и документации проектов.** Они дают графу наибольшую ценность — решения, люди, проекты и их взаимосвязи.
 
 ---
 
-## Querying the Graph
+## Запросы к графу
 
-### Query Modes
+### Режимы запросов
 
-LightRAG has four query modes:
+LightRAG имеет четыре режима запросов:
 
-| Mode | Best For | How It Works |
+| Режим | Лучше всего для | Как работает |
 |------|----------|-------------|
-| `naive` | Simple keyword lookups | Vector search only (like basic RAG) |
-| `local` | Specific entity facts | Entity-focused graph traversal |
-| `global` | Cross-document relationships | Relationship-focused traversal |
-| `hybrid` | General questions (default) | Both local + global combined |
+| `naive` | Простые поиски по ключевым словам | Только векторный поиск (как базовый RAG) |
+| `local` | Факты о конкретной сущности | Обход графа с фокусом на сущности |
+| `global` | Связи между документами | Обход с фокусом на связи |
+| `hybrid` | Общие вопросы (по умолчанию) | Комбинация local + global |
 
-### Query via API
+### Запрос через API
 
 ```bash
-# Hybrid query (recommended default)
+# Гибридный запрос (рекомендуемый по умолчанию)
 curl -X POST http://localhost:9623/query \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "What infrastructure decisions were made and why?",
+    "query": "Какие инфраструктурные решения были приняты и почему?",
     "mode": "hybrid",
     "only_need_context": false
   }'
 
-# Local mode — specific entity facts
+# Режим local — факты о конкретной сущности
 curl -X POST http://localhost:9623/query \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "Tell me about the 5090 PC setup",
+    "query": "Расскажи о ПК на 5090",
     "mode": "local"
   }'
 
-# Global mode — relationship discovery
+# Режим global — обнаружение связей
 curl -X POST http://localhost:9623/query \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "How do the different projects relate to each other?",
+    "query": "Как разные проекты связаны друг с другом?",
     "mode": "global"
   }'
 ```
 
-### Get Just the Context (for your own LLM)
+### Получение только контекста (для вашей собственной LLM)
 
 ```bash
 curl -X POST http://localhost:9623/query \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "What models are running on what hardware?",
+    "query": "Какие модели работают на каком оборудовании?",
     "mode": "hybrid",
     "only_need_context": true
   }'
 ```
 
-This returns the raw context chunks without generating an answer — useful for feeding into your own pipeline or Hermes' LLM.
+Это возвращает сырые фрагменты контекста без генерации ответа — полезно для передачи в ваш собственный пайплайн или LLM Hermes.
 
 ---
 
-## Integrating With Hermes
+## Интеграция с Hermes
 
-### Create a LightRAG Skill
+### Создание навыка (skill) LightRAG
 
-Create `~/.hermes/skills/research/lightrag/SKILL.md`:
+Создайте `~/.hermes/skills/research/lightrag/SKILL.md`:
 
 ```markdown
 ---
 name: lightrag
-description: Query the LightRAG knowledge graph for past decisions, infrastructure, projects, and lessons learned. Use before saying "I don't remember."
+description: Запросить граф знаний LightRAG для поиска прошлых решений, инфраструктуры, проектов и извлечённых уроков. Используйте перед тем, как сказать «я не помню».
 ---
 
-# LightRAG Knowledge Graph
+# Граф знаний LightRAG
 
-Query the LightRAG knowledge graph for past decisions, infrastructure, projects, and lessons learned.
+Запросите граф знаний LightRAG для поиска прошлых решений, инфраструктуры, проектов и извлечённых уроков.
 
-## When To Use
-- User asks about past work, decisions, or "what happened with X"
-- Need context on projects, hardware, or configurations
-- Remembering lessons learned or past issues
-- Any question where you'd say "I don't remember" — use this FIRST
+## Когда использовать
+- Пользователь спрашивает о прошлой работе, решениях или «что случилось с X»
+- Нужен контекст по проектам, оборудованию или конфигурациям
+- Вспомнить извлечённые уроки или прошлые проблемы
+- Любой вопрос, на который вы бы ответили «я не помню» — используйте ЭТОТ навык В ПЕРВУЮ ОЧЕРЕДЬ
 
-## Usage
+## Использование
 ```bash
 curl -s -X POST http://localhost:9623/query \
   -H "Content-Type: application/json" \
-  -d '{"query": "YOUR QUERY", "mode": "hybrid", "only_need_context": true}'
+  -d '{"query": "ВАШ ЗАПРОС", "mode": "hybrid", "only_need_context": true}'
 ```
 
-## Search Modes
-- `hybrid` (default): Combined vector + graph search
-- `local`: Entity-focused (specific facts)
-- `global`: Relationship-focused (how things connect)
-- `naive`: Vector-only (simple lookups)
+## Режимы поиска
+- `hybrid` (по умолчанию): Комбинированный векторный + графовый поиск
+- `local`: С фокусом на сущности (конкретные факты)
+- `global`: С фокусом на связи (как вещи соединены)
+- `naive`: Только векторы (простые поиски)
 
-## Important
-- ALWAYS search this before saying "I don't remember"
-- Results supersede general knowledge about the setup
-- Reference entity names when citing results
+## Важно
+- ВСЕГДА ищите здесь, прежде чем сказать «я не помню»
+- Результаты имеют приоритет над общими знаниями о конфигурации
+- При цитировании результатов ссылайтесь на имена сущностей
 ```
 
-### Query from a Script
+### Запрос из скрипта
 
-Create `~/.hermes/skills/research/lightrag/scripts/lightrag_search.py`:
+Создайте `~/.hermes/skills/research/lightrag/scripts/lightrag_search.py`:
 
 ```python
 #!/usr/bin/env python3
-"""LightRAG search script for Hermes skill integration."""
+"""Скрипт поиска LightRAG для интеграции с навыками Hermes."""
 import json
 import sys
 import urllib.request
@@ -304,116 +304,116 @@ def search(query: str, mode: str = "hybrid") -> str:
             result = json.loads(resp.read())
             return result.get("response", result.get("data", str(result)))
     except Exception as e:
-        return f"LightRAG query failed: {e}"
+        return f"Запрос LightRAG не удался: {e}"
 
 if __name__ == "__main__":
     query = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else ""
     if not query:
-        print("Usage: lightrag_search.py <query>")
+        print("Использование: lightrag_search.py <запрос>")
         sys.exit(1)
     print(search(query))
 ```
 
 ---
 
-## Optimizing Search Quality
+## Оптимизация качества поиска
 
-### 1. Tune Entity Extraction
+### 1. Настройка извлечения сущностей
 
-The quality of your graph depends on entity extraction. In LightRAG's config:
+Качество вашего графа зависит от извлечения сущностей. В конфиге LightRAG:
 
 ```yaml
-# More entities = richer graph, slower ingestion
-entity_extract_max_gleaning: 5    # Default: 3. Higher = more thorough
+# Больше сущностей = богаче граф, медленнее ингестия
+entity_extract_max_gleaning: 5    # По умолчанию: 3. Выше = тщательнее
 
-# Chunk size affects entity density
-chunk_token_size: 1200             # Default: 1200. Smaller = more entities per doc
-chunk_overlap_token_size: 100      # Default: 100
+# Размер чанка влияет на плотность сущностей
+chunk_token_size: 1200             # По умолчанию: 1200. Меньше = больше сущностей на документ
+chunk_overlap_token_size: 100      # По умолчанию: 100
 ```
 
-### 2. Use High-Quality Embeddings
+### 2. Используйте качественные эмбеддинги
 
-Embedding quality directly impacts vector search accuracy:
+Качество эмбеддингов напрямую влияет на точность векторного поиска:
 
-| Model | Dimensions | Quality | Cost |
+| Модель | Измерения | Качество | Стоимость |
 |-------|-----------|---------|------|
-| nomic-embed-text (Ollama) | 768 | Good | Free (local) |
-| Qwen3-Embedding-8B (Fireworks) | 4096 | Excellent | ~$0.001/1K tokens |
-| text-embedding-3-large (OpenAI) | 3072 | Very Good | ~$0.00013/1K tokens |
+| nomic-embed-text (Ollama) | 768 | Хорошее | Бесплатно (локально) |
+| Qwen3-Embedding-8B (Fireworks) | 4096 | Отличное | ~$0.001/1K токенов |
+| text-embedding-3-large (OpenAI) | 3072 | Очень хорошее | ~$0.00013/1K токенов |
 
-> **If search quality matters, use 4096-dimension embeddings.** The difference between 768 and 4096 dims is like the difference between 720p and 4K — you catch details you'd otherwise miss.
+> **Если качество поиска важно, используйте 4096-мерные эмбеддинги.** Разница между 768 и 4096 измерениями — как разница между 720p и 4K — вы улавливаете детали, которые иначе пропустили бы.
 
-### 3. Reindex After Bulk Changes
+### 3. Переиндексация после массовых изменений
 
-After ingesting a large batch of new documents:
+После ингестии большой партии новых документов:
 
 ```bash
-# Check entity count
-curl http://localhost:9623/graph/label/list | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d)} entities')"
+# Проверьте количество сущностей
+curl http://localhost:9623/graph/label/list | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'{len(d)} сущностей')"
 ```
 
-### 4. Use the Right Query Mode
+### 4. Используйте правильный режим запроса
 
-Don't always default to `hybrid`. Use:
-- `local` when asking about a specific thing ("Tell me about the GPU setup")
-- `global` when asking about connections ("How do the projects relate?")
-- `hybrid` for general questions ("What decisions were made last week?")
+Не всегда используйте `hybrid` по умолчанию. Применяйте:
+- `local` когда спрашиваете о чём-то конкретном («Расскажи о конфигурации GPU»)
+- `global` когда спрашиваете о связях («Как проекты связаны между собой?»)
+- `hybrid` для общих вопросов («Какие решения были приняты на прошлой неделе?»)
 
-### 5. Monitor and Prune
+### 5. Мониторинг и чистка
 
-The Web UI at `http://localhost:9623/webui` lets you:
-- Browse the knowledge graph visually
-- See entity relationships
-- Identify orphaned or redundant entities
-
----
-
-## Web UI
-
-Once the server is running, open `http://localhost:9623/webui` in your browser. You can:
-
-- **Search** the graph with any query mode
-- **Visualize** entity relationships as a network graph
-- **Browse** all entities and their connections
-- **Inspect** raw chunks and their source documents
+Веб-интерфейс по адресу `http://localhost:9623/webui` позволяет:
+- Визуально просматривать граф знаний
+- Видеть связи сущностей
+- Выявлять осиротевшие или избыточные сущности
 
 ---
 
-## Troubleshooting
+## Веб-интерфейс
 
-### "Connection refused" on query
+Когда сервер запущен, откройте `http://localhost:9623/webui` в браузере. Вы сможете:
 
-The server isn't running. Start it:
+- **Искать** по графу в любом режиме запроса
+- **Визуализировать** связи сущностей в виде сетевого графа
+- **Просматривать** все сущности и их соединения
+- **Исследовать** сырые фрагменты и документы-источники
+
+---
+
+## Устранение неполадок
+
+### «Connection refused» при запросе
+
+Сервер не запущен. Запустите его:
 ```bash
 cd ~/.hermes/lightrag/LightRAG && lightrag-server --port 9623
 ```
 
-### Slow ingestion
+### Медленная ингестия
 
-Entity extraction is LLM-bound. Speed it up:
-- Use a faster model for ingestion (GPT-4.1-mini, Claude Haiku)
-- Process documents in parallel batches
-- Use a local model if you have GPU capacity
+Извлечение сущностей упирается в LLM. Ускорьте:
+- Используйте более быструю модель для ингестии (GPT-4.1-mini, Claude Haiku)
+- Обрабатывайте документы параллельными пакетами
+- Используйте локальную модель, если есть GPU
 
-### Empty or irrelevant results
+### Пустые или нерелевантные результаты
 
-- Check that documents were actually ingested (Web UI → entities)
-- Try different query modes (`local` vs `global` vs `hybrid`)
-- Rephrase your query — be more specific about entities
-- Check embedding model is actually running (`curl http://localhost:11434/api/tags` for Ollama)
+- Проверьте, что документы действительно загружены (веб-интерфейс → сущности)
+- Попробуйте разные режимы запросов (`local` vs `global` vs `hybrid`)
+- Переформулируйте запрос — будьте конкретнее в названиях сущностей
+- Проверьте, что модель эмбеддингов действительно работает (`curl http://localhost:11434/api/tags` для Ollama)
 
-### Duplicate entities after re-ingestion
+### Дубликаты сущностей после повторной ингестии
 
-LightRAG merges similar entities automatically, but exact duplicates can happen. Use the Web UI to manually clean up, or reindex from scratch:
+LightRAG автоматически объединяет похожие сущности, но точные дубликаты могут возникать. Используйте веб-интерфейс для ручной очистки или переиндексируйте с нуля:
 ```bash
-# Nuclear option: wipe and reingest
+# Ядерный вариант: стереть и перезагрузить
 rm -rf ~/.hermes/lightrag/LightRAG/rag_storage/*
-# Then re-ingest your documents
+# Затем перезагрузите ваши документы
 ```
 
 ---
 
-## What's Next
+## Что дальше
 
-- **Need mobile access?** → [Part 4: Telegram Setup](./part4-telegram-setup.md)
-- **Want the agent to self-improve?** → [Part 5: On-the-Fly Skills](./part5-creating-skills.md)
+- **Нужен мобильный доступ?** → [Часть 4: Настройка Telegram](./part4-telegram-setup.md)
+- **Хотите, чтобы агент самосовершенствовался?** → [Часть 5: Навыки на лету](./part5-creating-skills.md)

@@ -1,12 +1,12 @@
-# Part 1: Setup (Stop Fumbling With Installation)
+# Часть 1: Настройка (хватит мучиться с установкой)
 
-*From zero to working agent in under 5 minutes. Covers what the docs don't.*
+*От нуля до работающего агента (agent) меньше чем за 5 минут. То, о чём документация умалчивает.*
 
 ---
 
-## The Install
+## Установка
 
-One command. That's it.
+Одна команда. И всё.
 
 ### Linux / macOS / WSL2
 
@@ -14,186 +14,186 @@ One command. That's it.
 curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
 ```
 
-> **Security tip:** Piping scripts directly from the internet to bash executes them sight-unseen. If you prefer to inspect first:
+> **Совет безопасности:** Конвейерная передача скриптов из интернета напрямую в bash выполняет их вслепую. Если хотите сначала проверить:
 > ```bash
 > curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh -o install.sh
-> less install.sh   # Review the script
+> less install.sh   # Просмотрите скрипт
 > bash install.sh
 > ```
 
-> **Windows users:** Native Windows is not supported. Install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) and run the command from inside WSL. It works perfectly.
+> **Пользователям Windows:** Нативная Windows не поддерживается. Установите [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) и запустите команду из WSL. Всё работает отлично.
 
-### What the Installer Does
+### Что делает установщик
 
-The installer handles everything automatically:
+Установщик делает всё автоматически:
 
-- Installs **uv** (fast Python package manager)
-- Installs **Python 3.11** via uv (no sudo needed)
-- Installs **Node.js v22** (for browser automation)
-- Installs **ripgrep** (fast file search) and **ffmpeg** (audio conversion)
-- Clones the Hermes repo
-- Sets up the virtual environment
-- Creates the global `hermes` command
-- Runs the setup wizard for LLM provider configuration
+- Устанавливает **uv** (быстрый менеджер пакетов Python)
+- Устанавливает **Python 3.11** через uv (без sudo)
+- Устанавливает **Node.js v22** (для автоматизации браузера)
+- Устанавливает **ripgrep** (быстрый поиск по файлам) и **ffmpeg** (конвертация аудио)
+- Клонирует репозиторий Hermes
+- Настраивает виртуальное окружение
+- Создаёт глобальную команду `hermes`
+- Запускает мастер настройки LLM-провайдера (provider)
 
-The only prerequisite is **Git**. Everything else is handled for you.
+Единственное требование — **Git**. Всё остальное установщик берёт на себя.
 
-### After Installation
+### После установки
 
 ```bash
-source ~/.bashrc   # or: source ~/.zshrc
-hermes             # Start chatting!
+source ~/.bashrc   # или: source ~/.zshrc
+hermes             # Начинайте общение!
 ```
 
 ---
 
-## First-Run Configuration
+## Первоначальная настройка
 
-The setup wizard (`hermes setup`) walks you through:
+Мастер настройки (`hermes setup`) проведёт вас через:
 
-### 1. Choose Your LLM Provider
+### 1. Выберите провайдера (provider) LLM
 
 ```bash
 hermes model
 ```
 
-Supported providers:
+Поддерживаемые провайдеры (providers):
 
-| Provider | Best For | Env Variable |
+| Провайдер (Provider) | Лучше всего подходит для | Переменная окружения |
 |----------|----------|-------------|
-| Anthropic (Claude) | Highest quality, best at complex tasks | `ANTHROPIC_API_KEY` |
-| OpenAI (GPT-4.1/o3) | Strong tool use, fast | `OPENAI_API_KEY` |
-| OpenRouter | Access 100+ models from one key | `OPENROUTER_API_KEY` |
-| Cerebras | Fast inference, good for simple tasks | `CEREBRAS_API_KEY` |
-| Groq | Very fast, limited context | `GROQ_API_KEY` |
-| xAI (Grok) | Good balance of speed/quality | `XAI_API_KEY` |
-| Google (Gemini) | Huge context, cheap | `GEMINI_API_KEY` |
+| Anthropic (Claude) | Наивысшее качество, лучший для сложных задач | `ANTHROPIC_API_KEY` |
+| OpenAI (GPT-4.1/o3) | Мощная работа с инструментами (tools), быстро | `OPENAI_API_KEY` |
+| OpenRouter | Доступ к 100+ моделям по одному ключу | `OPENROUTER_API_KEY` |
+| Cerebras | Быстрый инференс, хорош для простых задач | `CEREBRAS_API_KEY` |
+| Groq | Очень быстро, ограниченный контекст | `GROQ_API_KEY` |
+| xAI (Grok) | Хороший баланс скорости и качества | `XAI_API_KEY` |
+| Google (Gemini) | Огромный контекст, дёшево | `GEMINI_API_KEY` |
 
-You can configure **multiple providers** with automatic fallback. If one goes down, Hermes switches to the next.
+Вы можете настроить **несколько провайдеров (providers)** с автоматическим переключением (fallback). Если один недоступен, Hermes переключается на следующий.
 
-### 2. Set Your API Keys
+### 2. Укажите ваши API-ключи
 
 ```bash
 hermes auth
 ```
 
-This opens an interactive menu to add API keys for each provider. Keys are stored in `~/.hermes/.env` — never committed to git.
+Откроется интерактивное меню для добавления API-ключей для каждого провайдера (provider). Ключи хранятся в `~/.hermes/.env` — никогда не попадают в git.
 
-> **Tip:** You can also set keys manually:
+> **Совет:** Вы также можете указать ключи вручную:
 > ```bash
-> echo "ANTHROPIC_API_KEY=<your-key-here>" >> ~/.hermes/.env
-> chmod 600 ~/.hermes/.env   # Restrict access to your user only
+> echo "ANTHROPIC_API_KEY=<ваш-ключ>" >> ~/.hermes/.env
+> chmod 600 ~/.hermes/.env   # Ограничить доступ только для вашего пользователя
 > ```
 >
-> **Important:** Always run `chmod 600 ~/.hermes/.env` to prevent other users on the system from reading your API keys.
+> **Важно:** Всегда выполняйте `chmod 600 ~/.hermes/.env`, чтобы другие пользователи системы не могли прочитать ваши API-ключи.
 
-### 3. Configure Toolsets
+### 3. Настройка наборов инструментов (toolsets)
 
 ```bash
 hermes tools
 ```
 
-This opens an interactive TUI to enable/disable tool categories:
+Откроется интерактивный TUI для включения/отключения категорий инструментов (tools):
 
-- **core** — File read/write, terminal, web search
-- **web** — Browser automation, web extraction
-- **browser** — Full browser control (requires Node.js)
-- **code** — Code execution sandbox
-- **delegate** — Sub-agent spawning for parallel work
-- **skills** — Skill discovery and creation
-- **memory** — Memory search and management
+- **core** — Чтение/запись файлов, терминал, веб-поиск
+- **web** — Автоматизация браузера, извлечение данных из веба
+- **browser** — Полное управление браузером (требуется Node.js)
+- **code** — Песочница для выполнения кода
+- **delegate** — Запуск под-агентов (sub-agents) для параллельной работы
+- **skills** — Поиск и создание навыков (skills)
+- **memory** — Поиск и управление памятью (memory)
 
-> **Recommendation:** Enable `core`, `web`, `skills`, and `memory` at minimum. Add `browser` and `code` if you need automation or sandboxed execution.
+> **Рекомендация:** Включите как минимум `core`, `web`, `skills` и `memory`. Добавьте `browser` и `code`, если нужна автоматизация или выполнение кода в песочнице.
 
 ---
 
-## Key Config Options
+## Ключевые параметры конфигурации
 
-After initial setup, fine-tune with `hermes config set`:
+После начальной настройки можно тонко подстроить параметры через `hermes config set`:
 
-### Model Settings
+### Настройки модели
 
 ```bash
-# Set primary model
+# Установить основную модель
 hermes config set model anthropic/claude-sonnet
 
-# Set fallback model (used when primary is rate-limited)
+# Установить запасную модель (используется при превышении лимита запросов)
 hermes config set fallback_models '["openrouter/anthropic/claude-sonnet-5"]'
 ```
 
-### Agent Behavior
+### Поведение агента (agent)
 
 ```bash
-# Max turns per conversation (default: 90)
+# Максимум шагов (turns) за диалог (по умолчанию: 90)
 hermes config set agent.max_turns 90
 
-# Verbose mode: off, on, or full
+# Подробный режим: off, on или full
 hermes config set agent.verbose off
 
-# Quiet mode (less terminal output)
+# Тихий режим (меньше вывода в терминал)
 hermes config set agent.quiet_mode true
 ```
 
-### Context Management
+### Управление контекстом
 
 ```bash
-# Enable prompt caching (reduces cost on repeated context)
+# Включить кэширование промптов (снижает затраты на повторяющийся контекст)
 hermes config set prompt_caching.enabled true
 
-# Context compression (auto-summarize old messages)
+# Сжатие контекста (автосуммаризация старых сообщений)
 hermes config set context_compression.enabled true
 ```
 
 ---
 
-## File Locations
+## Расположение файлов
 
-Everything lives under `~/.hermes/`:
+Всё находится в `~/.hermes/`:
 
 ```
 ~/.hermes/
-├── config.yaml          # Main configuration
-├── .env                 # API keys (never commit this)
-├── SOUL.md             # Agent personality (injected every message)
-├── memories/           # Long-term memory entries
-├── skills/             # Skills (auto-discovered)
-├── skins/              # CLI themes
-├── audio_cache/        # TTS audio files
-├── logs/               # Session logs
-└── hermes-agent/       # Source code (git repo)
+├── config.yaml          # Основная конфигурация
+├── .env                 # API-ключи (никогда не коммитить)
+├── SOUL.md             # Личность агента (agent) — встраивается в каждое сообщение
+├── memories/           # Записи долговременной памяти (memory)
+├── skills/             # Навыки (skills) — автоматически обнаруживаются
+├── skins/              # Темизация CLI
+├── audio_cache/        # TTS-аудиофайлы
+├── logs/               # Журналы сессий (sessions)
+└── hermes-agent/       # Исходный код (git-репозиторий)
 ```
 
-> **Important:** `SOUL.md` is injected into every message. Keep it under 1 KB. Every byte costs latency and tokens.
+> **Важно:** `SOUL.md` встраивается в каждое сообщение. Держите его в пределах 1 КБ. Каждый байт увеличивает задержку и расход токенов.
 
 ---
 
-## Verify Your Setup
+## Проверка установки
 
 ```bash
-# Check everything is working
+# Проверить, что всё работает
 hermes status
 
-# Quick test
+# Быстрый тест
 hermes chat -q "Say hello and confirm you're working"
 ```
 
-Expected output: Hermes responds with a greeting, confirming the model connection, tool availability, and session initialization.
+Ожидаемый результат: Hermes отвечает приветствием, подтверждая подключение модели, доступность инструментов (tools) и инициализацию сессии (session).
 
 ---
 
-## Updating
+## Обновление
 
 ```bash
 hermes update
 ```
 
-This pulls the latest code, updates dependencies, migrates config, and restarts the gateway. Run it regularly — Hermes ships frequent improvements.
+Эта команда загружает последний код, обновляет зависимости, мигрирует конфигурацию и перезапускает шлюз (gateway). Запускайте регулярно — Hermes часто выпускает улучшения.
 
 ---
 
-## What's Next
+## Что дальше
 
-- **Coming from OpenClaw?** → [Part 2: OpenClaw Migration](./part2-openclaw-migration.md)
-- **Want smarter memory?** → [Part 3: LightRAG Setup](./part3-lightrag-setup.md)
-- **Need mobile access?** → [Part 4: Telegram Setup](./part4-telegram-setup.md)
-- **Want the agent to self-improve?** → [Part 5: On-the-Fly Skills](./part5-creating-skills.md)
+- **Переходите с OpenClaw?** → [Часть 2: Миграция с OpenClaw](./part2-openclaw-migration.md)
+- **Хотите более умную память?** → [Часть 3: Настройка LightRAG](./part3-lightrag-setup.md)
+- **Нужен мобильный доступ?** → [Часть 4: Настройка Telegram](./part4-telegram-setup.md)
+- **Хотите, чтобы агент самосовершенствовался?** → [Часть 5: Навыки (Skills) на лету](./part5-creating-skills.md)
