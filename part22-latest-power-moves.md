@@ -1,12 +1,12 @@
-# Part 22: Latest Power Moves — Curator, TUI, Plugins, Context Files
+# Часть 22: Последние новинки — Куратор (Curator), TUI, Плагины (Plugin), Файлы контекста (Context Files)
 
-*If you already know Hermes but missed the v0.11/v0.12 wave, read this part first for Curator, TUI, plugins, and context hygiene. For the v0.13 durability layer — Kanban, `/goal`, Checkpoints v2, and no-agent cron — go next to [Part 23](./part23-tenacity-stack.md).*
+*Если вы уже знаете Hermes, но пропустили волну v0.11/v0.12, сначала прочтите эту часть о кураторе (Curator), TUI, плагинах (plugin) и гигиене контекста. Для слоя отказоустойчивости v0.13 — Kanban, `/goal`, Checkpoints v2 и cron без агента (agent) — переходите к [Части 23](./part23-tenacity-stack.md).*
 
 ---
 
-## 1. Turn On Curator Before Your Skill Library Becomes Noise
+## 1. Включите куратора (Curator) до того, как ваша библиотека навыков (skill) превратится в шум
 
-Agent-created skills are valuable until the library fills with duplicates, stale CLI flags, and one-off task notes. Curator is the v0.12 maintenance loop for that.
+Навыки (skill), созданные агентом (agent), ценны до тех пор, пока библиотека не заполнится дубликатами, устаревшими флагами CLI и разовыми заметками. Куратор (Curator) — это цикл обслуживания v0.12 для этого.
 
 ```bash
 hermes curator run --dry-run
@@ -14,63 +14,63 @@ hermes curator run
 hermes curator enable
 ```
 
-Use it like this:
+Используйте его так:
 
-- Pin production runbooks and skills you personally rely on.
-- Let Curator archive weak/duplicate agent-created skills.
-- Run a dry-run after upgrades or big workflow changes.
-- Restore archived skills instead of recreating them from memory.
+- Закрепляйте производственные инструкции и навыки, на которые вы лично полагаетесь.
+- Позвольте куратору архивировать слабые/дублирующиеся навыки, созданные агентом.
+- Запускайте пробный прогон (dry-run) после обновлений или крупных изменений рабочего процесса.
+- Восстанавливайте архивированные навыки вместо их повторного создания по памяти (memory).
 
-Curator should prune skills, not decide project policy. Put durable project rules in context files.
+Куратор должен обрезать навыки, а не определять политику проекта. Выносите долговременные правила проекта в файлы контекста.
 
 ---
 
-## 2. Use the TUI as Your Daily Driver
+## 2. Используйте TUI как ежедневный инструмент
 
-`hermes --tui` is now the primary power-user interface. It is not just prettier output; it changes how you steer long runs.
+`hermes --tui` теперь является основным интерфейсом для опытных пользователей. Это не просто более красивый вывод; это меняет то, как вы управляете длительными сессиями (session).
 
 ```bash
 hermes --tui
 ```
 
-Habits that pay off:
+Привычки, которые окупаются:
 
-- Use `/steer <constraint>` when the agent is mid-run but drifting.
-- Use `/queue <next task>` for dependent follow-ups.
-- Use `/background <prompt>` for independent research or monitoring.
-- Use `/resume`, then delete stale sessions from the picker with `d`.
-- Use `/reload` after editing `.env`; avoid restarting the session just to pick up keys.
-- Toggle `/mouse` if your terminal/ConPTY injects phantom mouse events.
+- Используйте `/steer <constraint>`, когда агент в процессе выполнения, но отклоняется.
+- Используйте `/queue <next task>` для зависимых последующих задач.
+- Используйте `/background <prompt>` для независимого исследования или мониторинга.
+- Используйте `/resume`, затем удаляйте устаревшие сессии из списка с помощью `d`.
+- Используйте `/reload` после редактирования `.env`; избегайте перезапуска сессии только для обновления ключей.
+- Переключайте `/mouse`, если ваш терминал/ConPTY генерирует ложные события мыши.
 
-If the dashboard Chat tab is enabled, it embeds the same TUI through a PTY, so improving your TUI workflow also improves the browser workflow.
-
----
-
-## 3. Clean Up Context Files
-
-Hermes now reads common agent instruction files, including `.hermes.md`, `AGENTS.md`, `CLAUDE.md`, `SOUL.md`, and `.cursorrules`.
-
-Use them for different jobs:
-
-| File | Put this there | Avoid |
-|------|----------------|-------|
-| `.hermes.md` | Hermes-specific repo workflow, commands, approval expectations | Generic company policy |
-| `AGENTS.md` | Cross-agent coding instructions | Personal style/personality |
-| `SOUL.md` | Tone, boundaries, durable preferences | Build commands and API docs |
-| `.cursorrules` | Editor/Cursor compatibility | Secrets or credentials |
-
-Best pattern:
-
-1. Keep root instructions short.
-2. Add subdirectory-specific files only where behavior changes.
-3. Store secrets in `.env` or provider auth stores, never context files.
-4. Use skills for procedures, memory for facts, and context files for policy.
+Если вкладка Chat панели управления (dashboard) включена, она встраивает тот же TUI через PTY, так что улучшение вашего TUI-процесса также улучшает работу в браузере.
 
 ---
 
-## 4. Use Plugins for Integrations, Not One-Off Scripts
+## 3. Приведите в порядок файлы контекста
 
-v0.12 made plugins the right abstraction for tools, hooks, slash commands, dashboard tabs, and gateway platforms.
+Hermes теперь читает общие файлы инструкций агентов, включая `.hermes.md`, `AGENTS.md`, `CLAUDE.md`, `SOUL.md` и `.cursorrules`.
+
+Используйте их для разных задач:
+
+| Файл | Сюда помещайте | Избегайте |
+|------|----------------|-----------|
+| `.hermes.md` | Рабочий процесс репозитория для Hermes, команды, ожидания по утверждению | Общие политики компании |
+| `AGENTS.md` | Инструкции по кодингу для кросс-агентов | Личный стиль/характер |
+| `SOUL.md` | Тон, границы, долговременные предпочтения | Команды сборки и документация API |
+| `.cursorrules` | Совместимость с редактором/Cursor | Секреты и учетные данные |
+
+Лучшая практика:
+
+1. Держите корневые инструкции краткими.
+2. Добавляйте файлы для подкаталогов только там, где меняется поведение.
+3. Храните секреты в `.env` или хранилищах аутентификации провайдера (provider), никогда в файлах контекста.
+4. Используйте навыки для процедур, память для фактов и файлы контекста для политик.
+
+---
+
+## 4. Используйте плагины для интеграций, а не для разовых скриптов
+
+v0.12 сделал плагины правильной абстракцией для инструментов (tool), хуков, слеш-команд, вкладок панели управления и платформ шлюзов (gateway).
 
 ```bash
 hermes plugins list
@@ -78,52 +78,52 @@ hermes plugins enable observability/langfuse
 hermes plugins enable spotify
 ```
 
-Bundled plugins worth reviewing:
+Встроенные плагины, на которые стоит обратить внимание:
 
-| Plugin | Why enable it |
-|--------|---------------|
-| `observability/langfuse` | Trace LLM/tool calls without writing custom hooks |
-| `spotify` | Native playback, queue, search, playlists, devices |
-| `google_meet` | Join calls, transcribe, speak, and generate follow-ups |
-| `hermes-achievements` | Dashboard achievements from session history |
-| image-gen backends | Extra OpenAI/Codex/xAI image routes |
+| Плагин | Зачем включать |
+|--------|----------------|
+| `observability/langfuse` | Трассировка вызовов LLM/инструментов без написания собственных хуков |
+| `spotify` | Нативное воспроизведение, очередь, поиск, плейлисты, устройства |
+| `google_meet` | Присоединение к звонкам, транскрибация, озвучивание и создание последующих задач |
+| `hermes-achievements` | Достижения на панели управления из истории сессий |
+| image-gen backends | Дополнительные маршруты изображений OpenAI/Codex/xAI |
 
-Security posture:
+Политика безопасности:
 
-- Plugins are disabled by default; keep it that way.
-- Enable only trusted bundled/user plugins.
-- Enable project-local plugins only for trusted repos.
-- Treat hooks as code execution, not "just configuration."
-
----
-
-## 5. Split Main and Auxiliary Models
-
-The dashboard and `hermes model` now expose auxiliary model configuration. Use it.
-
-| Job | Good default |
-|-----|--------------|
-| Main agent | Your preferred coding/reasoning model |
-| Compression | Cheap fast model |
-| Vision | A model with actual image capability |
-| Session search | Cheap summarizer/search-capable model |
-| Title generation | Cheapest reliable model |
-| Curator | Cheap model with enough context for skill review |
-
-This avoids spending premium tokens on titles, compression, and housekeeping.
+- Плагины отключены по умолчанию; сохраняйте это.
+- Включайте только доверенные встроенные/пользовательские плагины.
+- Включайте локальные для проекта плагины только для доверенных репозиториев.
+- Относитесь к хукам как к исполнению кода, а не «просто конфигурации».
 
 ---
 
-## 6. Chain Cron Jobs Instead of Repeating Context
+## 5. Разделяйте основную и вспомогательные модели
 
-Cron is no longer just "run this prompt every morning." Use:
+Панель управления и `hermes model` теперь предоставляют конфигурацию вспомогательных моделей. Используйте это.
 
-- Per-job `workdir` for project-aware jobs.
-- Per-job `enabled_toolsets` to shrink tool/context overhead.
-- `context_from` to feed one job's output into the next.
-- Webhook direct delivery for zero-LLM notifications.
+| Задача | Хорошее значение по умолчанию |
+|--------|------------------------------|
+| Основной агент | Ваша предпочитаемая модель для кодинга/рассуждений |
+| Сжатие | Дешёвая быстрая модель |
+| Зрение | Модель с реальной поддержкой изображений |
+| Поиск по сессиям | Дешёвая модель для суммаризации/поиска |
+| Генерация заголовков | Самая дешёвая надёжная модель |
+| Куратор | Дешёвая модель с достаточным контекстом для проверки навыков |
 
-Example pattern:
+Это позволяет избежать траты премиальных токенов на заголовки, сжатие и обслуживание.
+
+---
+
+## 6. Связывайте задачи Cron вместо повторения контекста
+
+Cron — это больше не просто «запускать этот промпт каждое утро». Используйте:
+
+- Индивидуальный `workdir` для задач, учитывающих проект.
+- Индивидуальный `enabled_toolsets` для уменьшения накладных расходов инструментов/контекста.
+- `context_from` для передачи вывода одной задачи в следующую.
+- Прямая доставка через Webhook для уведомлений без LLM.
+
+Пример шаблона:
 
 ```yaml
 cron:
@@ -142,9 +142,9 @@ cron:
 
 ---
 
-## 7. v0.12 Upgrade Checklist for Existing Installs
+## 7. Чек-лист обновления до v0.12 для существующих установок
 
-Before moving an older v0.9/v0.10 setup to the v0.12 interface/curator stack:
+Перед переносом старой установки v0.9/v0.10 на стек интерфейса/куратора v0.12:
 
 ```bash
 hermes update --check
@@ -153,24 +153,24 @@ hermes --version
 hermes doctor
 ```
 
-Then:
+Затем:
 
-1. Open `hermes dashboard`.
-2. Configure main + auxiliary models.
-3. Enable only the plugins you actually need.
-4. Run `hermes curator run --dry-run`.
-5. Test one gateway message, one tool call, one skill, and one cron job.
-6. Review [Part 19](./part19-security-playbook.md) before enabling broad platform access.
-7. Then run the [v0.13 Tenacity checklist](./part23-tenacity-stack.md#8-upgrade-checklist-from-v012-to-v013).
+1. Откройте `hermes dashboard`.
+2. Настройте основную и вспомогательные модели.
+3. Включите только те плагины, которые вам действительно нужны.
+4. Запустите `hermes curator run --dry-run`.
+5. Протестируйте одно сообщение шлюза, один вызов инструмента, один навык и одну задачу cron.
+6. Изучите [Часть 19](./part19-security-playbook.md) перед включением широкого доступа к платформе.
+7. Затем выполните [чек-лист v0.13 Tenacity](./part23-tenacity-stack.md#8-upgrade-checklist-from-v012-to-v013).
 
 ---
 
-## What to Ignore
+## Что игнорировать
 
-Some old advice is no longer worth optimizing around:
+Некоторые старые советы больше не стоят оптимизации:
 
-- Do not install external Gemini CLI just for Gemini auth; Hermes can do OAuth itself.
-- Do not fork the dashboard for a custom tab; write a dashboard plugin.
-- Do not keep a giant SOUL.md full of procedures; use skills and Curator.
-- Do not use one expensive default model for every auxiliary task.
-- Do not expose the dashboard publicly without a real reverse proxy and auth layer.
+- Не устанавливайте внешний Gemini CLI только для аутентификации Gemini; Hermes сам может выполнять OAuth.
+- Не форкайте панель управления для пользовательской вкладки; напишите плагин для панели управления.
+- Не храните огромный SOUL.md, полный процедур; используйте навыки и куратора.
+- Не используйте одну дорогую модель по умолчанию для всех вспомогательных задач.
+- Не открывайте панель управления публично без реального обратного прокси и слоя аутентификации.

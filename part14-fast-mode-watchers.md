@@ -1,109 +1,109 @@
-# Part 14: Fast Mode & Background Watchers
+# Часть 14: Fast Mode и фоновые наблюдатели
 
-*Priority-tier inference, live background-process events, and the newer TUI controls that keep long sessions steerable instead of stuck.*
+*Приоритетная обработка запросов, события фоновых процессов и новые элементы управления TUI, которые сохраняют управляемость долгих сессий вместо их зависания.*
 
 ---
 
 ## Fast Mode (`/fast`)
 
-### What It Is
+### Что это такое
 
-Both OpenAI and Anthropic run **priority processing queues** for latency-sensitive traffic. Higher cost per token, but dramatically lower p50 and p99 latency — especially under load on reasoning models.
+И OpenAI, и Anthropic используют **очереди приоритетной обработки** для трафика, чувствительного к задержкам. Более высокая стоимость за токен, но значительно более низкая задержка p50 и p99 — особенно под нагрузкой на моделях рассуждения.
 
-`/fast` toggles that priority tier per session. On supported OpenAI/Codex and Anthropic models, flipping it on injects `service_tier: "priority"` into outgoing requests.
+`/fast` переключает этот приоритетный уровень для каждой сессии. На поддерживаемых моделях OpenAI/Codex и Anthropic включение этого режима добавляет `service_tier: "priority"` в исходящие запросы.
 
-### When to Use It
+### Когда использовать
 
-- **Interactive CLI sessions** where you're waiting on each response (coding, debugging).
-- **Messaging replies** where a slow answer is a bad UX (Telegram, iMessage, WeChat).
-- **Subagent-heavy workflows** where the orchestrator latency stacks (Part 8).
-- **Whenever the default tier is rate-limited** — priority tier has its own pool.
+- **Интерактивные сессии CLI**, где вы ждёте каждый ответ (кодинг, отладка).
+- **Ответы в мессенджерах**, где медленный ответ — плохой UX (Telegram, iMessage, WeChat).
+- **Работы с большим количеством агентов (subagent)**, где задержка оркестратора накапливается (Часть 8).
+- **Когда стандартный уровень ограничен по скорости** — приоритетный уровень имеет собственный пул.
 
-Don't use it for:
-- Batch cron jobs or overnight research runs where latency doesn't matter.
-- Anything where you're trying to minimize cost and the default tier is fine.
+Не использовать для:
+- Пакетных cron-задач или ночных исследовательских прогонов, где задержка не важна.
+- Всё, где вы пытаетесь минимизировать стоимость и стандартный уровень подходит.
 
-### How to Toggle
+### Как переключить
 
-In any interactive session (CLI or messaging platform):
+В любой интерактивной сессии (CLI или мессенджер):
 
 ```text
 You → /fast
   Fast mode: ON (service_tier=priority)
 ```
 
-It persists until you toggle it off:
+Это сохраняется до тех пор, пока вы не переключите обратно:
 
 ```text
 You → /fast
   Fast mode: OFF (service_tier=default)
 ```
 
-### Or Set It Globally
+### Или установить глобально
 
-In `~/.hermes/config.yaml`:
+В `~/.hermes/config.yaml`:
 
 ```yaml
 agent:
   service_tier: priority   # default, priority, or flex
 ```
 
-This makes Fast Mode the default for every new session. The `/fast` slash command still overrides per-session.
+Это делает Fast Mode значением по умолчанию для каждой новой сессии. Команда `/fast` всё ещё может переопределить это для конкретной сессии.
 
-### Where It Works
+### Где работает
 
-- ✅ Interactive CLI (`hermes`)
-- ✅ Every gateway platform as of v0.9 — Telegram, Discord, Slack, WhatsApp, Signal, iMessage (BlueBubbles), WeChat, Matrix, Email, SMS, DingTalk, Feishu, WeCom, Mattermost, Home Assistant, Webhooks
-- ✅ Cron jobs (set `agent.service_tier: priority` in config)
-- ✅ Subagents (`delegate_task` inherits the parent's tier)
-- ❌ Local/Ollama models (no priority tier exists)
-- ❌ Free OpenRouter variants (the `:free` suffix forces default tier)
+- ✅ Интерактивный CLI (`hermes`)
+- ✅ Каждый шлюз (gateway) платформы начиная с v0.9 — Telegram, Discord, Slack, WhatsApp, Signal, iMessage (BlueBubbles), WeChat, Matrix, Email, SMS, DingTalk, Feishu, WeCom, Mattermost, Home Assistant, Webhooks
+- ✅ Cron-задачи (установите `agent.service_tier: priority` в конфигурации (config))
+- ✅ Subagents (`delegate_task` наследует уровень родителя)
+- ❌ Локальные модели Ollama (приоритетный уровень не существует)
+- ❌ Бесплатные варианты OpenRouter (суффикс `:free` принудительно устанавливает стандартный уровень)
 
-### Pricing Heads-Up
+### Предупреждение о ценах
 
-Priority tier is more expensive per token. Watch the **Analytics** tab in the dashboard (Part 12) for per-day cost deltas after enabling it. If you're surprised by a bill, the most common cause is leaving `agent.service_tier: priority` on globally for cron jobs that don't need it.
+Приоритетный уровень дороже за токен. Следите за вкладкой **Analytics** в панели управления (Часть 12) за ежедневными изменениями стоимости после его включения. Если вас удивил счёт, наиболее частая причина — оставленный глобально `agent.service_tier: priority` для cron-задач, которым это не нужно.
 
 ---
 
-## `/steer`, `/queue`, and Background Turns
+## `/steer`, `/queue` и фоновые ходы
 
-The newer TUI makes long-running work much easier to control:
+Новый TUI значительно упрощает управление долгой работой:
 
-| Command | Use it when | Pattern |
+| Команда | Используйте, когда | Паттерн |
 |---------|-------------|---------|
-| `/steer <instruction>` | The agent is mid-run but drifting | "Continue, but don't edit generated files" |
-| `/queue <prompt>` | You want the next task to start after the current one | "After tests pass, summarize the risk" |
-| `/background <prompt>` | Fire off work without blocking the main chat | "Research alternatives while I keep coding" |
-| `/busy` | You want to inspect what Hermes is doing | Check active runs/subagents |
-| `/indicator` | The spinner/activity feed is too loud or too quiet | Toggle busy indicator style |
+| `/steer <инструкция>` | Агент (agent) в середине выполнения, но отклоняется | "Продолжай, но не редактируй сгенерированные файлы" |
+| `/queue <промпт>` | Вы хотите, чтобы следующая задача началась после текущей | "После прохождения тестов, суммируй риски" |
+| `/background <промпт>` | Запусти работу без блокировки основного чата | "Исследуй альтернативы, пока я продолжаю кодить" |
+| `/busy` | Вы хотите проверить, что делает Hermes | Проверить активные прогоны/subagents |
+| `/indicator` | Спиннер/лента активности слишком громкая или слишком тихая | Переключить стиль индикатора занятости |
 
-Best practice:
+Лучшие практики:
 
-1. Use `/steer` for **constraints**, not brand-new goals.
-2. Use `/queue` for dependent follow-ups.
-3. Use `/background` for independent research or monitoring.
-4. If the run touches files, keep follow-up prompts specific enough that Hermes can avoid clobbering its own edits.
+1. Используйте `/steer` для **ограничений**, а не абсолютно новых целей.
+2. Используйте `/queue` для зависимых последующих задач.
+3. Используйте `/background` для независимых исследований или мониторинга.
+4. Если прогон затрагивает файлы, делайте последующие промпты достаточно конкретными, чтобы Hermes мог избежать перезаписи своих собственных изменений.
 
-This is the practical replacement for repeatedly interrupting and restating the whole task.
+Это практическая замена для повторного прерывания и пересказа всей задачи.
 
 ---
 
-## Background Process Monitoring (`watch_patterns`)
+## Мониторинг фоновых процессов (`watch_patterns`)
 
-### The Problem This Fixes
+### Проблема, которую это решает
 
-A huge chunk of agent work is "run a long thing and wait for a signal" — start a dev server and wait for `listening on port`, start a build and wait for a failure, run a test suite and wait for the summary line.
+Огромная часть работы агента (agent) — "запусти длинную задачу и жди сигнала" — запусти dev-сервер и жди `listening on port`, запусти сборку и жди ошибку, запусти набор тестов и жди итоговую строку.
 
-Before v0.9, the agent had two options:
+До v0.9 у агента было два варианта:
 
-1. Run the process in the foreground, block the agent loop, lose the ability to do anything else.
-2. Run it in the background, then **poll** log output every few seconds, which is wasteful and introduces lag.
+1. Запустить процесс на переднем плане, заблокировать цикл агента, потерять возможность делать что-либо ещё.
+2. Запустить его в фоне, затем **опрашивать** вывод логов каждые несколько секунд, что расточительно и добавляет задержку.
 
-`watch_patterns` makes option 2 work correctly. You pass a pattern (or several) when you start a background process, and the agent gets a real-time event the moment the output matches — no polling.
+`watch_patterns` делает второй вариант работоспособным. Вы передаёте паттерн (или несколько) при запуске фонового процесса, и агент получает событие в реальном времени в момент, когда вывод совпадает — без опроса.
 
-### Basic Usage
+### Базовое использование
 
-Inside an agent session:
+Внутри сессии агента (agent):
 
 ```
 Start the dev server in the background. Watch for "listening on port"
@@ -111,7 +111,7 @@ to know it's ready, and for "EADDRINUSE" or "error" so you can surface
 failures immediately.
 ```
 
-Hermes uses the `terminal_run` tool with `watch_patterns`:
+Hermes использует инструмент (tool) `terminal_run` с `watch_patterns`:
 
 ```json
 {
@@ -124,21 +124,21 @@ Hermes uses the `terminal_run` tool with `watch_patterns`:
 }
 ```
 
-Each matched line gets delivered to the agent as an **event**, not a polled log snapshot — it's injected into the next turn like a tool result.
+Каждая совпавшая строка доставляется агенту как **событие**, а не как снимок лога при опросе — она внедряется в следующий ход как результат инструмента (tool).
 
-### Pattern Fields
+### Поля паттерна
 
-| Field | Required | Description |
+| Поле | Обязательно | Описание |
 |-------|----------|-------------|
-| `pattern` | yes | Python `re` regex, matched against each line of stdout/stderr |
-| `label` | no | Human-friendly tag so the agent knows *which* watcher fired |
-| `severity` | no | `info` (default), `warning`, or `error` — affects how the agent reacts |
-| `max_matches` | no | Stop watching after N matches. Default: unlimited |
-| `stop_process_on_match` | no | Kill the process when the pattern matches |
+| `pattern` | да | Python `re` regex, сопоставляется с каждой строкой stdout/stderr |
+| `label` | нет | Понятный тег, чтобы агент знал, какой наблюдатель сработал |
+| `severity` | нет | `info` (по умолчанию), `warning` или `error` — влияет на реакцию агента |
+| `max_matches` | нет | Остановить наблюдение после N совпадений. По умолчанию: без ограничений |
+| `stop_process_on_match` | нет | Убить процесс при совпадении паттерна |
 
-### Useful Recipes
+### Полезные рецепты
 
-#### Wait for a dev server to be ready, then run E2E tests
+#### Ждать готовности dev-сервера, затем запустить E2E тесты
 
 ```json
 {
@@ -150,9 +150,9 @@ Each matched line gets delivered to the agent as an **event**, not a polled log 
 }
 ```
 
-Once `ready` fires, the agent knows it can proceed with the tests.
+Когда `ready` срабатывает, агент знает, что может перейти к тестам.
 
-#### Fail fast on compilation errors
+#### Быстро падать при ошибках компиляции
 
 ```json
 {
@@ -164,7 +164,7 @@ Once `ready` fires, the agent knows it can proceed with the tests.
 }
 ```
 
-#### Tail a log file forever, alert on specific lines
+#### Вечно следить за файлом лога, оповещать о конкретных строках
 
 ```json
 {
@@ -177,45 +177,45 @@ Once `ready` fires, the agent knows it can proceed with the tests.
 }
 ```
 
-Pair this with a messaging platform gateway (Part 4 / Part 15) and you have a cheap production alerting pipeline with zero infrastructure.
+Объедините это со шлюзом (gateway) мессенджеров (Часть 4 / Часть 15) и получите дешёвый pipeline оповещений о production без инфраструктуры.
 
-### Inspecting What's Running
+### Проверка выполняемых задач
 
-List background processes with active watchers:
+Список фоновых процессов с активными наблюдателями:
 
 ```bash
 /background list
 ```
 
-or via the CLI:
+или через CLI:
 
 ```bash
 hermes background list
 ```
 
-Each row shows the PID, command, uptime, watcher count, and recent match count. Click a row (in the dashboard) to tail live output.
+Каждая строка показывает PID, команду, uptime, количество наблюдателей и количество недавних совпадений. Кликните по строке (в панели управления), чтобы следить за живым выводом.
 
-### Killing a Background Process
+### Убийство фонового процесса
 
 ```bash
 /background kill <pid>
 ```
 
-Or use the dashboard's Logs page to find the process and click the terminate icon.
+Или используйте страницу Logs в панели управления, чтобы найти процесс и нажать иконку завершения.
 
 ---
 
-## Pluggable Context Engine
+## Подключаемый контекстный движок
 
-Related-but-separate feature also shipped in v0.9.0: the context engine — the thing that decides what gets injected into each agent turn — is now a **pluggable slot** via `hermes plugins`.
+Связанная, но отдельная функция также выпущенная в v0.9.0: контекстный движок — то, что решает, что внедряется в каждый ход агента (agent) — теперь является **подключаемым слотом** через `hermes plugins`.
 
-You can swap in a custom context engine that:
+Вы можете подключить собственный контекстный движок, который:
 
-- Filters memory differently (e.g. only inject memory entries tagged `@project:my-project`)
-- Summarizes tool output before injection (cheap local model pre-pass)
-- Injects domain-specific context (pulling from LightRAG, a private vector DB, your CRM, etc.)
+- Фильтрует память (memory) иначе (например, внедряет только элементы памяти с тегом `@project:my-project`)
+- Суммирует вывод инструментов (tool) перед внедрением (проход дешёвой локальной модели)
+- Внедряет контекст, специфичный для домена (извлекая из LightRAG, приватной векторной БД, вашего CRM и т.д.)
 
-### Minimum Custom Engine
+### Минимальный собственный движок
 
 `~/.hermes/plugins/my-context/plugin.yaml`:
 
@@ -255,20 +255,20 @@ def _load_project_context(session):
     ...
 ```
 
-Enable it:
+Включить его:
 
 ```yaml
 # ~/.hermes/config.yaml
 context_engine: my-context
 ```
 
-New sessions use the custom engine. Existing sessions keep the default until restart.
+Новые сессии используют собственный движок. Существующие сессии сохраняют стандартный до перезапуска.
 
 ---
 
-## `/compress <topic>` — Guided Compression
+## `/compress <topic>` — управляемое сжатие
 
-The existing context compressor (Part 6) now accepts a focus topic:
+Существующий компрессор контекста (Часть 6) теперь принимает тему фокуса:
 
 ```text
 You → /compress project migration to Fly.io
@@ -276,24 +276,24 @@ You → /compress project migration to Fly.io
   Kept 6 messages verbatim, summarized 41 into 2 bullet blocks.
 ```
 
-Without a topic, it runs with its default heuristics. With one, the summarizer preserves detail relevant to that topic and aggressively compresses the rest. Useful when you're 3 hours into a session and want to keep all the migration detail but jettison the 200 tool calls you ran to generate fixtures.
+Без темы он работает с эвристиками по умолчанию. С темой сумматор сохраняет детали, релевантные этой теме, и агрессивно сжимает остальное. Полезно, когда вы 3 часа в сессии и хотите сохранить все детали миграции, но избавиться от 200 вызовов инструментов (tool), которые вы использовали для генерации фикстур.
 
 ---
 
-## `/goal` — Persistent Target Locking
+## `/goal` — постоянная фиксация цели
 
-v0.13 adds `/goal` for the long-loop version of this problem: not "compress this context," but "keep working until this observable objective is done."
+v0.13 добавляет `/goal` для долгосрочной версии этой проблемы: не "сожми этот контекст", а "продолжай работать, пока этот наблюдаемый objective не будет выполнен".
 
 ```text
 /goal Migrate the gateway to Google Chat, run checks, and leave a PR link.
 ```
 
-Use it when the agent should continue across tool calls and intermediate updates until the exit condition is satisfied. For multi-agent work, pair it with [Part 23's Kanban board](./part23-tenacity-stack.md); for one focused session, `/goal` is enough.
+Используйте это, когда агент (agent) должен продолжать работу через вызовы инструментов (tool) и промежуточные обновления, пока условие выхода не будет удовлетворено. Для мультиагентной работы объедините это с доской Kanban из [Части 23](./part23-tenacity-stack.md); для одной сфокусированной сессии `/goal` достаточно.
 
 ---
 
-## What's Next
+## Что дальше
 
-- **Save keys + streamline setup:** [Part 13 — Nous Tool Gateway](./part13-tool-gateway.md)
-- **Expand reach:** [Part 15 — New Platforms (iMessage, WeChat, Android)](./part15-new-platforms.md)
-- **Disaster recovery:** [Part 16 — Backup, Debug, and Pluggable Context](./part16-backup-debug.md)
+- **Сохраните ключи и оптимизируйте настройку:** [Часть 13 — Nous Tool Gateway](./part13-tool-gateway.md)
+- **Расширьте охват:** [Часть 15 — новые платформы (iMessage, WeChat, Android)](./part15-new-platforms.md)
+- **Восстановление после катастроф:** [Часть 16 — резервное копирование, отладка и подключаемый контекст](./part16-backup-debug.md)

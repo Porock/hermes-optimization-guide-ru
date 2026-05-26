@@ -1,44 +1,45 @@
-# Roadmap
+# Дорожная карта (Roadmap)
 
-What's landing next. PRs welcome.
+Что появится в следующих версиях. PR приветствуются.
 
-## In progress
+## В процессе
 
-- [ ] **GitHub Pages docs site** — Astro Starlight with full-text search across all parts + skills.
-- [ ] **Asciinema cast** — 60-second "zero to working Telegram bot" recording embedded in the README.
-- [ ] **Langfuse dashboard JSON** — importable ready-made dashboard for Hermes traces.
-- [ ] **Upstream PR** to `NousResearch/hermes-agent` README — add Community Guides section (draft in `docs/outreach/nous-upstream-pr-body.md`).
+- [ ] **Документация на GitHub Pages** — Astro Starlight с полнотекстовым поиском по всем частям и навыкам (skills)
+- [ ] **Asciinema запись** — 60-секундная запись «от нуля до рабочего Telegram бота», встроенная в README
+- [ ] **Langfuse dashboard JSON** — импортируемая готовая панель мониторинга для трейсов (traces) Hermes
+- [ ] **Upstream PR** в README `NousResearch/hermes-agent` — добавить раздел Community Guides (черновик в `docs/outreach/nous-upstream-pr-body.md`)
 
-## Queued
+## В очереди
 
-- [ ] **Skill templates** — `hermes skills new <name>` scaffolding generator
-- [ ] **Cross-link checker** — CI check that fails if any `[...](./...)` link 404s (partial: markdown-link-check on modified files is live)
-- [ ] **Security CVE feed** — `.github/workflows/cve-watch.yml` that monitors OSV for relevant advisories
-- [ ] **Dashboard screenshots pass** — embed actual screens in parts 12 / 17 / 20
+- [ ] **Шаблоны навыков (Skill templates)** — генератор заготовок `hermes skills new <name>`
+- [ ] **Проверка перекрёстных ссылок (Cross-link checker)** — CI проверка, которая падает, если любая ссылка `[...](./...)` выдаёт 404 (частично: markdown-link-check на изменённых файлах уже работает)
+- [ ] **Лента CVE безопасности (Security CVE feed)** — `.github/workflows/cve-watch.yml`, отслеживающий OSV на предмет соответствующих уведомлений
+- [ ] **Проход со скриншотами панелей (Dashboard screenshots pass)** — встроить реальные скриншоты в части 12 / 17 / 20
 
-## Under consideration
+## На рассмотрении
 
-- Native Hermes skill pack installable via `hermes skills install onlyterp/hermes-optimization-guide`
-- Per-release git tags so users can pin to a known-good state
-- Community MCP server incubator — small repo that graduates servers once they hit quality bar
+- Нативный пакет навыков (skill pack) Hermes, устанавливаемый через `hermes skills install onlyterp/hermes-optimization-guide`
+- Git-теги на каждый релиз, чтобы пользователи могли зафиксироваться на известном рабочем состоянии
+- Инкубатор MCP-серверов сообщества — небольшой репозиторий, который выпускает серверы после достижения планки качества
 
-## Done (recent)
+## Готово (недавнее)
 
-- ✅ 2026-05-14 — v0.13 refresh: Kanban, `/goal`, Checkpoints v2, Google Chat, no-agent cron, provider plugins, and May 2026 model SOTA
-- ✅ 2026-04-30 — v0.11/v0.12 refresh: Curator, TUI, plugins, Bedrock/Azure/LM Studio, Teams/Yuanbao/QQBot, Vercel Sandbox, Part 22
-- ✅ 2026-04-17 — Interactive config wizard (`docs/wizard/`)
-- ✅ 2026-04-17 — 4 reference architectures (homelab / solo-dev / small-agency / road-warrior)
-- ✅ 2026-04-17 — CI (markdown-link-check + yamllint + skill frontmatter validator)
-- ✅ 2026-04-17 — Chinese + Japanese README entry pages
-- ✅ 2026-04-17 — Outreach drafts (tweet, HN, Reddit, upstream PR, blog post)
-- ✅ 2026-04-17 — Installable skill library + templates + bootstrap script
-- ✅ 2026-04-17 — MCP / coding-agent / security / observability / sandbox parts (17–21)
-- ✅ 2026-04-16 — v0.9 + v0.10 refresh (parts 12–16)
+- ✅ 2026-05-14 — Обновление v0.13: Kanban, `/goal`, Checkpoints v2, Google Chat, cron без агента (agent), плагины провайдеров (provider plugins) и SOTA моделей мая 2026
+- ✅ 2026-04-30 — Обновление v0.11/v0.12: куратор (Curator), TUI, плагины, Bedrock/Azure/LM Studio, Teams/Yuanbao/QQBot, Vercel Sandbox, Часть 22
+- ✅ 2026-04-17 — Интерактивный мастер конфигурации (config wizard) (`docs/wizard/`)
+- ✅ 2026-04-17 — 4 эталонные архитектуры (homelab / solo-dev / small-agency / road-warrior)
+- ✅ 2026-04-17 — CI (markdown-link-check + yamllint + валидатор frontmatter навыков)
+- ✅ 2026-04-17 — Страницы входа README на китайском и японском языках
+- ✅ 2026-04-17 — Черновики для публикаций (tweet, HN, Reddit, upstream PR, blog post)
+- ✅ 2026-04-17 — Устанавливаемая библиотека навыков (skill library) + шаблоны (templates) + скрипт начальной настройки (bootstrap script)
+- ✅ 2026-04-17 — Части по MCP, кодинг-агенту (coding-agent), безопасности, наблюдаемости (observability), песочнице (sandbox) (17–21)
+- ✅ 2026-04-16 — Обновление v0.9 + v0.10 (части 12–16)
 
-## How to suggest additions
+## Как предложить дополнения
 
-Open an issue with the `roadmap` label. Include:
-- What the addition does
-- Who it's for
-- An estimate of effort (small / medium / large)
-- Whether you'd write it yourself
+Откройте issue с меткой `roadmap`. Укажите:
+
+- Что делает дополнение
+- Для кого оно
+- Оценка трудозатрат (small / medium / large)
+- Готовы ли вы написать это самостоятельно

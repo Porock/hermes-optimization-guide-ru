@@ -1,125 +1,125 @@
-# Part 23: Tenacity Stack — Kanban, Goals, Checkpoints v2, No-Agent Cron
+# Часть 23: Стек отказоустойчивости (Tenacity Stack) — Канбан, Цели, Контрольные точки (Checkpoints) v2, Cron без агента (No-Agent Cron)
 
-*Hermes v0.13.0 (2026.5.7, "The Tenacity Release") changed the best-practice stack again. The move is no longer "spawn more subagents"; it is "put durable work on a board, lock important sessions to a goal, checkpoint aggressively, and remove the LLM from jobs that do not need one."*
+*Hermes v0.13.0 (2026.5.7, «Релиз Tenacity») снова изменил стек (stack) лучших практик. Суть больше не в «породи больше сабагентов (subagent)»; она в «положи долговременную работу на доску, привяжи важные сессии (session) к цели (goal), агрессивно ставь контрольные точки (checkpoint) и убери LLM из задач, которым она не нужна».*
 
 ---
 
-## 1. Treat Kanban as the Durable Execution Layer
+## 1. Используйте Канбан (Kanban) как уровень долговременного выполнения (Durable Execution Layer)
 
-`delegate_task` is still useful for short fork/join reasoning. It is not the right primitive for work that must survive restarts, wait for humans, retry after failures, or pass through multiple roles.
+`delegate_task` по-прежнему полезен для коротких fork/join рассуждений. Но он не подходит для работы, которая должна переживать перезапуски, ждать человека, повторяться после сбоев или проходить через множество ролей.
 
-Use **Hermes Kanban** for that:
+Используйте для этого **Hermes Канбан (Kanban)**:
 
 ```bash
 hermes kanban init
-hermes dashboard   # open the Kanban page
+hermes dashboard   # открыть страницу Kanban
 ```
 
-Then create work from chat, CLI, or the dashboard:
+Затем создавайте задачи из чата, CLI или панели управления (dashboard):
 
 ```text
-/kanban create "Audit the billing dashboard for stale Hermes v0.12 claims" \
+/kanban create "Проверить панель биллинга на устаревшие утверждения Hermes v0.12" \
   --assignee researcher \
   --workspace worktree
 ```
 
-Why this matters:
+Почему это важно:
 
-| Old pattern | v0.13 pattern |
+| Старый подход | Подход v0.13 |
 |-------------|---------------|
-| Parent subagent blocks until child returns | Board row persists; parent can move on |
-| Failed child disappears into logs | Task blocks with comments, retry budget, and history |
-| One anonymous worker | Named assignees with durable identity |
-| Context compression can erase the trail | SQLite board keeps the audit trail |
-| Human feedback is awkward | Human comments/unblocks are first-class |
+| Родительский сабагент (subagent) блокируется, пока дочерний не завершится | Строка на доске сохраняется; родитель может двигаться дальше |
+| Провалившийся дочерний процесс исчезает в логах | Задача (task) блокируется с комментариями, бюджетом повторов и историей |
+| Один анонимный воркер (worker) | Именованные исполнители с постоянной идентичностью |
+| Сжатие контекста может стереть след | SQLite-доска сохраняет аудиторский след |
+| Обратная связь от человека неудобна | Комментарии и разблокировка от человека — первоклассные возможности |
 
-Workers use the `kanban_*` toolset (`kanban_show`, `kanban_list`, `kanban_complete`, `kanban_block`, `kanban_heartbeat`, `kanban_comment`, `kanban_create`, `kanban_link`, `kanban_unblock`). Humans use `hermes kanban ...`, `/kanban ...`, or the dashboard. Both hit the same `~/.hermes/kanban.db`.
+Воркеры (worker) используют набор инструментов (toolset) `kanban_*` (`kanban_show`, `kanban_list`, `kanban_complete`, `kanban_block`, `kanban_heartbeat`, `kanban_comment`, `kanban_create`, `kanban_link`, `kanban_unblock`). Люди используют `hermes kanban ...`, `/kanban ...` или панель управления (dashboard). И те, и другие работают с одной и той же `~/.hermes/kanban.db`.
 
-Good board shapes:
+Хорошие формы доски:
 
-- **Solo dev:** triage → implement → review → PR.
-- **Research desk:** scouts gather links, analyst synthesizes, writer drafts.
-- **Ops journal:** recurring checks append comments to the same service task over weeks.
-- **Fleet work:** one board per client/account/tenant; specialists claim their lane.
-- **Coding factory:** Codex/Claude/OpenCode worker lanes write patches; Hermes reviews before completion.
+- **Одиночный разработчик:** триаж → реализация → ревью → PR.
+- **Исследовательский отдел:** разведчики собирают ссылки, аналитик синтезирует, писатель черновик.
+- **Операционный журнал:** повторяющиеся проверки добавляют комментарии к одной и той же задаче обслуживания в течение недель.
+- **Работа по клиентам:** одна доска на клиента/аккаунт/тенанта; специалисты занимают свою полосу.
+- **Фабрика кода:** полосы воркеров (worker) Codex/Claude/OpenCode пишут патчи; Hermes проверяет перед завершением.
 
 ---
 
-## 2. Add Worker Lanes Instead of Giant Prompt Swarms
+## 2. Добавляйте Полосы Воркеров (Worker Lanes) вместо Гигантских Роев Промптов
 
-Worker lanes are the SOTA orchestration pattern for coding-heavy Hermes setups. A lane is an assignee plus a spawn contract:
+Полосы воркеров (worker lanes) — это современный (SOTA) паттерн оркестрации для насыщенных кодом конфигураций Hermes. Полоса — это исполнитель плюс контракт на порождение:
 
-- Hermes profile lanes: dispatcher spawns `hermes -p <profile>` with claim-scoped Kanban tools.
-- External CLI lanes: Codex, Claude Code, OpenCode, or custom workers pull assigned cards and report back through the Kanban API/tools.
-- Review lanes: human or agent reviewer gates "done" before dependent work unblocks.
+- Полосы профилей Hermes: диспетчер порождает `hermes -p <profile>` с инструментами (tool) Kanban, ограниченными задачей.
+- Полосы внешних CLI: Codex, Claude Code, OpenCode или пользовательские воркеры (worker) забирают назначенные карточки и отчитываются через API/инструменты (tool) Kanban.
+- Полосы ревью: человек или агент (agent) проверяет статус «готово» перед тем, как зависимая работа разблокируется.
 
-Practical routing:
+Практическая маршрутизация:
 
-| Assignee | Use for | Completion posture |
+| Исполнитель | Использовать для | Завершение |
 |----------|---------|--------------------|
-| `specifier` | Convert vague cards into acceptance criteria | Complete when spec is clear |
-| `researcher` | Gather docs, issues, release notes | Comment sources, then hand off |
-| `codex-worker` | Small isolated code edits | Block for Hermes/human review |
-| `claude-code` | Larger multi-file refactors | Block for review + tests |
-| `reviewer` | Verify diff, tests, risk | Complete or unblock with fixes |
+| `specifier` | Преобразование расплывчатых карточек в критерии приёмки | Завершить, когда спецификация ясна |
+| `researcher` | Сбор документации, ишью, релизных заметок | Прокомментировать источники, затем передать |
+| `codex-worker` | Небольшие изолированные правки кода | Блокировать для ревью Hermes/человеком |
+| `claude-code` | Крупные многофайловые рефакторинги | Блокировать для ревью + тесты |
+| `reviewer` | Проверка диффа, тестов, рисков | Завершить или разблокировать с исправлениями |
 
-Keep Hermes Kanban as the source of truth. Do not let a specialist CLI silently mark code as done just because it exited successfully.
+Держите Hermes Kanban как источник истины. Не позволяйте специализированному CLI молча помечать код как готовый только потому, что он успешно завершился.
 
 ---
 
-## 3. Use `/goal` for "Do Not Stop Until It Is Done"
+## 3. Используйте `/goal` для «Не Останавливайся, Пока Не Сделано»
 
-`/goal` gives a session a persistent objective. After each turn, Hermes checks whether the goal is satisfied; if not, it continues within the configured turn budget.
+`/goal` даёт сессии (session) постоянную цель. После каждого шага Hermes проверяет, достигнута ли цель; если нет — продолжает в пределах заданного бюджета шагов.
 
 ```text
-/goal Refresh this guide to Hermes v0.13, remove stale v0.12-as-current claims, run validation, and open a PR.
+/goal Обновить это руководство до Hermes v0.13, удалить устаревшие утверждения v0.12-как-текущая, запустить валидацию и открыть PR.
 ```
 
-Use it for:
+Используйте для:
 
-- Release-note sweeps where the agent might otherwise stop after the first file.
-- Bug hunts that require reproduce → inspect → patch → test loops.
-- Documentation refreshes with many cross-links.
-- Long "make this production-ready" sessions where done means verified, not merely attempted.
+- Проверок релизных заметок, где агент (agent) может остановиться после первого файла.
+- Охоты на баги, требующей циклов воспроизведение → анализ → патч → тест.
+- Обновлений документации с множеством перекрёстных ссылок.
+- Длинных сессий «сделай это production-ready», где «готово» означает проверено, а не просто попробовано.
 
-Do not use `/goal` for vague aspirations like "improve the project." Give it an observable exit condition: checks pass, PR opened, benchmark table updated, board card complete, etc.
+Не используйте `/goal` для расплывчатых стремлений вроде «улучшить проект». Дайте ему наблюдаемое условие завершения: проверки пройдены, PR открыт, таблица бенчмарков обновлена, карточка на доске завершена и т.д.
 
 ---
 
-## 4. Checkpoints v2 Changes Your Risk Model
+## 4. Контрольные точки v2 (Checkpoints v2) Меняют Вашу Модель Рисков
 
-Hermes already had rollback-style safety. v0.13's Checkpoints v2 makes it more production-worthy:
+У Hermes уже была безопасность с откатом. Контрольные точки v2 (Checkpoints v2) в v0.13 делают её более production-достойной:
 
-- Real pruning prevents checkpoint directories from growing forever.
-- Disk guardrails stop runaway snapshots from filling a VPS.
-- Shadow repos are cleaned up instead of orphaned.
-- Patch/write syntax linting catches broken Python, JSON, YAML, and TOML immediately after file writes.
+- Настоящая обрезка предотвращает бесконечный рост директорий контрольных точек.
+- Ограничения диска предотвращают заполнение VPS вышедшими из-под контроля снимками.
+- Теневые репозитории очищаются вместо того, чтобы оставаться осиротевшими.
+- Линтинг синтаксиса патчей/записей выявляет сломанный Python, JSON, YAML и TOML сразу после записи файлов.
 
-Recommended habit:
+Рекомендуемая привычка:
 
 ```text
-Before a risky multi-file edit, confirm checkpointing is enabled.
-After the edit, run tests.
-If the direction is wrong, /rollback before trying a different strategy.
+Перед рискованным многофайловым редактированием убедитесь, что контрольные точки включены.
+После редактирования запустите тесты.
+Если направление неверное, выполните /rollback перед попыткой другой стратегии.
 ```
 
-This is especially important when Kanban workers use git worktrees: checkpoints protect the worker workspace, while git protects the reviewable diff.
+Это особенно важно, когда воркеры (worker) Kanban используют git worktrees: контрольные точки защищают рабочее пространство воркера, а git защищает проверяемый дифф.
 
 ---
 
-## 5. Use `no_agent` Cron for Watchdogs
+## 5. Используйте Cron без агента (No-Agent Cron) для Сторожевых Псов (Watchdogs)
 
-Not every scheduled job needs an LLM. v0.13 cron can run in **no-agent mode**: execute a script on schedule, deliver stdout if there is anything to say, and spend zero tokens.
+Не каждой запланированной задаче нужна LLM. Cron в v0.13 может работать в **режиме без агента (no-agent mode)**: выполнить скрипт по расписанию, вывести stdout, если есть что сказать, и потратить ноль токенов.
 
-Use no-agent mode for:
+Используйте режим без агента (no-agent mode) для:
 
-- Disk-space alerts.
-- Uptime checks.
-- Backup presence checks.
-- "Did CI fail?" pollers.
-- Cost/budget threshold pings.
+- Оповещений о заполнении диска.
+- Проверок аптайма.
+- Проверок наличия бэкапов.
+- Опросов «CI упал?».
+- Уведомлений о превышении порогов стоимости/бюджета.
 
-Pattern:
+Шаблон (pattern):
 
 ```yaml
 cron:
@@ -130,22 +130,22 @@ cron:
     notify: telegram_private
 ```
 
-Keep LLM-backed cron for jobs that need judgment, synthesis, or tool use. Use no-agent for deterministic checks.
+Оставляйте cron с LLM для задач, которым нужны суждение, синтез или использование инструментов (tool). Используйте no-agent для детерминированных проверок.
 
 ---
 
-## 6. Route Media to Models That Actually Understand It
+## 6. Направляйте Медиа к Моделям, Которые Его Действительно Понимают
 
-v0.13 adds a `video_analyze` tool path for Gemini and compatible multimodal providers. Do not treat video as "just another attachment" on a text model.
+v0.13 добавляет путь инструмента (tool) `video_analyze` для Gemini и совместимых мультимодальных провайдеров (provider). Не рассматривайте видео как «ещё одно вложение» для текстовой модели.
 
-Use it for:
+Используйте для:
 
-- Meeting recordings: action items, objections, decisions, timestamps.
-- UI bug reports: "watch the repro video and identify the first broken frame."
-- Security review: inspect screen recordings without dumping raw private media into memory.
-- Support triage: classify customer clips before escalating to a human.
+- Записей встреч: пункты действий, возражения, решения, временные метки.
+- Отчётов о багах UI: «посмотри видео воспроизведения и определи первый сломанный кадр».
+- Проверок безопасности: просмотр записи экрана без сброса сырых приватных медиа в память (memory).
+- Триажа поддержки: классификация клипсов клиентов перед эскалацией человеку.
 
-Pattern:
+Шаблон (pattern):
 
 ```yaml
 auxiliary_models:
@@ -157,7 +157,7 @@ auxiliary_models:
     model: gemini-3.1-pro
 ```
 
-For voice replies, xAI Custom Voices can now sit beside Edge/OpenAI/Gemini/MiniMax TTS:
+Для голосовых ответов пользовательские голоса xAI теперь могут располагаться рядом с Edge/OpenAI/Gemini/MiniMax TTS:
 
 ```yaml
 tts:
@@ -166,27 +166,27 @@ tts:
   require_private_channel: true
 ```
 
-Keep cloned voices private-channel only unless you have explicit consent and a clear disclosure policy.
+Держите клонированные голоса только для приватных каналов, если у вас нет явного согласия и чёткой политики раскрытия информации.
 
 ---
 
-## 7. Update Your Platform and Provider Mental Model
+## 7. Обновите Модель Платформ и Провайдеров (Platform and Provider)
 
-v0.13 pushes two plugin surfaces forward:
+v0.13 продвигает две поверхности плагинов (plugin):
 
-- **Platforms:** Google Chat becomes the 20th messaging platform, and platform adapters can ship as plugins without touching core.
-- **Providers:** model providers can ship as plugins through the provider profile surface, so "wait for core support" is less of a blocker.
+- **Платформы (Platforms):** Google Chat становится 20-й платформой обмена сообщениями, адаптеры платформ могут поставляться как плагины (plugin) без изменения ядра.
+- **Провайдеры (Providers):** модели провайдеров (provider) могут поставляться как плагины (plugin) через поверхность профиля провайдера, поэтому «жди поддержки в ядре» становится меньшим препятствием.
 
-Operational rule:
+Операционное правило:
 
-1. Keep bundled/user plugins opt-in.
-2. Keep project-local plugins disabled unless the repo is trusted.
-3. Prefer native provider plugins over generic OpenAI-compatible shims when they expose provider-specific caching, reasoning, media, or auth.
-4. Re-run `hermes plugins list` and `hermes model` after every major release; the live menus move faster than static docs.
+1. Оставляйте встроенные/пользовательские плагины (plugin) opt-in.
+2. Оставляйте локальные для проекта плагины (plugin) отключёнными, если репозиторий не доверенный.
+3. Предпочитайте нативные плагины провайдеров (provider) универсальным OpenAI-совместимым прослойкам, когда они предоставляют кэширование, рассуждение, медиа или аутентификацию, специфичные для провайдера.
+4. Запускайте `hermes plugins list` и `hermes model` после каждого крупного релиза; живые меню обновляются быстрее статической документации.
 
 ---
 
-## 8. Upgrade Checklist from v0.12 to v0.13
+## 8. Чеклист Обновления с v0.12 на v0.13
 
 ```bash
 hermes update --check
@@ -197,32 +197,32 @@ hermes plugins list
 hermes model
 ```
 
-Then verify the v0.13-specific paths:
+Затем проверьте пути, специфичные для v0.13:
 
-- Create a throwaway Kanban card and dispatch one worker.
-- Set and clear a `/goal` in a disposable session.
-- Make a harmless file edit and confirm checkpoint/rollback behavior.
-- Restart the gateway mid-conversation and verify auto-resume.
-- Check that secret redaction is on by default in logs, debug bundles, and gateway replies.
-- If you use Discord/WhatsApp, re-check guild/channel/user allowlists.
-- Replace pure status-check LLM crons with `no_agent` jobs.
-- If you expose Google Chat, treat it like any other untrusted group surface until allowlists are proven.
+- Создайте одноразовую карточку Kanban и отправьте одного воркера (worker).
+- Установите и сбросьте `/goal` в одноразовой сессии (session).
+- Сделайте безобидную правку файла и подтвердите поведение контрольных точек/отката.
+- Перезапустите шлюз (gateway) в середине разговора и проверьте авто-возобновление.
+- Проверьте, что редактирование секретов включено по умолчанию в логах, отладочных пакетах и ответах шлюза (gateway).
+- Если вы используете Discord/WhatsApp, перепроверьте белые списки гильдий/каналов/пользователей.
+- Замените чистые LLM-задачи cron для проверки статуса на задания `no_agent`.
+- Если вы открываете Google Chat, относитесь к нему как к любой другой недоверенной групповой поверхности, пока белые списки не подтверждены.
 
 ---
 
-## 9. The Current Power Stack
+## 9. Текущий Стек Мощности (Power Stack)
 
-For a serious May 2026 Hermes deployment:
+Для серьёзного развёртывания Hermes в мае 2026:
 
-1. **Dashboard** for config, plugins, Kanban, analytics, profiles, and Chat.
-2. **Kanban** for durable multi-agent work.
-3. **`/goal`** for single-session persistence.
-4. **Curator** for skill-library hygiene.
-5. **LightRAG or a memory provider plugin** for cross-session recall.
-6. **MCP** for tools, with strict trust and sampling boundaries.
-7. **Coding-agent lanes** for code work, not one giant Hermes prompt.
-8. **Remote sandboxes/worktrees** for isolation.
-9. **Langfuse/Helicone/Phoenix** for traces and cost control.
-10. **No-agent cron** for deterministic watchdogs.
+1. **Панель управления (Dashboard)** для конфигурации, плагинов (plugin), Kanban, аналитики, профилей и чата.
+2. **Канбан (Kanban)** для долговременной многолетней (multi-agent) работы.
+3. **`/goal`** для постоянства в рамках одной сессии (session).
+4. **Куратор (Curator)** для гигиены библиотеки навыков (skill).
+5. **LightRAG или плагин провайдера памяти (memory provider plugin)** для межсессионного воспроизведения.
+6. **MCP** для инструментов (tool), со строгими границами доверия и сэмплирования.
+7. **Полосы кодирующих агентов (Coding-agent lanes)** для работы с кодом, а не один гигантский промпт Hermes.
+8. **Удалённые песочницы/рабочие деревья (Remote sandboxes/worktrees)** для изоляции.
+9. **Langfuse/Helicone/Phoenix** для трассировки и контроля стоимости.
+10. **Cron без агента (No-agent cron)** для детерминированных сторожевых псов (watchdogs).
 
-If you only adopt one new pattern from v0.13, adopt Kanban. It is the difference between "an agent tried something" and "a system of agents completed auditable work."
+Если вы возьмёте из v0.13 только один новый паттерн, возьмите Kanban. Это разница между «агент (agent) что-то попробовал» и «система агентов (agent) выполнила проверяемую работу».

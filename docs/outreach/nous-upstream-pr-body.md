@@ -1,57 +1,57 @@
-# Upstream PR to `NousResearch/hermes-agent` — Draft PR Body
+# Upstream PR в `NousResearch/hermes-agent` — Черновик тела PR
 
-**This is the single highest-leverage move for stars + team respect.** Rob should open this PR themselves — it comes better from a user than from an AI assistant.
+**Это единственное действие с максимальным рычагом для звёзд и уважения команды.** Роб должен открыть этот PR самостоятельно — от пользователя он звучит убедительнее, чем от AI-ассистента.
 
 ---
 
-## Suggested title
+## Предлагаемый заголовок
 `docs: add "Community Guides" section linking external optimization resources`
 
-## Suggested branch name
+## Предлагаемое название ветки
 `docs/community-guides`
 
-## Suggested change
+## Предлагаемое изменение
 
-Add a new section to `README.md` (just below "Documentation" or "Quick Start"):
+Добавить новую секцию в `README.md` (сразу после «Documentation» или «Quick Start»):
 
 ````markdown
 ## Community Guides
 
-Independent guides written by Hermes users. These are not official, but have been vetted by maintainers for accuracy.
+Независимые гайды, написанные пользователями Hermes. Они не являются официальными, но проверены мейнтейнерами на точность.
 
-- [Hermes Optimization Guide](https://github.com/OnlyTerp/hermes-optimization-guide) — 24-part guide covering LightRAG, Telegram deployment, Kanban, MCP, security hardening, cost routing, observability, and remote sandboxes. Ships installable skills, 5 production configs, a VPS bootstrap script, and reproducible cost benchmarks.
+- [Hermes Optimization Guide](https://github.com/OnlyTerp/hermes-optimization-guide) — 24-частный гайд, охватывающий LightRAG, развёртывание Telegram, Kanban, MCP, усиление безопасности, маршрутизацию расходов, наблюдаемость и удалённые песочницы. Содержит устанавливаемые навыки (skills), 5 продакшн-конфигов, скрипт развёртывания VPS и воспроизводимые бенчмарки расходов.
 
-_Maintain your own? Open a PR adding it here._
+_Поддерживаете свой собственный? Откройте PR и добавьте его сюда._
 ````
 
-## PR body
+## Тело PR
 
-> Hi Nous team — first, thanks for Hermes, it's been my daily driver for a year.
+> Привет, команда Nous — прежде всего, спасибо за Hermes, это мой ежедневный инструмент уже год.
 >
-> I've been writing a community optimization guide since v0.9.0 shipped, and have gotten enough "where should I link this so people can find it?" messages that I wanted to propose an upstream spot: a small **Community Guides** section in the README.
+> Я пишу community-гайд по оптимизации с момента выхода v0.9.0 и получил достаточно сообщений вроде «куда мне сослаться, чтобы люди могли это найти?», чтобы предложить место в upstream: небольшую секцию **Community Guides** в README.
 >
-> The guide itself is at https://github.com/OnlyTerp/hermes-optimization-guide — 24 parts of documentation, 13 installable `SKILL.md` files, 5 production configs, 4 reference architectures, a VPS bootstrap script, an in-browser config wizard, and a reproducible cost benchmark. MIT license. CHANGELOG + ROADMAP are real. I cross-check every release note on `main` and update within 72h.
+> Сам гайд находится по адресу https://github.com/OnlyTerp/hermes-optimization-guide — 24 части документации, 13 устанавливаемых файлов `SKILL.md`, 5 продакшн-конфигов, 4 эталонные архитектуры, скрипт развёртывания VPS, конфигурационный визард (wizard) в браузере и воспроизводимый бенчмарк расходов. Лицензия MIT. CHANGELOG и ROADMAP — настоящие. Я сверяю каждую заметку о релизе в `main` и обновляю гайд в течение 72 часов.
 >
-> Totally understand if you'd rather maintain a separate page, or curate more carefully before pointing at third-party content. Happy to iterate on the section copy, add more guides as they show up, or even move the list to `docs/community.md` if that fits better.
+> Полностью понимаю, если вы предпочтёте вести отдельную страницу или тщательнее отбирать контент перед ссылками на сторонние материалы. С удовольствием доработаю формулировку секции, добавлю другие гайды по мере их появления или перенесу список в `docs/community.md`, если так будет лучше.
 >
-> If there's a better channel for this kind of ask (Discord, an `awesome-hermes` repo, etc.) — just let me know and I'll move there.
+> Если есть более подходящий канал для такого рода предложений (Discord, репозиторий `awesome-hermes` и т. д.) — просто дайте знать, и я перейду туда.
 
-## Why this specific shape
+## Почему именно такая форма
 
-- **"Community Guides" (plural)** — signals the section is for anyone, not just this guide. Easier to accept because it's a pattern, not a promo.
-- **One-line link with a quality descriptor** — follows the style Nous already uses for integrations. Doesn't read like marketing.
-- **Explicit "vetted by maintainers for accuracy"** — puts the burden on the team to do a light review. Removes their fear of linking something that'll get out of date.
-- **"Maintain your own? Open a PR adding it here."** — invites contribution. Doesn't feel self-serving.
-- **PR body is a user speaking user-to-user** — the Nous team respects builders; show that you've been building.
+- **«Community Guides» (во множественном числе)** — сигнализирует, что секция предназначена для всех, а не только для этого гайда. Легче принять, потому что это паттерн, а не реклама.
+- **Однострочная ссылка с описанием качества** — соответствует стилю, который Nous уже использует для интеграций. Не выглядит как маркетинг.
+- **Явное указание «проверены мейнтейнерами на точность»** — переносит бремя лёгкой проверки на команду. Снимает их страх, что ссылка устареет.
+- **«Поддерживаете свой собственный? Откройте PR и добавьте его сюда.»** — приглашает к участию. Не выглядит корыстно.
+- **Тело PR написано от пользователя к пользователю** — команда Nous уважает строителей; покажите, что вы строите.
 
-## What to do if rejected
+## Что делать, если отклонили
 
-1. **Ask where the right spot is.** If they say "not in README", ask about `docs/community.md` or a GH topic/tag.
-2. **Offer to run an `awesome-hermes` repo** — totally different framing, same destination: people find this guide.
-3. **Don't push.** Take the rejection, thank them, keep writing.
+1. **Спросить, где правильное место.** Если скажут «не в README», спросить про `docs/community.md` или тему/тег на GitHub.
+2. **Предложить вести репозиторий `awesome-hermes`** — совершенно другой ракурс, та же цель: люди найдут этот гайд.
+3. **Не настаивать.** Принять отказ, поблагодарить, продолжать писать.
 
-## What to do if accepted
+## Что делать, если приняли
 
-1. **Thank them publicly** — quote-tweet / reply in the PR. The Hermes community watches these merges.
-2. **Update [this guide's README](../../README.md)** with the upstream link ("Listed in the official Hermes README").
-3. **Don't abuse the channel.** Never add other projects to that section in a later PR unless they're comparable-quality and the author opens it themselves.
+1. **Публично поблагодарить их** — цитата-ретвит / ответ в PR. Сообщество Hermes следит за такими слияниями.
+2. **Обновить [README этого гайда](../../README.md)** — добавить ссылку на upstream («Упомянут в официальном README Hermes»).
+3. **Не злоупотреблять каналом.** Никогда не добавлять другие проекты в эту секцию в следующих PR, если только они не сопоставимого качества и автор не открывает PR самостоятельно.

@@ -1,50 +1,51 @@
-# Part 17: MCP Servers — Give Hermes Any Tool With Zero Glue Code
+# Часть 17: MCP-серверы (MCP Servers) — Дайте Hermes Любой Инструмент Без Единой Строки Прокси-Кода
 
-*Model Context Protocol (MCP) is the "USB-C of AI agents" — a standard way for any tool server to plug into any agent. Hermes has supported MCP natively since [v0.7.0](https://github.com/NousResearch/hermes-agent/releases/tag/v2026.4.3). This is the part of the guide nobody reads until they realize they can stop writing tool adapters by hand.*
-
----
-
-## Why This Matters
-
-Before MCP, every agent framework had its own tool-calling schema. You'd write a GitHub tool for Hermes, then rewrite it for Claude Code, then rewrite it again for Cursor. All three calling the same GitHub API.
-
-MCP (introduced by Anthropic, now a de facto standard across Claude Code, Cursor, GitHub Copilot, Devin, and Hermes) defines:
-
-- **Tool discovery** — a standard JSON format for describing inputs and outputs
-- **Transports** — stdio (local subprocess) and HTTP (remote server)
-- **Bi-directional sampling** — MCP servers can ask the agent to run an LLM call on their behalf
-
-Hermes plugs into this ecosystem. Point it at any MCP server — community-built or your own — and the tools show up next to Hermes' built-ins with zero code changes. This is the most leveraged hour you'll spend optimizing your agent.
+*Model Context Protocol (MCP) — это «USB-C для AI-агентов (agents)»: стандартный способ подключения любого инструментального сервера (server) к любому агенту. Hermes поддерживает MCP нативно начиная с [v0.7.0](https://github.com/NousResearch/hermes-agent/releases/tag/v2026.4.3). Это та часть руководства, которую никто не читает, пока не осознаёт, что может перестать писать адаптеры для инструментов (tools) вручную.*
 
 ---
 
-## How MCP Fits Into Hermes
+## Почему Это Важно
+
+До появления MCP каждый фреймворк агентов имел свою собственную схему вызова инструментов. Вы писали GitHub-инструмент для Hermes, затем переписывали его для Claude Code, затем снова переписывали для Cursor. И все три вызывали один и тот же GitHub API.
+
+MCP (представленный Anthropic, теперь де-факто стандарт для Claude Code, Cursor, GitHub Copilot, Devin и Hermes) определяет:
+
+- **Обнаружение инструментов (tool discovery)** — стандартный JSON-формат для описания входных и выходных данных
+- **Транспорты (transports)** — stdio (локальный подпроцесс) и HTTP (удалённый сервер)
+- **Двунаправленная семплинг (bi-directional sampling)** — MCP-серверы могут попросить агента выполнить LLM-вызов от их имени
+
+Hermes встраивается в эту экосистему. Укажите ему любой MCP-сервер — созданный сообществом или ваш собственный — и инструменты появятся рядом со встроенными инструментами Hermes без изменений в коде. Это самый эффективный час, который вы потратите на оптимизацию своего агента.
+
+---
+
+## Как MCP Встраивается в Hermes
 
 ```
 ┌────────────────────────────────────────────────────┐
 │  Hermes Agent                                       │
 │  ┌──────────────────────────────────────────────┐  │
-│  │  Built-in tools (terminal, skills, memory)   │  │
+│  │  Встроенные инструменты (терминал, навыки,   │  │
+│  │  память)                                      │  │
 │  └──────────────────────────────────────────────┘  │
 │  ┌──────────────────────────────────────────────┐  │
-│  │  MCP Client                                  │  │
-│  │  ├─ github-mcp     (stdio, subprocess)      │  │
-│  │  ├─ postgres-mcp   (stdio, subprocess)      │  │
-│  │  ├─ mem0-mcp       (http, remote)           │  │
-│  │  └─ your-mcp       (stdio or http)          │  │
+│  │  MCP-клиент (MCP Client)                     │  │
+│  │  ├─ github-mcp     (stdio, подпроцесс)       │  │
+│  │  ├─ postgres-mcp   (stdio, подпроцесс)       │  │
+│  │  ├─ mem0-mcp       (http, удалённый)         │  │
+│  │  └─ your-mcp       (stdio или http)          │  │
 │  └──────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────┘
 ```
 
-Hermes auto-discovers tools at startup and subscribes to dynamic updates — if an MCP server adds a new tool mid-session, Hermes picks it up without a restart.
+Hermes автоматически обнаруживает инструменты при запуске и подписывается на динамические обновления — если MCP-сервер добавляет новый инструмент в середине сессии (session), Hermes подхватывает его без перезапуска.
 
 ---
 
-## Configuration
+## Конфигурация
 
-MCP servers live under the `mcp_servers` key in `~/.hermes/config.yaml`.
+MCP-серверы указываются в ключе `mcp_servers` в файле `~/.hermes/config.yaml`.
 
-### stdio Servers (Local Subprocess)
+### stdio-серверы (Локальный Подпроцесс)
 
 ```yaml
 mcp_servers:
@@ -63,9 +64,9 @@ mcp_servers:
     args: ["-y", "@modelcontextprotocol/server-postgres", "${DATABASE_URL}"]
 ```
 
-Hermes spawns the subprocess on startup, pipes JSON-RPC over stdio, and unspawns it on exit. Restart Hermes after adding a new stdio server.
+Hermes запускает подпроцесс при старте, передаёт JSON-RPC через stdio и завершает его при выходе. Перезапустите Hermes после добавления нового stdio-сервера.
 
-### HTTP / SSE Servers (Remote)
+### HTTP / SSE-серверы (Удалённые)
 
 ```yaml
 mcp_servers:
@@ -80,59 +81,59 @@ mcp_servers:
       Authorization: Bearer ${CLOUDFLARE_API_TOKEN}
 ```
 
-HTTP servers can add/remove tools live. Hermes handles reconnection with exponential backoff.
+HTTP-серверы могут добавлять/удалять инструменты на лету. Hermes обрабатывает переподключение с экспоненциальной задержкой (exponential backoff).
 
-### Scoped Enablement
+### Ограничение Области Видимости
 
-Some servers are chatty — you don't want every tool they expose loaded into every conversation. Scope them:
+Некоторые серверы болтливы — вы не хотите загружать все их инструменты в каждый разговор. Ограничьте их область:
 
 ```yaml
 mcp_servers:
   postgres:
     command: npx
     args: ["-y", "@modelcontextprotocol/server-postgres", "${DATABASE_URL}"]
-    enabled_for:                     # Only load in these sessions
+    enabled_for:                     # Загружать только в этих сессиях
       - profile: engineering
       - channel: "#data-questions"
-    tools_allowlist:                 # Only expose these tools
+    tools_allowlist:                 # Предоставлять только эти инструменты
       - query
       - describe_table
 ```
 
-Without a `tools_allowlist`, every tool the server exposes is available.
+Без `tools_allowlist` будут доступны все инструменты, которые предоставляет сервер.
 
 ---
 
-## The MCP Servers Worth Installing Today
+## MCP-Серверы, Которые Стоит Установить Сегодня
 
-These are the ones that pay for themselves within a day:
+Эти окупаются в течение дня:
 
-> **2026 reality check:** MCP is also a supply-chain boundary. Prefer official servers, pin package versions, restrict filesystem roots, and keep `allow_sampling: false` unless the server genuinely needs to call an LLM.
+> **Реалии 2026 года:** MCP также является границей цепочки поставок. Предпочитайте официальные серверы, фиксируйте версии пакетов, ограничивайте корневые каталоги файловой системы и держите `allow_sampling: false`, если серверу действительно не нужно вызывать LLM.
 
-| Server | What it adds | Why you want it |
-|--------|--------------|-----------------|
-| **@modelcontextprotocol/server-github** | Issues, PRs, repo search, branch diffs | Hermes becomes a code-aware teammate |
-| **@modelcontextprotocol/server-filesystem** | Scoped file reads/writes/search | Safer than giving terminal access |
-| **@modelcontextprotocol/server-postgres** | Read-only SQL | Answer "what's in the db?" without exposing DSN |
-| **@modelcontextprotocol/server-sqlite** | Local SQLite analysis | Great for log files, analytics snapshots |
-| **@modelcontextprotocol/server-puppeteer** | Browser automation | Complement to the Tool Gateway's Browser Use; sandbox it tightly |
-| **@modelcontextprotocol/server-memory** | Knowledge-graph memory | Pairs with [Part 3 LightRAG](./part3-lightrag-setup.md) for redundancy |
-| **mcp.mem0.ai** | Hosted long-term memory | Cross-device memory across Hermes + Claude Code |
-| **Cloudflare Observability MCP** | Query your Worker logs/analytics | If you run anything on Cloudflare |
-| **@supabase/mcp-server-supabase** | Supabase RPC + Postgres + storage | One config for a whole backend |
-| **linear-mcp** | Linear issue CRUD | Turn Hermes into an issue assignee |
-| **stripe-mcp** | Stripe reads (customers, subs) | Support triage from Telegram |
-| **@notionhq/notion-mcp-server** | Notion pages + databases | Company wiki as grounded context |
-| **@browserbase/mcp** | Headless browser-as-a-service | Scraping sites Firecrawl can't handle |
-| **@chroma-core/chroma-mcp** | ChromaDB vectors | Works alongside LightRAG |
+| Сервер | Что добавляет | Зачем он вам |
+|--------|--------------|--------------|
+| **@modelcontextprotocol/server-github** | Issues, PR, поиск по репозиторию, диффы веток | Hermes становится осведомлённым о коде коллегой |
+| **@modelcontextprotocol/server-filesystem** | Ограниченные чтение/запись/поиск файлов | Безопаснее, чем давать доступ к терминалу |
+| **@modelcontextprotocol/server-postgres** | SQL только для чтения | Ответить «что в базе?» без раскрытия DSN |
+| **@modelcontextprotocol/server-sqlite** | Локальный анализ SQLite | Отлично для логов, аналитических срезов |
+| **@modelcontextprotocol/server-puppeteer** | Автоматизация браузера | Дополнение к Browser Use в шлюзе (gateway) инструментов; изолируйте его строго |
+| **@modelcontextprotocol/server-memory** | Графовая память (knowledge-graph memory) | Сочетается с [Частью 3 LightRAG](./part3-lightrag-setup.md) для избыточности |
+| **mcp.mem0.ai** | Облачная долговременная память | Кросс-платформенная память между Hermes и Claude Code |
+| **Cloudflare Observability MCP** | Запрос логов/аналитики Workers | Если вы используете Cloudflare |
+| **@supabase/mcp-server-supabase** | Supabase RPC + Postgres + хранилище | Одна конфигурация для всего бэкенда |
+| **linear-mcp** | CRUD задач Linear | Превратите Hermes в исполнителя задач |
+| **stripe-mcp** | Чтение Stripe (клиенты, подписки) | Триаж поддержки из Telegram |
+| **@notionhq/notion-mcp-server** | Страницы и базы данных Notion | Вики компании как обоснованный контекст |
+| **@browserbase/mcp** | Головной браузер как услуга | Парсинг сайтов, с которыми не справляется Firecrawl |
+| **@chroma-core/chroma-mcp** | Векторы ChromaDB | Работает вместе с LightRAG |
 
-For the full catalog, see the [MCP Registry](https://registry.modelcontextprotocol.io/) and the `awesome-mcp-servers` list on GitHub.
+Полный каталог — в [MCP Registry](https://registry.modelcontextprotocol.io/) и в списке `awesome-mcp-servers` на GitHub.
 
 ---
 
-## Writing Your Own MCP Server (Fast)
+## Создание Собственного MCP-Сервера (Быстро)
 
-A minimal Node MCP server is ~30 lines. Python is similar. Point Hermes at it like any other stdio server.
+Минимальный Node MCP-сервер занимает ~30 строк. Python — аналогично. Укажите его Hermes как любой другой stdio-сервер.
 
 ```javascript
 // my-mcp/index.js
@@ -166,7 +167,7 @@ server.setRequestHandler("tools/call", async (req) => {
 await server.connect(new StdioServerTransport());
 ```
 
-Register it:
+Зарегистрируйте его:
 
 ```yaml
 mcp_servers:
@@ -175,77 +176,79 @@ mcp_servers:
     args: ["/home/you/mcp/my-mcp/index.js"]
 ```
 
-Now `deploy_staging` is a tool Hermes can call from any surface — CLI, Telegram, iMessage, Discord — without touching Hermes' code.
+Теперь `deploy_staging` — это инструмент, который Hermes может вызывать из любого интерфейса — CLI, Telegram, iMessage, Discord — без изменения кода Hermes.
 
 ---
 
-## Sampling: Letting an MCP Server Call the LLM
+## Семплинг (Sampling): MCP-Сервер Вызывает LLM
 
-This is MCP's killer feature and the reason it matters for agents specifically. MCP servers can request LLM inference from Hermes via `sampling/createMessage`:
+Это убийственная функция MCP и причина, по которой он важен именно для агентов. MCP-серверы могут запрашивать LLM-инференс у Hermes через `sampling/createMessage`:
 
-- A scraper MCP fetches a messy page → asks Hermes' LLM to extract the structured data → returns the structured data to the agent.
-- A security-review MCP reads a diff → asks the LLM to classify severity → returns a triage label.
-- A translation MCP reads a file → asks the LLM to localize it → writes the output.
+- Парсерный MCP загружает неструктурированную страницу → просит LLM Hermes извлечь структурированные данные → возвращает структурированные данные агенту.
+- MCP проверки безопасности читает дифф → просит LLM классифицировать серьёзность → возвращает метку триажа.
+- MCP перевода читает файл → просит LLM локализовать его → записывает результат.
 
-Hermes handles the inference request with the active provider and meters the tokens against the current session. Enable sampling for a server:
+Hermes обрабатывает запрос инференса активным провайдером (provider) и учитывает токены в текущей сессии. Включите семплинг для сервера:
 
 ```yaml
 mcp_servers:
   scraper:
     command: node
     args: ["./scraper-mcp.js"]
-    allow_sampling: true              # Off by default
-    sampling_model: gpt-5-mini        # Optional: pin a cheaper model for sampling
+    allow_sampling: true              # По умолчанию выключено
+    sampling_model: gpt-5-mini        # Опционально: закрепить более дешёвую модель для семплинга
 ```
 
-**Security note:** Sampling means an MCP server can burn your tokens. Only enable it for servers you trust. See [Part 19](./part19-security-playbook.md#mcp-server-trust-model).
+**Замечание по безопасности:** Семплинг означает, что MCP-сервер может расходовать ваши токены. Включайте его только для серверов, которым доверяете. См. [Часть 19](./part19-security-playbook.md#mcp-server-trust-model).
 
 ---
 
-## Observing MCP Traffic
+## Наблюдение за MCP-Трафиком
 
 ```bash
-/mcp list                            # Show registered servers + tool counts
-/mcp reload                          # Reload servers without restarting Hermes
-/mcp disable github                  # Temporarily unregister
-/mcp enable github                   # Bring it back
+/mcp list                            # Показать зарегистрированные серверы + количество инструментов
+/mcp reload                          # Перезагрузить серверы без перезапуска Hermes
+/mcp disable github                  # Временно отключить
+/mcp enable github                   # Включить обратно
 ```
 
-The [Web Dashboard](./part12-web-dashboard.md) has an **MCP Servers** tab that shows connection status, tool list, recent invocations, and error logs for each server. This is the fastest way to debug a misbehaving MCP.
+[Веб-панель (Web Dashboard)](./part12-web-dashboard.md) имеет вкладку **MCP Servers**, которая показывает статус подключения, список инструментов, последние вызовы и логи ошибок для каждого сервера. Это самый быстрый способ отладки проблемного MCP.
 
-Set `HERMES_MCP_LOG=debug` in your `.env` to get full JSON-RPC traces in `~/.hermes/logs/mcp.log`. Turn this off in production — traces include tool arguments and results.
-
----
-
-## When MCP Is Overkill
-
-MCP adds a process (or a network hop) per tool. For things that live inside Hermes already, don't bother:
-
-- **Terminal commands** — just use the built-in `terminal` tool.
-- **File edits** — built-in file tools are faster than filesystem MCP if the files are local.
-- **Skills** — if the workflow is deterministic, a [skill](./part5-creating-skills.md) is cheaper to maintain.
-
-Use MCP when you want:
-- A tool that already has a community-maintained server (GitHub, Slack, Postgres, etc.)
-- A tool you'd want to share with other agents (Claude Code, Cursor, Copilot)
-- A tool that needs its own runtime (Node/Go/Rust) you'd rather not embed into Hermes
+Установите `HERMES_MCP_LOG=debug` в вашем `.env`, чтобы получить полные JSON-RPC трассы в `~/.hermes/logs/mcp.log`. Отключайте это в продакшене — трассы содержат аргументы и результаты инструментов.
 
 ---
 
-## Troubleshooting
+## Когда MCP Избыточен
 
-| Symptom | Likely cause | Fix |
+MCP добавляет процесс (или сетевой прыжок) на каждый инструмент. Для того, что уже есть внутри Hermes, не стоит:
+
+- **Команды терминала** — просто используйте встроенный инструмент `terminal`.
+- **Редактирование файлов** — встроенные файловые инструменты быстрее, чем filesystem MCP, если файлы локальны.
+- **Навыки (skills)** — если рабочий процесс детерминирован, [навык](./part5-creating-skills.md) дешевле поддерживать.
+
+Используйте MCP, когда вам нужно:
+- Инструмент, у которого уже есть поддерживаемый сообществом сервер (GitHub, Slack, Postgres и т.д.)
+- Инструмент, которым вы хотите делиться с другими агентами (Claude Code, Cursor, Copilot)
+- Инструмент, которому нужна своя среда выполнения (Node/Go/Rust), которую вы не хотите встраивать в Hermes
+
+---
+
+## Устранение Неполадок
+
+| Симптом | Вероятная причина | Исправление |
 |---------|--------------|-----|
-| `MCP server 'github' failed to start` | `npx` not on PATH in the gateway's environment | Use an absolute path in `command:` or set `PATH` in `env:` |
-| Server shows connected but 0 tools | Permissions — server's env vars are missing its auth token | Check `env:` entries and that referenced `${VARS}` exist in `.env` |
-| Tools show up in CLI but not Telegram | Gateway process has its own env — restart it after config change | `hermes gateway restart` |
-| Constant reconnects on HTTP server | SSE timeout behind a reverse proxy | Set `proxy_read_timeout 300s` in nginx/Caddy |
-| `sampling not permitted` in server logs | `allow_sampling: false` (default) | Set `allow_sampling: true` in the server's block |
+| `MCP server 'github' failed to start` | `npx` не найден в PATH окружения шлюза | Используйте абсолютный путь в `command:` или укажите `PATH` в `env:` |
+| Сервер показывает подключение, но 0 инструментов | Разрешения — в переменных окружения сервера отсутствует токен аутентификации | Проверьте записи `env:` и что указанные `${VARS}` существуют в `.env` |
+| Инструменты видны в CLI, но не в Telegram | Процесс шлюза имеет своё окружение — перезапустите его после изменения конфига | `hermes gateway restart` |
+| Постоянные переподключения на HTTP-сервере | Тайм-аут SSE за обратным прокси | Установите `proxy_read_timeout 300s` в nginx/Caddy |
+| `sampling not permitted` в логах сервера | `allow_sampling: false` (по умолчанию) | Установите `allow_sampling: true` в блоке сервера |
 
 ---
 
-## What's Next
+## Что Далее
 
-- [Part 18: Delegating to Coding Agents](./part18-coding-agents.md) — use Claude Code, Codex, and Gemini CLI as sub-agents invoked through Hermes (some ship MCP servers too)
-- [Part 19: Security Playbook](./part19-security-playbook.md) — MCP trust model, sampling limits, and how untrusted MCPs get quarantined
-- [Part 12: Web Dashboard](./part12-web-dashboard.md) — the MCP Servers panel
+- [Часть 18: Делегирование Кодирующим Агентам](./part18-coding-agents.md) — используйте Claude Code, Codex и Gemini CLI как сабагентов (subagents), вызываемых через Hermes (некоторые также поставляются с MCP-серверами)
+- [Часть 19: Практическое Руководство по Безопасности](./part19-security-playbook.md) — модель доверия MCP, лимиты семплинга и как недоверенные MCP изолируются
+- [Часть 12: Веб-Панель](./part12-web-dashboard.md) — панель MCP Servers
+
+(Конец файла)

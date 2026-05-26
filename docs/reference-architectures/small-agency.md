@@ -1,20 +1,20 @@
-# Reference Architecture: Small Agency
+# Эталонная архитектура (Reference Architecture): Small Agency
 
-**2–6 devs, multiple clients, per-client isolation.** One Hermes install is hard to scale across a team; this architecture runs a dedicated profile per developer/client and shares only the observability + audit layer.
+**2–6 разработчиков, несколько клиентов, изоляция по клиентам.** Одна инсталляция Hermes плохо масштабируется на команду; эта архитектура (architecture) запускает выделенный профиль (profile) на каждого разработчика/клиента и разделяет только слой observability + аудита.
 
-## Who this is for
+## Для кого это
 
-- Dev shops / consulting agencies handling multiple client codebases
-- Small product teams with strict separation-of-concerns requirements
-- Anyone who needs audit trails that hold up to a client security review
+- Dev-шопы / консалтинговые агентства, работающие с несколькими клиентскими кодовыми базами
+- Небольшие продуктовые команды со строгими требованиями разделения ответственности
+- Те, кому нужны аудиторские следы, выдерживающие проверку безопасности клиента
 
-## Cost
+## Стоимость
 
-- **Infra:** ~$25–50/mo (one CX32 or 2× CX22)
-- **LLM:** $200–800/mo (routed)
-- **Langfuse/observability:** $0 self-host or $100+/mo managed
+- **Инфраструктура:** ~$25–50/мес (один CX32 или 2× CX22)
+- **LLM:** $200–800/мес (с маршрутизацией)
+- **Langfuse/observability:** $0 при самостоятельном хостинге или $100+/мес управляемая версия
 
-## Architecture
+## Архитектура (Architecture)
 
 ```
           Devs (Telegram/Discord DMs, CLI)
@@ -31,21 +31,21 @@
      └───────────────────┘    └───────────────────┘
 ```
 
-- **Systemd templated units** — `hermes@<name>.service`, one per dev/client, each with its own `${HOME}/.hermes/` and own approval channel (DM of that dev)
-- **LightRAG per instance** — never mix client knowledge
-- **Centralized Langfuse + audit log** — every call traced, PII-redacted at the secrets layer
+- **Шаблонные systemd-юниты** — `hermes@<name>.service`, по одному на разработчика/клиента, каждый со своим `${HOME}/.hermes/` и своим каналом одобрения (DM этого разработчика)
+- **LightRAG на каждый экземпляр** — знания клиентов никогда не смешиваются
+- **Централизованный Langfuse + журнал аудита** — каждый вызов отслеживается, PID-данные вырезаются на уровне секретов
 
-## Parts list
+## Состав
 
-- **1× CX32** (4 vCPU, 8GB RAM) — $12/mo, hosts 3–6 Hermes instances + Langfuse
-- **S3/R2 backup bucket** — encrypted nightly backups (age/gpg)
-- **Cloudflare** — DNS + TLS-terminated reverse proxy (or Caddy if you prefer not touching CF)
-- **Linear/Notion/Slack/Google Workspace** — MCP-wired read-only for context
+- **1× CX32** (4 vCPU, 8GB RAM) — $12/мес, размещает 3–6 экземпляров Hermes + Langfuse
+- **S3/R2 бакет для бэкапов** — зашифрованные еженощные резервные копии (age/gpg)
+- **Cloudflare** — DNS + TLS-терминированный обратный прокси (или Caddy, если вы предпочитаете не использовать CF)
+- **Linear/Notion/Slack/Google Workspace** — MCP-подключённые, только на чтение для контекста
 
-## Install
+## Установка
 
-1. **Bootstrap the host** as in [Solo Developer](./solo-developer.md).
-2. **Replace `hermes.service`** with a templated unit (`hermes@.service`):
+1. **Загрузите хост** как в [Solo Developer](./solo-developer.md).
+2. **Замените `hermes.service`** на шаблонный юнит (`hermes@.service`):
 
 ```ini
 [Unit]
@@ -64,7 +64,7 @@ EnvironmentFile=-/home/%i/.hermes/.env
 WantedBy=multi-user.target
 ```
 
-Then:
+Затем:
 
 ```bash
 # For each dev or client:
@@ -75,37 +75,37 @@ chown alice:alice /home/alice/.hermes/config.yaml
 systemctl enable --now hermes@alice.service
 ```
 
-3. **Centralize Langfuse** per [Solo Developer](./solo-developer.md#install), then every `config.yaml` points `telemetry.langfuse.host` at the same internal URL. Each profile ships under its own Langfuse project for isolation.
+3. **Централизуйте Langfuse** как в [Solo Developer](./solo-developer.md#install), затем каждый `config.yaml` указывает `telemetry.langfuse.host` на тот же внутренний URL. Каждый профиль работает в своём проекте Langfuse для изоляции.
 
-## Per-client separation
+## Разделение по клиентам
 
-- **`profile:`** in the Hermes config — `quarantine` (untrusted input for a public bot) vs `trusted` (the dev's admin DM)
-- **Approval channels** — the dev's DM is the only trusted approval source; client support channels are *never* trusted
-- **LightRAG dirs** — `~/.hermes/lightrag-<client>/` per client; never mix
-- **MCP** — per-client read-only PATs (`GITHUB_PAT_CLIENT_A`, `GITHUB_PAT_CLIENT_B`)
-- **Audit log** — append-only JSONL per session, centralized to a single append-only bucket the dev can *read* but not *delete* (makes client reviews easy)
+- **`profile:`** в конфиге Hermes — `quarantine` (недоверенный ввод для публичного бота) vs `trusted` (административный DM разработчика)
+- **Каналы одобрения** — DM разработчика — единственный доверенный источник одобрения; каналы поддержки клиентов *никогда* не считаются доверенными
+- **Директории LightRAG** — `~/.hermes/lightrag-<client>/` для каждого клиента; никогда не смешиваются
+- **MCP** — PAT только на чтение для каждого клиента (`GITHUB_PAT_CLIENT_A`, `GITHUB_PAT_CLIENT_B`)
+- **Журнал аудита** — append-only JSONL на сессию (session), централизованно в один append-only бакет, который разработчик может *читать*, но не *удалять* (упрощает проверки со стороны клиента)
 
-## Cost routing at agency scale
+## Маршрутизация стоимости в масштабе агентства
 
-Use [`templates/config/production.yaml`](../../templates/config/production.yaml) as the base. Key rules:
+Используйте [`templates/config/production.yaml`](../../templates/config/production.yaml) как основу. Ключевые правила:
 
-- **Triage** (most traffic): Cerebras Llama 70B — free-ish tier
-- **Default coding:** Kimi/Moonshot (cheap competent coder)
-- **"Hard" coding / architecture:** Anthropic Sonnet — explicit opt-in
-- **Long-context research:** Gemini 2.5 Pro
-- **Deep reasoning:** OpenAI reasoning model (opt-in)
+- **Триаж** (большая часть трафика): Cerebras Llama 70B — почти бесплатный тариф
+- **Обычное программирование:** Kimi/Moonshot (дешёвый компетентный кодер)
+- **«Сложное» программирование / архитектура:** Anthropic Sonnet — явный opt-in
+- **Длинноконтекстные исследования:** Gemini 2.5 Pro
+- **Глубокие рассуждения:** OpenAI reasoning model (opt-in)
 
-With weekly `cost-report` → Discord ops channel, cost anomalies surface before the invoice.
+С еженедельным `cost-report` → Discord ops channel аномалии стоимости всплывают до получения счёта.
 
-## Compliance-friendly defaults
+## Compliance-дружественные настройки по умолчанию
 
-- `memory_write_redaction: true` (skip writing secrets to LightRAG)
+- `memory_write_redaction: true` (не записывать секреты в LightRAG)
 - `log_redaction: true`
 - `security.webhook.max_body_bytes: 524288`
-- `security.approval.approval_timeout: 120` — no action sits in pending queue forever
-- Nightly backup encrypted with per-client age keys
+- `security.approval.approval_timeout: 120` — ни одно действие не зависает в очереди навсегда
+- Еженощное резервное копирование с шифрованием per-client age-ключами
 
-## When to graduate
+## Когда переходить на следующий уровень
 
-- Past ~20 devs → move to a proper Kubernetes setup with per-profile pods, separate Langfuse instances per client
-- Regulated industries → self-host the LLM too (vLLM or Ollama on a GPU box)
+- После ~20 разработчиков → переходите на полноценную Kubernetes-конфигурацию с подами на профиль, отдельными экземплярами Langfuse на клиента
+- Регулируемые отрасли → хостите LLM тоже самостоятельно (vLLM или Ollama на GPU-сервере)

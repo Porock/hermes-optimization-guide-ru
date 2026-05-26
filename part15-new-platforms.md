@@ -1,53 +1,53 @@
-# Part 15: Messaging Platforms (Google Chat, iMessage, WeChat, QQBot, Yuanbao, Teams, Android)
+# Часть 15: Мессенджеры (Google Chat, iMessage, WeChat, QQBot, Yuanbao, Teams, Android)
 
-*Hermes' gateway is now a plugin host. v0.9 made Hermes "everywhere"; v0.11/v0.12 added QQBot, Tencent Yuanbao, and Microsoft Teams; v0.13 adds Google Chat and reinforces platform adapters as opt-in plugins.*
+*Шлюз (gateway) Hermes теперь является хостом плагинов (plugin). Версия v0.9 сделала Hermes «вездесущим»; v0.11/v0.12 добавили QQBot, Tencent Yuanbao и Microsoft Teams; v0.13 добавляет Google Chat и закрепляет платформенные адаптеры как опциональные плагины.*
 
 ---
 
-## The 20+ Platform Lineup
+## Состав из 20+ платформ
 
-As of v0.13, the gateway ships built-in adapters plus plugin-shipped platforms:
+Начиная с v0.13, шлюз (gateway) поставляется со встроенными адаптерами плюс платформами, поставляемыми через плагины:
 
-| Platform | Mode | Notes |
-|----------|------|-------|
-| Telegram | Polling + Webhook | Flagship adapter — see [Part 4](./part4-telegram-setup.md) |
-| Discord | WebSocket (bot) | Slash commands, voice/media, DMs + servers |
-| Slack | Socket / Events API | Threads, file uploads, blocks |
-| **Google Chat** | App / webhook | **New in v0.13**, Workspace-native chat surface |
-| WhatsApp | Web API | QR-code login, requires always-on node |
-| **iMessage (BlueBubbles)** | Webhook | **New in v0.9** |
-| **Weixin (WeChat personal)** | Long-poll | **New in v0.9** |
-| **WeCom (Enterprise WeChat)** | Webhook | **New in v0.9** |
-| **QQBot** | WebSocket/Webhook | Added after the original v0.9 platform sweep |
-| **Tencent Yuanbao** | Native gateway | **New in v0.12**, text + media delivery |
-| **Microsoft Teams** | Plugin | **New in v0.12**, first plugin-shipped gateway platform |
-| Signal | REST via signal-cli | Self-hosted bridge |
-| DingTalk | Webhook | Corporate IM, China/APAC |
-| Feishu / Lark | Webhook | Corporate IM, ByteDance |
-| SMS (Twilio) | Webhook | Plain SMS |
-| Mattermost | WebSocket | Self-hosted Slack alternative |
-| Matrix | Client-server | Federated chat |
-| Email (IMAP+SMTP) | Polling | Plain email |
-| Home Assistant | WebSocket | Voice + automation triggers |
-| Webhook (generic) | HTTP POST | Wire up anything |
+| Платформа | Режим | Примечания |
+|-----------|-------|------------|
+| Telegram | Polling + Webhook | Флагманский адаптер — см. [Часть 4](./part4-telegram-setup.md) |
+| Discord | WebSocket (бот) | Слеш-команды, голос/медиа, ЛС + серверы |
+| Slack | Socket / Events API | Треды, загрузка файлов, блоки |
+| **Google Chat** | App / webhook | **Новое в v0.13**, нативный чат Workspace |
+| WhatsApp | Web API | Вход по QR-коду, требуется постоянно работающий узел |
+| **iMessage (BlueBubbles)** | Webhook | **Новое в v0.9** |
+| **Weixin (WeChat личный)** | Long-poll | **Новое в v0.9** |
+| **WeCom (Enterprise WeChat)** | Webhook | **Новое в v0.9** |
+| **QQBot** | WebSocket/Webhook | Добавлен после первоначального внедрения платформ v0.9 |
+| **Tencent Yuanbao** | Нативный шлюз | **Новое в v0.12**, передача текста + медиа |
+| **Microsoft Teams** | Плагин | **Новое в v0.12**, первая платформа шлюза, поставляемая как плагин |
+| Signal | REST через signal-cli | Самостоятельный мост |
+| DingTalk | Webhook | Корпоративный IM, Китай/Азиатско-Тихоокеанский регион |
+| Feishu / Lark | Webhook | Корпоративный IM, ByteDance |
+| SMS (Twilio) | Webhook | Обычные SMS |
+| Mattermost | WebSocket | Самостоятельная альтернатива Slack |
+| Matrix | Client-server | Федеративный чат |
+| Email (IMAP+SMTP) | Polling | Обычная электронная почта |
+| Home Assistant | WebSocket | Голос + триггеры автоматизации |
+| Webhook (общий) | HTTP POST | Подключите что угодно |
 
-All of them respect:
-- Allowlist / allow-all / pairing access controls
-- `/fast` Fast Mode (Part 14)
-- Tool Gateway routing (Part 13)
-- Cron delivery targets
-- The shared session database (Part 7)
-- Pre-dispatch plugin hooks
+Все они соблюдают:
+- Whitelist / allow-all / парные контроли доступа
+- `/fast` Быстрый режим (Часть 14)
+- Маршрутизацию Tool Gateway (Часть 13)
+- Цели доставки Cron
+- Общую базу данных сессий (session) (Часть 7)
+- Хуки плагинов перед отправкой
 
-This part covers the v0.9 adapters, the newer v0.12/v0.13 surfaces, and **Android / Termux** — running the agent itself on a phone.
+Эта часть охватывает адаптеры v0.9, новые поверхности v0.12/v0.13, а также **Android / Termux** — запуск агента (agent) непосредственно на телефоне.
 
-## 2026 Update: Google Chat, QQBot, Yuanbao, and Teams
+## Обновление 2026: Google Chat, QQBot, Yuanbao и Teams
 
 ### Google Chat
 
-Google Chat is the cleanest v0.13 choice for Google Workspace teams that do not want a separate Slack/Discord surface. Treat spaces as group chats: use allowlists, never approve sensitive actions in the same room that requested them, and route production approvals to a private admin DM/channel.
+Google Chat — самый чистый выбор v0.13 для команд Google Workspace, которые не хотят отдельную поверхность Slack/Discord. Воспринимайте пространства как групповые чаты: используйте вайтлисты, никогда не одобряйте чувствительные действия в той же комнате, где они были запрошены, и направляйте производственные утверждения в приватный админский ЛС/канал.
 
-Typical posture:
+Типичная конфигурация:
 
 ```yaml
 gateways:
@@ -60,19 +60,19 @@ gateways:
     trust_label: medium
 ```
 
-Keep public/customer-facing spaces in quarantine profile until identity mapping and approval routing are proven.
+Держите публичные/клиентские пространства в карантинном профиле, пока не будут подтверждены маппинг идентификаторов и маршрутизация утверждений.
 
 ### QQBot
 
-Use QQBot when your community already lives in QQ and you want the same approval/session model as Telegram or Discord. Treat QQ groups as untrusted input by default: keep allowlists tight, require approval for filesystem/network tools, and use [Part 19](./part19-security-playbook.md) for prompt-injection hardening.
+Используйте QQBot, если ваше сообщество уже живёт в QQ и вы хотите ту же модель утверждений/сессий, что в Telegram или Discord. Считайте QQ-группы ненадёжным входом по умолчанию: держите вайтлисты строгими, требуйте одобрения для инструментов (tool) файловой системы/сети и используйте [Часть 19](./part19-security-playbook.md) для защиты от инъекций промптов.
 
 ### Tencent Yuanbao
 
-Yuanbao is now a native gateway adapter with text and media delivery. It belongs in the same bucket as Weixin/WeCom: powerful in China/APAC workflows, but operationally different from Western SaaS bots. Verify media size limits and identity mapping before using it for production approvals.
+Yuanbao теперь является нативным адаптером шлюза с передачей текста и медиа. Он относится к той же категории, что и Weixin/WeCom: мощный в рабочих процессах Китая/Азиатско-Тихоокеанского региона, но операционно отличается от западных SaaS-ботов. Проверьте лимиты размера медиа и маппинг идентификаторов перед использованием для производственных утверждений.
 
-### Microsoft Teams Plugin
+### Плагин Microsoft Teams
 
-Teams proves the v0.12 gateway-plugin architecture: new platforms no longer need to land inside `gateway/platforms/` to be usable. Enable only trusted platform plugins:
+Teams доказывает архитектуру плагинов шлюза v0.12: новые платформы больше не обязаны находиться внутри `gateway/platforms/`, чтобы быть используемыми. Включайте только доверенные платформенные плагины:
 
 ```bash
 hermes plugins list
@@ -80,245 +80,245 @@ hermes plugins enable teams
 hermes gateway setup
 ```
 
-Keep project-local plugins disabled unless the repository is trusted (`HERMES_ENABLE_PROJECT_PLUGINS=true` is intentionally opt-in).
+Держите локальные плагины проекта отключёнными, если репозиторий не является доверенным (`HERMES_ENABLE_PROJECT_PLUGINS=true` намеренно требует явного включения).
 
 ---
 
-## iMessage via BlueBubbles
+## iMessage через BlueBubbles
 
-### Why This Matters
+### Почему это важно
 
-Apple doesn't have a public iMessage API. The only supported path is [BlueBubbles](https://bluebubbles.app/), a free open-source macOS server that exposes a REST API + webhook feed on top of the native Messages.app database.
+У Apple нет публичного API для iMessage. Единственный поддерживаемый путь — [BlueBubbles](https://bluebubbles.app/), бесплатный macOS-сервер с открытым исходным кодом, который предоставляет REST API + вебхук поверх нативной базы данных Messages.app.
 
-If you have a Mac that stays on, you now have an iMessage bot with full media, reactions, typing indicators, and read receipts.
+Если у вас есть Mac, который постоянно включён, вы получаете iMessage-бота с полной поддержкой медиа, реакций, индикаторов набора текста и уведомлений о прочтении.
 
-### Prerequisites
+### Предварительные требования
 
-- A **macOS 10.15+** machine that stays on (a Mac mini or spare MacBook works great)
-- Apple ID signed into Messages.app on that Mac, actually sending + receiving iMessages
+- **macOS 10.15+** машина, которая постоянно включена (Mac mini или запасной MacBook отлично подходят)
+- Apple ID, выполнивший вход в Messages.app на этом Mac, реально отправляющий и получающий iMessage
 - Homebrew
 
-### Step 1: Install BlueBubbles Server
+### Шаг 1: Установка BlueBubbles Server
 
 ```bash
 brew install --cask bluebubbles
 open /Applications/BlueBubbles.app
 ```
 
-> The app is unsigned (Apple disabled the dev account). If macOS blocks it, right-click in Finder → **Open** → confirm.
+> Приложение не подписано (Apple заблокировала аккаунт разработчика). Если macOS блокирует его, щёлкните правой кнопкой в Finder → **Open** → подтвердите.
 
-### Step 2: Grant Permissions
+### Шаг 2: Предоставление разрешений
 
-System Settings → Privacy & Security, grant BlueBubbles:
+System Settings → Privacy & Security, предоставьте BlueBubbles:
 
-- **Full Disk Access** — required (it reads `~/Library/Messages/chat.db`)
-- **Accessibility** — optional, enables the Private API helper for reactions, typing indicators, and read receipts
+- **Full Disk Access** — обязательно (читает `~/Library/Messages/chat.db`)
+- **Accessibility** — опционально, включает помощник Private API для реакций, индикаторов набора текста и уведомлений о прочтении
 
-### Step 3: Capture Server URL and Password
+### Шаг 3: Получение URL сервера и пароля
 
-BlueBubbles Server → **Settings → API**, note:
+BlueBubbles Server → **Settings → API**, запишите:
 
-- **Server URL** (e.g. `http://192.168.1.10:1234`)
+- **Server URL** (например, `http://192.168.1.10:1234`)
 - **Server Password**
 
-### Step 4: Configure Hermes
+### Шаг 4: Настройка Hermes
 
 ```bash
 hermes gateway setup
 ```
 
-Select **BlueBubbles (iMessage)**, paste the URL + password.
+Выберите **BlueBubbles (iMessage)**, вставьте URL + пароль.
 
-Or manually in `~/.hermes/.env`:
+Или вручную в `~/.hermes/.env`:
 
 ```bash
 BLUEBUBBLES_SERVER_URL=http://192.168.1.10:1234
 BLUEBUBBLES_PASSWORD=your-server-password
 ```
 
-### Step 5: Authorize Users (Pick One)
+### Шаг 5: Авторизация пользователей (выберите один вариант)
 
-**DM Pairing (recommended):**
+**Спаривание в ЛС (рекомендуется):**
 
-When someone iMessages your Apple ID, Hermes auto-replies with a pairing code. Approve it:
+Когда кто-то отправляет iMessage на ваш Apple ID, Hermes автоматически отвечает кодом спаривания. Подтвердите его:
 
 ```bash
 hermes pairing approve bluebubbles <CODE>
-hermes pairing list    # see pending + approved pairings
+hermes pairing list    # просмотр ожидающих и подтверждённых спариваний
 ```
 
-**Pre-authorize specific users** in `.env`:
+**Предварительная авторизация конкретных пользователей** в `.env`:
 
 ```bash
 BLUEBUBBLES_ALLOWED_USERS=user@icloud.com,+15551234567
 ```
 
-**Open access** (not recommended — your iMessage is probably spammed):
+**Открытый доступ (не рекомендуется — ваш iMessage, скорее всего, заспамлен):**
 
 ```bash
 BLUEBUBBLES_ALLOW_ALL_USERS=true
 ```
 
-### Step 6: Start the Gateway
+### Шаг 6: Запуск шлюза
 
 ```bash
 hermes gateway run
 ```
 
-Hermes will register a webhook with BlueBubbles Server and listen. First message should round-trip within seconds.
+Hermes зарегистрирует вебхук на BlueBubbles Server и будет слушать. Первое сообщение должно пройти туда и обратно за секунды.
 
-### Environment Reference
+### Справочник переменных окружения
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `BLUEBUBBLES_SERVER_URL` | — | Server URL (required) |
-| `BLUEBUBBLES_PASSWORD` | — | Server password (required) |
-| `BLUEBUBBLES_WEBHOOK_HOST` | `127.0.0.1` | Webhook listener bind address |
-| `BLUEBUBBLES_WEBHOOK_PORT` | `8645` | Webhook listener port |
-| `BLUEBUBBLES_WEBHOOK_PATH` | `/bluebubbles-webhook` | Webhook URL path |
-| `BLUEBUBBLES_HOME_CHANNEL` | — | Phone/email for cron delivery |
-| `BLUEBUBBLES_ALLOWED_USERS` | — | Comma-separated authorized users |
-| `BLUEBUBBLES_ALLOW_ALL_USERS` | `false` | Allow all users |
-| `BLUEBUBBLES_SEND_READ_RECEIPTS` | `true` | Auto-mark messages as read |
+| Переменная | По умолчанию | Назначение |
+|-----------|--------------|------------|
+| `BLUEBUBBLES_SERVER_URL` | — | URL сервера (обязательно) |
+| `BLUEBUBBLES_PASSWORD` | — | Пароль сервера (обязательно) |
+| `BLUEBUBBLES_WEBHOOK_HOST` | `127.0.0.1` | Адрес привязки вебхука |
+| `BLUEBUBBLES_WEBHOOK_PORT` | `8645` | Порт вебхука |
+| `BLUEBUBBLES_WEBHOOK_PATH` | `/bluebubbles-webhook` | Путь URL вебхука |
+| `BLUEBUBBLES_HOME_CHANNEL` | — | Телефон/email для доставки cron |
+| `BLUEBUBBLES_ALLOWED_USERS` | — | Авторизованные пользователи через запятую |
+| `BLUEBUBBLES_ALLOW_ALL_USERS` | `false` | Разрешить всех пользователей |
+| `BLUEBUBBLES_SEND_READ_RECEIPTS` | `true` | Автоматически отмечать сообщения как прочитанные |
 
-### Features
+### Возможности
 
-- **Text, images, voice messages, videos, documents** in both directions
-- **Tapback reactions** (love / like / dislike / laugh / emphasize / question) — requires Private API
-- **Typing indicators** — requires Private API
-- **Read receipts** — requires Private API
-- **Address chats by email or phone number** — Hermes resolves to BlueBubbles GUIDs automatically
-- **Cron delivery** — `hermes cron create --deliver bluebubbles …`
+- **Текст, изображения, голосовые сообщения, видео, документы** в обоих направлениях
+- **Реакции Tapback** (love / like / dislike / laugh / emphasize / question) — требуется Private API
+- **Индикаторы набора текста** — требуется Private API
+- **Уведомления о прочтении** — требуется Private API
+- **Адресация чатов по email или номеру телефона** — Hermes автоматически преобразует в GUID BlueBubbles
+- **Доставка Cron** — `hermes cron create --deliver bluebubbles …`
 
-### Private API (Optional but Nice)
+### Private API (опционально, но приятно)
 
-Install the helper bundle: [docs.bluebubbles.app/helper-bundle/installation](https://docs.bluebubbles.app/helper-bundle/installation). Without it, basic text + media still work — only reactions, typing, and read receipts require it.
+Установите вспомогательный бандл: [docs.bluebubbles.app/helper-bundle/installation](https://docs.bluebubbles.app/helper-bundle/installation). Без него базовая работа с текстом и медиа всё равно функционирует — только реакции, набор текста и уведомления о прочтении требуют его наличия.
 
-### Security Note
+### Замечание по безопасности
 
-BlueBubbles gives API access to your **entire iMessage history**. Treat the server password like a root password. Keep BlueBubbles on your LAN (or behind Tailscale / WireGuard) instead of exposing it publicly. If you must expose it, use Ngrok / Cloudflare Tunnel with authentication.
+BlueBubbles предоставляет API-доступ ко всей **истории ваших iMessage**. Относитесь к паролю сервера как к root-паролю. Держите BlueBubbles в вашей локальной сети (или за Tailscale / WireGuard) вместо публичного暴露. Если необходимо открыть доступ, используйте Ngrok / Cloudflare Tunnel с аутентификацией.
 
-### Common Issues
+### Частые проблемы
 
-- **"Cannot reach server"** — Mac asleep, BlueBubbles not running, firewall blocking the port
-- **Messages not arriving** — webhook not registered. Check BlueBubbles Server → Settings → API → Webhooks. Make sure the webhook URL points back at the machine running Hermes.
-- **"Private API helper not connected"** — only required for reactions/typing/receipts. Install the helper bundle or ignore if you don't need those.
+- **«Cannot reach server»** — Mac спит, BlueBubbles не запущен, брандмауэр блокирует порт
+- **Сообщения не приходят** — вебхук не зарегистрирован. Проверьте BlueBubbles Server → Settings → API → Webhooks. Убедитесь, что URL вебхука указывает на машину, где запущен Hermes
+- **«Private API helper not connected»** — требуется только для реакций/набора/прочтений. Установите вспомогательный бандл или проигнорируйте, если вам это не нужно
 
 ---
 
 ## WeChat (Weixin, 微信)
 
-### Why This Matters
+### Почему это важно
 
-WeChat is the dominant personal messaging platform across China and much of Asia-Pacific. The new Weixin adapter uses Tencent's public iLink Bot API, requires no public endpoint, and logs in via QR code — the exact UX people already use for Web WeChat.
+WeChat — доминирующая платформа личных сообщений в Китае и большей части Азиатско-Тихоокеанского региона. Новый адаптер Weixin использует публичный API iLink Bot от Tencent, не требует публичной конечной точки и выполняет вход через QR-код — ровно тот UX, который люди уже используют для Web WeChat.
 
-> For corporate/enterprise WeChat, see the WeCom section below. The two are separate platforms.
+> Для корпоративного/enterprise WeChat см. раздел WeCom ниже. Это две разные платформы.
 
-### Prerequisites
+### Предварительные требования
 
-- A personal WeChat account
-- `aiohttp` and `cryptography` Python packages
-- Optional: `qrcode` for terminal QR rendering during setup
+- Личный аккаунт WeChat
+- Пакеты Python `aiohttp` и `cryptography`
+- Опционально: `qrcode` для отображения QR в терминале во время настройки
 
 ```bash
 pip install aiohttp cryptography
-pip install qrcode   # optional — for terminal QR display
+pip install qrcode   # опционально — для отображения QR в терминале
 ```
 
-### Step 1: Run the Setup Wizard
+### Шаг 1: Запуск мастера настройки
 
 ```bash
 hermes gateway setup
 ```
 
-Pick **Weixin**. The wizard:
+Выберите **Weixin**. Мастер:
 
-1. Requests a QR code from the iLink Bot API
-2. Renders it in the terminal (or prints a URL to an image)
-3. Scan with the WeChat mobile app → tap **Confirm Login**
-4. Saves credentials to `~/.hermes/weixin/accounts/`
+1. Запрашивает QR-код из API iLink Bot
+2. Отображает его в терминале (или выводит URL на изображение)
+3. Отсканируйте в мобильном приложении WeChat → нажмите **Подтвердить вход**
+4. Сохраняет учётные данные в `~/.hermes/weixin/accounts/`
 
-On success:
+В случае успеха:
 
 ```text
 微信连接成功，account_id=your-account-id
 ```
 
-The wizard persists `account_id`, `token`, and `base_url`. You don't touch them again.
+Мастер сохраняет `account_id`, `token` и `base_url`. Вам больше не нужно к ним обращаться.
 
-### Step 2: Set Access Controls (Optional)
+### Шаг 2: Настройка контроля доступа (опционально)
 
-In `~/.hermes/.env`:
+В `~/.hermes/.env`:
 
 ```bash
 WEIXIN_ACCOUNT_ID=your-account-id
 
-# DM access policy: open, allowlist, disabled, or pairing
+# Политика доступа в ЛС: open, allowlist, disabled, or pairing
 WEIXIN_DM_POLICY=open
 
-# Or restrict to specific users
+# Или ограничьте конкретными пользователями
 WEIXIN_ALLOWED_USERS=user_id_1,user_id_2
 
-# Cron/notifications target
+# Цель для cron/уведомлений
 WEIXIN_HOME_CHANNEL=chat_id
 WEIXIN_HOME_CHANNEL_NAME=Home
 ```
 
-### Step 3: Start
+### Шаг 3: Запуск
 
 ```bash
 hermes gateway
 ```
 
-The adapter restores saved credentials, connects to iLink, and begins long-polling.
+Адаптер восстанавливает сохранённые учётные данные, подключается к iLink и начинает длинный опрос (long-polling).
 
-### Features
+### Возможности
 
-- **Long-poll transport** — no public endpoint, webhook, or WebSocket required
-- **QR code login** — scan once, persist across restarts
-- **DM and group messaging**
-- **Media** — images, video, files, voice messages
-- **AES-128-ECB encrypted CDN** — automatic encrypt/decrypt for every media transfer
-- **Markdown reformatting** — headers, tables, code blocks rewritten for WeChat readability
-- **Smart chunking** — single bubble when under the limit; split at logical boundaries only when oversized
-- **Typing indicators**
-- **SSRF protection** — outbound media URLs validated before download
-- **Message deduplication** — 5-minute sliding window
-- **Automatic retry with backoff** — survives transient API errors
-- **Context token persistence** — disk-backed reply continuity across restarts
+- **Транспорт через long-poll** — не требует публичной конечной точки, вебхука или WebSocket
+- **Вход по QR-коду** — сканируйте один раз, сохраняется между перезапусками
+- **Обмен сообщениями в ЛС и группах**
+- **Медиа** — изображения, видео, файлы, голосовые сообщения
+- **AES-128-ECB зашифрованный CDN** — автоматическое шифрование/дешифрование для каждой передачи медиа
+- **Переформатирование Markdown** — заголовки, таблицы, блоки кода переписываются для читаемости в WeChat
+- **Умная разбивка** — одно сообщение, если в пределах лимита; разделение только по логическим границам при превышении
+- **Индикаторы набора текста**
+- **SSRF защита** — исходящие URL медиа проверяются перед загрузкой
+- **Дедупликация сообщений** — скользящее окно в 5 минут
+- **Автоматический повтор с экспоненциальной задержкой** — переживает временные ошибки API
+- **Сохранение контекстных токенов** — непрерывность ответов на диске между перезапусками
 
-### Full Config Reference
+### Полный справочник конфигурации
 
-In `config.yaml` under `platforms.weixin.extra`:
+В `config.yaml` в разделе `platforms.weixin.extra`:
 
-| Key | Default | Description |
-|-----|---------|-------------|
-| `account_id` | — | iLink Bot account ID (required) |
-| `token` | — | iLink Bot token (required, auto-saved from QR login) |
-| `base_url` | `https://ilinkai.weixin.qq.com` | iLink API base URL |
-| `cdn_base_url` | `https://novac2c.cdn.weixin.qq.com/c2c` | CDN base for media |
-| `dm_policy` | `open` | `open`, `allowlist`, `disabled`, or `pairing` |
+| Ключ | По умолчанию | Описание |
+|------|-------------|----------|
+| `account_id` | — | ID аккаунта iLink Bot (обязательно) |
+| `token` | — | Токен iLink Bot (обязательно, автосохраняется при QR-входе) |
+| `base_url` | `https://ilinkai.weixin.qq.com` | Базовый URL API iLink |
+| `cdn_base_url` | `https://novac2c.cdn.weixin.qq.com/c2c` | База CDN для медиа |
+| `dm_policy` | `open` | `open`, `allowlist`, `disabled` или `pairing` |
 
-> **Windows users:** native Windows is not supported for the WeChat adapter. Use WSL2.
+> **Пользователи Windows:** нативный Windows не поддерживается для адаптера WeChat. Используйте WSL2.
 
-### Common Issues
+### Частые проблемы
 
-- **QR expires before you scan** — re-run `hermes gateway setup` and keep the phone ready
-- **"Login confirmed but no messages"** — check `dm_policy`. `disabled` silently drops all DMs
-- **Media downloads fail** — SSRF protection is blocking an internal/private URL. Set `WEIXIN_ALLOW_PRIVATE_MEDIA_URLS=true` only on trusted networks.
+- **QR истекает до того, как вы его отсканируете** — повторно запустите `hermes gateway setup` и держите телефон наготове
+- **«Вход подтверждён, но сообщений нет»** — проверьте `dm_policy`. `disabled` молча отбрасывает все ЛС
+- **Загрузка медиа не удаётся** — SSRF защита блокирует внутренний/приватный URL. Установите `WEIXIN_ALLOW_PRIVATE_MEDIA_URLS=true` только в доверенных сетях
 
 ---
 
 ## WeCom (Enterprise WeChat, 企业微信)
 
-Separate adapter for enterprise deployments. Setup is webhook-based rather than QR-based because WeCom bots run as first-class corporate apps.
+Отдельный адаптер для корпоративных развёртываний. Настройка основана на вебхуках, а не на QR, потому что боты WeCom работают как полноценные корпоративные приложения.
 
-### Quick Setup
+### Быстрая настройка
 
-1. In the WeCom admin console, create a new bot under **Apps & Mini Programs → Bots**.
-2. Note the `corp_id`, `agent_id`, and `secret`.
-3. Set a callback URL pointing at your Hermes instance (must be HTTPS, public, and respond to WeCom's verification handshake).
-4. Add to `~/.hermes/.env`:
+1. В консоли администратора WeCom создайте нового бота в разделе **Apps & Mini Programs → Bots**.
+2. Запишите `corp_id`, `agent_id` и `secret`.
+3. Установите callback URL, указывающий на ваш экземпляр Hermes (должен быть HTTPS, публичным и отвечать на проверочное рукопожатие WeCom).
+4. Добавьте в `~/.hermes/.env`:
 
 ```bash
 WECOM_CORP_ID=your-corp-id
@@ -329,58 +329,58 @@ WECOM_ENCODING_AES_KEY=your-43-char-aes-key
 WECOM_ALLOWED_USERS=user_id_1,user_id_2
 ```
 
-5. Run `hermes gateway` — the webhook handler exposes `/wecom/callback` and validates the WeCom signature on every inbound event.
+5. Запустите `hermes gateway` — обработчик вебхука публикует `/wecom/callback` и проверяет подпись WeCom для каждого входящего события.
 
-Feature surface is a subset of Weixin — DM and @mention in group chats, text + media, and bot-to-user replies.
+Набор возможностей — подмножество Weixin: ЛС и @упоминания в групповых чатах, текст + медиа и ответы от бота пользователю.
 
 ---
 
-## Android / Termux (Running Hermes *on* Your Phone)
+## Android / Termux (Запуск Hermes *на* вашем телефоне)
 
-### What This Is
+### Что это такое
 
-v0.9 adds a tested path for running the Hermes CLI itself directly on Android via [Termux](https://termux.dev/). Not "connect to Hermes from your phone" — that's what messaging adapters are for. **This is running the whole agent locally on the phone itself.**
+v0.9 добавляет протестированный путь для запуска самого CLI Hermes непосредственно на Android через [Termux](https://termux.dev/). Не «подключиться к Hermes с телефона» — для этого существуют адаптеры мессенджеров. **Это запуск всего агента (agent) локально на самом телефоне.**
 
-Great for:
-- Offline fieldwork where you don't want a round-trip to a server
-- A self-contained assistant that never leaves your pocket
-- Homelab admins who want `hermes` in their SSH kit on any device
+Отлично подходит для:
+- Полевых работ без интернета, где не нужен обход до сервера
+- Автономного ассистента, который никогда не покидает ваш карман
+- Администраторов домашней лаборатории, которые хотят иметь `hermes` в своём SSH-наборе на любом устройстве
 
-### Tested Bundle (What You Get)
+### Протестированный комплект (что вы получаете)
 
-The Termux install path deliberately narrows the feature set to what's known-good on Android:
+Путь установки Termux намеренно сужает набор функций до того, что заведомо работает на Android:
 
-- ✅ Hermes CLI
-- ✅ Cron support
-- ✅ PTY / background terminal support
-- ✅ Telegram gateway (best-effort background runs)
-- ✅ MCP support
-- ✅ Honcho memory provider
-- ✅ ACP support
+- ✅ CLI Hermes
+- ✅ Поддержка Cron
+- ✅ PTY / поддержка фонового терминала
+- ✅ Шлюз Telegram (фоновый запуск best-effort)
+- ✅ Поддержка MCP
+- ✅ Провайдер (provider) памяти (memory) Honcho
+- ✅ Поддержка ACP
 
-- ❌ `.[all]` extras (many fail to compile on Android)
-- ❌ `voice` (blocked by `faster-whisper → ctranslate2` which has no Android wheels)
-- ❌ Automatic browser / Playwright bootstrap
-- ❌ Docker-based terminal isolation (Docker doesn't run on stock Android)
-- ⚠️  Background persistence — Android may suspend Termux jobs; gateway runs are best-effort, not a managed service
+- ❌ Дополнения `.[all]` (многие не компилируются на Android)
+- ❌ `voice` (блокируется `faster-whisper → ctranslate2`, у которого нет Android-сборок)
+- ❌ Автоматическая загрузка браузера / Playwright
+- ❌ Docker-изоляция терминала (Docker не работает на стандартном Android)
+- ⚠️  Фоновая работа — Android может приостанавливать задачи Termux; работа шлюза выполняется best-effort, а не как управляемый сервис
 
-### One-Line Installer
+### Установка одной командой
 
-Inside Termux:
+Внутри Termux:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
 ```
 
-On Termux, the installer:
+На Termux установщик:
 
-- Uses `pkg` for system packages
-- Creates the venv with `python -m venv`
-- Installs `.[termux]` with `pip` (under a Termux-specific constraints file)
-- Links `hermes` into `$PREFIX/bin` so it stays on PATH across sessions
-- Skips the untested browser / WhatsApp bootstrap
+- Использует `pkg` для системных пакетов
+- Создаёт venv с помощью `python -m venv`
+- Устанавливает `.[termux]` через `pip` (с файлом ограничений для Termux)
+- Создаёт симлинк `hermes` в `$PREFIX/bin`, чтобы он оставался в PATH между сессиями
+- Пропускает непротестированную загрузку браузера/WhatsApp
 
-### Manual Install (If the One-Liner Fails)
+### Ручная установка (если однострочник не сработал)
 
 ```bash
 pkg update && pkg upgrade
@@ -392,41 +392,41 @@ cd hermes-agent
 python -m pip install -e '.[termux]' -c constraints-termux.txt
 ```
 
-Add the venv to your Termux PATH so `hermes` stays available:
+Добавьте venv в PATH Termux, чтобы `hermes` оставался доступным:
 
 ```bash
 echo 'export PATH="$HOME/hermes-venv/bin:$PATH"' >> ~/.bashrc
 ```
 
-### First Run
+### Первый запуск
 
 ```bash
 hermes
 ```
 
-Set a model with `hermes model` — OpenRouter, Nous Portal, or any OpenAI-compatible endpoint works. For offline use, point at a local model server on your LAN (LM Studio, Ollama, vLLM running on a desktop) — the phone is your UI, the heavy lifting stays on the GPU.
+Установите модель с помощью `hermes model` — OpenRouter, Nous Portal или любая OpenAI-совместимая конечная точка работает. Для офлайн-использования укажите локальный сервер моделей в вашей LAN (LM Studio, Ollama, vLLM на десктопе) — телефон является вашим интерфейсом, тяжёлая работа остаётся на GPU.
 
-### Keeping It Alive in the Background
+### Поддержание работы в фоне
 
-Android aggressively suspends background apps. Two tactics:
+Android агрессивно приостанавливает фоновые приложения. Две тактики:
 
-**Termux:Boot + Termux:Wake-Lock** — install from F-Droid, add a wake-lock command to your gateway startup so Android doesn't freeze it:
+**Termux:Boot + Termux:Wake-Lock** — установите из F-Droid, добавьте команду wake-lock в запуск шлюза, чтобы Android не заморозил его:
 
 ```bash
 termux-wake-lock
 hermes gateway
 ```
 
-**Don't use Android as a server.** For always-on gateway duty, put Hermes on a $5 VPS or a home Linux box and talk to it from your phone via Telegram / iMessage. Termux is great as an interactive agent on your phone, not as a production gateway.
+**Не используйте Android как сервер.** Для круглосуточной работы шлюза разместите Hermes на VPS за $5 или домашнем Linux-сервере и общайтесь с ним с телефона через Telegram / iMessage. Termux отлично подходит как интерактивный агент на вашем телефоне, но не как производственный шлюз.
 
-### Tested vs. Untested on Android
+### Протестированное и непротестированное на Android
 
-If you want a feature outside the tested bundle, you can often get it working with extra effort — but it's on you. File issues with `[termux]` in the title if you hit something reproducible.
+Если вам нужна функция за пределами протестированного комплекта, вы часто можете заставить её работать дополнительными усилиями — но это на вашей ответственности. Создавайте issues с `[termux]` в заголовке, если столкнулись с воспроизводимой проблемой.
 
 ---
 
-## What's Next
+## Что дальше
 
-- **Telegram deep dive:** [Part 4 — Telegram Setup](./part4-telegram-setup.md)
-- **UI for everything:** [Part 12 — Web Dashboard](./part12-web-dashboard.md)
-- **Reliability on mobile links:** [Part 11 — Gateway Recovery](./part11-gateway-recovery.md)
+- **Погружение в Telegram:** [Часть 4 — Настройка Telegram](./part4-telegram-setup.md)
+- **Интерфейс для всего:** [Часть 12 — Веб-дашборд](./part12-web-dashboard.md)
+- **Надёжность на мобильных соединениях:** [Часть 11 — Восстановление шлюза](./part11-gateway-recovery.md)

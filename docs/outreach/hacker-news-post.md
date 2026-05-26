@@ -1,31 +1,31 @@
-# Hacker News — Show HN Draft
+# Hacker News — Черновик Show HN
 
-**Title:** Show HN: Hermes Optimization Guide – runnable skills, configs, and VPS bootstrap
+**Заголовок:** Show HN: Руководство по оптимизации Hermes – устанавливаемые навыки (skills), конфиги и развёртывание VPS
 
 **URL:** `https://github.com/OnlyTerp/hermes-optimization-guide`
 
-**Text:** (leave empty — HN prefers URL-only "Show HN" posts when the linked page speaks for itself; first self-comment below carries the context)
+**Текст:** (оставить пустым — HN предпочитает посты «Show HN» только с URL, когда страница по ссылке говорит сама за себя; первый собственный комментарий ниже содержит контекст)
 
 ---
 
-## First self-comment (post immediately after)
+## Первый собственный комментарий (опубликовать сразу после поста)
 
-Author here. Context on what this is and why:
+Автор здесь. Контекст о том, что это такое и зачем:
 
-Hermes (Nous Research, ~94K GH stars) is the agent framework I've been using for a year. Most of the existing community guides explain the architecture but don't give you anything to run — you read 15 parts, still have to write your own `config.yaml`, your own cron skills, your own systemd hardening.
+Hermes (Nous Research, ~94K звёзд на GitHub) — это фреймворк для агентов (agent), который я использую уже год. Большинство существующих гайдов сообщества объясняют архитектуру, но не дают ничего запускаемого — вы читаете 15 частей, но всё ещё должны писать свой собственный `config.yaml`, свои собственные cron-навыки (skills), свою собственную systemd-защиту.
 
-This guide is the other direction: 24 parts of actual documentation *plus*
+Этот гайд — в другом направлении: 24 части настоящей документации *плюс*
 
-- **13 installable `SKILL.md` files** (audit-mcp, rotate-secrets, audit-approval-bypass, nightly-backup, weekly-dep-audit, cost-report, telegram-triage, pr-review, release-notes, daily-inbox-triage, hermes-weekly, spam-trap, meeting-prep) — drop them into `~/.hermes/skills/` or symlink them in
-- **5 opinionated configs** for the 5 real personas (minimum / telegram-bot / production / cost-optimized / security-hardened) — every non-obvious field commented
-- **A VPS bootstrap script** — fresh Debian/Ubuntu to production Hermes with Caddy + UFW + fail2ban + systemd hardening in ~10 min, one `curl | bash`
-- **Docker compose for self-hosted Langfuse** — the single most-asked-for observability setup
-- **4 reference architectures** — Homelab, Solo Dev, Small Agency, Road Warrior (phone-drives-cloud-sandbox pattern from the new remote-sandbox PR)
-- **Reproducible cost benchmarks** — 12 flagship models × 5 canonical tasks (triage / summarize / codefix / deepreason / bulk-extract), methodology included, rerun-able with `hermes evals run`
-- **ECOSYSTEM.md** — 40+ curated MCP servers / coding agents / dashboard plugins
+- **13 устанавливаемых файлов `SKILL.md`** (audit-mcp, rotate-secrets, audit-approval-bypass, nightly-backup, weekly-dep-audit, cost-report, telegram-triage, pr-review, release-notes, daily-inbox-triage, hermes-weekly, spam-trap, meeting-prep) — поместите их в `~/.hermes/skills/` или создайте симлинки
+- **5 конкретных конфигов** для 5 реальных сценариев использования (minimum / telegram-bot / production / cost-optimized / security-hardened) — каждое неочевидное поле снабжено комментарием
+- **Скрипт развёртывания VPS** — свежий Debian/Ubuntu до продакшн-решения Hermes с Caddy + UFW + fail2ban + systemd-защитой за ~10 минут, одна команда `curl | bash`
+- **Docker compose для самостоятельно размещённого Langfuse** — самая востребованная настройка наблюдаемости
+- **4 эталонные архитектуры** — Homelab, Solo Dev, Small Agency, Road Warrior (паттерн «телефон управляет облачной песочницей» из нового PR по удалённым песочницам)
+- **Воспроизводимые бенчмарки расходов** — 12 флагманских моделей × 5 канонических задач (triage / summarize / codefix / deepreason / bulk-extract), методология включена, можно перезапустить командой `hermes evals run`
+- **ECOSYSTEM.md** — 40+ отобранных MCP-серверов, кодинг-агентов (coding agents) и плагинов (plugins) для панелей управления
 
-The part I wanted to share specifically for HN: the **cost routing playbook** (Part 20) — five rules that drop typical agent spend ~90% (Gemini Flash for triage, Cerebras Llama for classification, Kimi/Moonshot as default coder, Sonnet only when you explicitly opt in, Gemini Pro for long-context). The benchmarks folder lets you verify yourself on your own workload.
+Особенно я хотел показать аудитории HN: **руководство по маршрутизации расходов** (Часть 20) — пять правил, которые снижают типичные затраты на агента (agent) на ~90% (Gemini Flash для triage, Cerebras Llama для классификации, Kimi/Moonshot как кодер по умолчанию, Sonnet только при явном согласии, Gemini Pro для длинного контекста). Папка с бенчмарками позволяет проверить самостоятельно на своей нагрузке.
 
-And the **defensive security playbook** (Part 19) — written after the Apr 15 "Comment and Control" cross-vendor prompt-injection disclosure that hit Claude Code + Gemini CLI + Copilot Agent. Seven layers: provenance labels, approval, secret isolation, webhook signatures, SSRF, MCP trust levels, quarantine profiles. If your coding agent reads arbitrary PR bodies or emails, this is the hardening posture I wish I'd had 6 months ago.
+И **руководство по защитной безопасности** (Часть 19) — написано после раскрытия «Comment and Control» от 15 апреля — межвендорной инъекции промптов (prompt injection), поразившей Claude Code + Gemini CLI + Copilot Agent. Семь уровней: метки происхождения, подтверждение, изоляция секретов, подписи вебхуков, SSRF, уровни доверия MCP, карантинные профили. Если ваш кодинг-агент (coding agent) читает произвольные тела PR или электронные письма — это та стратегия защиты, которую я бы хотел иметь 6 месяцев назад.
 
-MIT licensed. Issues + PRs welcome. Happy to answer anything.
+Лицензия MIT. Issues и PRs приветствуются. Рад ответить на любые вопросы.

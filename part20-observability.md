@@ -1,65 +1,65 @@
-# Part 20: Observability & Cost Control — Langfuse, Helicone, Kanban, /usage, Routing Playbooks
+# Часть 20: Наблюдаемость (Observability) и контроль расходов — Langfuse, Helicone, Kanban, /usage, сценарии маршрутизации (Routing Playbooks)
 
-*You can't optimize what you can't see. Hermes tracks tokens, latency, and errors natively, but once you're running across CLI + Telegram + Discord + Google Chat + cron + Kanban worker lanes, you want a real tracing stack. This part sets up Langfuse, Helicone, or OpenTelemetry → Phoenix with one config block, then gives you the cost-routing playbook that dropped our test deployment from $34 to $3 per feature implementation.*
-
----
-
-## The Three-Level Stack
-
-```
-┌────────────────────────────────────────────────────────┐
-│  Level 3 — Hosted tracing (Langfuse / Helicone / Phoenix)│
-│  Replayable traces, prompt versioning, evals            │
-└────────────────────────────────────────────────────────┘
-                            ↑
-┌────────────────────────────────────────────────────────┐
-│  Level 2 — Hermes internals (/usage, /status, dashboard)│
-│  Token counts, rate-limit headers, per-session cost     │
-└────────────────────────────────────────────────────────┘
-                            ↑
-┌────────────────────────────────────────────────────────┐
-│  Level 1 — Logs (~/.hermes/logs/*, `hermes logs tail`)  │
-│  Raw events, tool invocations, errors                   │
-└────────────────────────────────────────────────────────┘
-```
-
-You always have Level 1 and 2. Level 3 is the force multiplier once you're spending more than $50/mo on LLM calls.
+*Нельзя оптимизировать то, что не видно. Hermes отслеживает токены, задержки (latency) и ошибки нативно, но когда вы работаете через CLI + Telegram + Discord + Google Chat + cron + воркеры (worker) Kanban, вам понадобится настоящий стек трассировки (tracing). Эта часть настраивает Langfuse, Helicone или OpenTelemetry → Phoenix одним блоком конфига, а затем даёт сценарий маршрутизации (routing playbook), который снизил расходы нашего тестового деплоя с $34 до $3 за реализацию фичи.*
 
 ---
 
-## Level 1 + 2 — What Ships With Hermes
+## Трёхуровневый стек (The Three-Level Stack)
+
+```
+┌────────────────────────────────────────────────────────┐
+│  Уровень 3 — Хостинговая трассировка (Langfuse / Helicone / Phoenix)│
+│  Воспроизводимые трейсы (traces), версионирование промптов, evals    │
+└────────────────────────────────────────────────────────┘
+                            ↑
+┌────────────────────────────────────────────────────────┐
+│  Уровень 2 — Внутренности Hermes (/usage, /status, dashboard)│
+│  Количество токенов, заголовки rate-limit, стоимость за сессию (session)│
+└────────────────────────────────────────────────────────┘
+                            ↑
+┌────────────────────────────────────────────────────────┐
+│  Уровень 1 — Логи (~/.hermes/logs/*, `hermes logs tail`)  │
+│  Сытые события, вызовы инструментов (tools), ошибки     │
+└────────────────────────────────────────────────────────┘
+```
+
+У вас всегда есть Уровни 1 и 2. Уровень 3 — это мультипликатор силы (force multiplier), когда вы тратите более $50/мес на LLM-вызовы.
+
+---
+
+## Уровень 1 + 2 — Что идёт в комплекте с Hermes
 
 ### `/usage`
 
 ```
-/usage                              # Current session
-/usage 7d                           # Rolling 7-day window
-/usage --by-provider                # Breakdown
-/usage --by-skill                   # Which skills burn tokens
+/usage                              # Текущая сессия (session)
+/usage 7d                           # Скользящее окно в 7 дней
+/usage --by-provider                # Детализация по провайдерам (providers)
+/usage --by-skill                   # Какие навыки (skills) сжигают токены
 /usage --by-gateway                 # CLI vs Telegram vs Discord
 ```
 
-As of v0.9.0 this now includes **rate-limit headers** captured from each provider — you can see "how close am I to the 5M/min ceiling" without digging into logs.
+Начиная с v0.9.0 это теперь включает **заголовки rate-limit**, полученные от каждого провайдера — вы можете видеть «насколько я близок к потолку 5M/мин» без погружения в логи.
 
-### Dashboard Analytics
+### Dashboard Analytics (Аналитика панели управления)
 
-The [Web Dashboard](./part12-web-dashboard.md) has an Analytics tab with:
+[Веб-панель (Web Dashboard)](./part12-web-dashboard.md) содержит вкладку Analytics (Аналитика) со следующими данными:
 
-- Cost by day / week / month
-- Tokens in vs out (streaming-aware)
-- Per-skill utilization (which ones actually earn their token cost)
-- Tool call distribution (are you really using all those MCPs?)
-- Error rates per provider (for failover tuning)
+- Стоимость за день / неделю / месяц
+- Токены на входе и выходе (с учётом потоковой передачи — streaming)
+- Использование по навыкам (какие из них действительно оправдывают свою стоимость токенов)
+- Распределение вызовов инструментов (действительно ли вы используете все эти MCP?)
+- Доля ошибок по провайдерам (для настройки failover)
 
 ### `hermes logs`
 
 ```bash
-hermes logs tail -f                 # Live tail, all gateways
-hermes logs search "TokenLimit"     # Grep
-hermes logs export --since 7d       # JSONL for offline analysis
+hermes logs tail -f                 # Живая лента (live tail), все шлюзы (gateways)
+hermes logs search "TokenLimit"     # Поиск (grep)
+hermes logs export --since 7d       # Экспорт в JSONL для офлайн-анализа
 ```
 
-Combine with `jq` or load into DuckDB for ad-hoc cost analysis:
+Комбинируйте с `jq` или загружайте в DuckDB для ad-hoc-анализа стоимости:
 
 ```bash
 hermes logs export --since 30d --format jsonl \
@@ -68,15 +68,15 @@ hermes logs export --since 30d --format jsonl \
 
 ---
 
-## Level 3 — Langfuse (Recommended Default)
+## Уровень 3 — Langfuse (рекомендуемый вариант по умолчанию)
 
-Langfuse is the "everything in one place" option: tracing, prompt management, evals, self-hostable. If you're not sure where to start, start here. Since v0.12, Langfuse also ships as a bundled observability plugin, so prefer enabling that over hand-rolled hooks.
+Langfuse — это опция «всё в одном»: трассировка (tracing), управление промптами, оценки (evals), возможность самостоятельного хостинга (self-hostable). Если вы не знаете, с чего начать, начните здесь. Начиная с v0.12, Langfuse также поставляется как встроенный плагин (plugin) наблюдаемости, поэтому предпочтительнее включать его, а не использовать самодельные хуки.
 
 ```bash
 hermes plugins enable observability/langfuse
 ```
 
-### Setup (Hosted Cloud)
+### Настройка (облачный хостинг — Hosted Cloud)
 
 ```yaml
 # ~/.hermes/config.yaml
@@ -86,47 +86,47 @@ observability:
     host: https://cloud.langfuse.com
     public_key: ${LANGFUSE_PUBLIC_KEY}
     secret_key: ${LANGFUSE_SECRET_KEY}
-    sample_rate: 1.0                # Reduce for very high volume
-    traced_tools:                    # Which tool calls to capture
+    sample_rate: 1.0                # Уменьшите при очень высоком объёме
+    traced_tools:                    # Какие вызовы инструментов (tools) захватывать
       - terminal
       - github
       - claude-code
       - gemini-cli
-    redact_payloads: true            # Redacts before sending (matches your security.secrets.patterns)
+    redact_payloads: true            # Редактирует перед отправкой (соответствует вашим security.secrets.patterns)
 ```
 
-Get the keys from https://cloud.langfuse.com → Settings → API Keys. Free tier covers most individual users.
+Получите ключи на https://cloud.langfuse.com → Settings → API Keys. Бесплатный тариф покрывает большинство индивидуальных пользователей.
 
-### Self-Hosted Langfuse
+### Самостоятельный хостинг Langfuse (Self-Hosted Langfuse)
 
-For privacy or compliance, one-liner on a VPS with Docker:
+Для конфиденциальности или соответствия требованиям — одна команда на VPS с Docker:
 
 ```bash
 curl -fsSL https://langfuse.com/docker-compose.yml -o langfuse.yml
 docker compose -f langfuse.yml up -d
 ```
 
-Point `host:` at your domain. Hermes sends OTLP over HTTPS, so Caddy with Let's Encrypt just works.
+Укажите `host:` на свой домен. Hermes отправляет OTLP через HTTPS, так что Caddy с Let's Encrypt работает без проблем.
 
-### What You See
+### Что вы увидите
 
-Each Hermes turn becomes a trace. Each trace has spans for:
+Каждый шаг (turn) Hermes становится трейсом (trace). Каждый трейс содержит спаны (spans) для:
 
-- `agent.turn` (root)
-  - `llm.call` (with prompt, completion, tokens, cost, latency)
-  - `tool.call` (each tool with args, result, duration)
-    - nested `llm.call` for sampling-enabled MCP servers
-  - `memory.search` (queries and hits)
-  - `skill.load` (which skills got pulled in)
-  - `kanban.task` / `kanban.worker` when a durable board lane claims or completes work
+- `agent.turn` (корневой — root)
+  - `llm.call` (с промптом, завершением, токенами, стоимостью, задержкой)
+  - `tool.call` (каждый инструмент с аргументами, результатом, длительностью)
+    - вложенный `llm.call` для MCP-серверов с включённым сэмплингом
+  - `memory.search` (запросы и совпадения)
+  - `skill.load` (какие навыки (skills) были подтянуты)
+  - `kanban.task` / `kanban.worker` когда постоянная полоса (board lane) доски захватывает или завершает работу
 
-Replay any turn, inspect the exact prompt, compare with previous runs, eval completions against datasets. This is how you find the turn that spent $4 on "how should I name this variable".
+Воспроизведите любой шаг, проверьте точный промпт, сравните с предыдущими запусками, оцените завершения по датасетам (datasets). Так вы найдёте шаг, который потратил $4 на «как назвать эту переменную».
 
 ---
 
-## Level 3 — Helicone (Gateway-First, Zero Code)
+## Уровень 3 — Helicone (сначала шлюз, ноль кода — Gateway-First, Zero Code)
 
-Helicone is the "swap the base URL and ship" option. You don't add a tracing SDK — you route your LLM traffic through a proxy that observes it.
+Helicone — это опция «замените базовый URL и работайте». Вы не добавляете SDK трассировки — вы маршрутизируете свой LLM-трафик через прокси, который его наблюдает.
 
 ```yaml
 providers:
@@ -143,22 +143,22 @@ providers:
     base_url: https://oai.helicone.ai/v1
     headers:
       Helicone-Auth: Bearer ${HELICONE_API_KEY}
-      Helicone-Cache-Enabled: "true"   # Automatic prompt caching
+      Helicone-Cache-Enabled: "true"   # Автоматическое кэширование промптов
 ```
 
-Hermes passes session ID and skill name as Helicone custom properties, so you can filter traces by skill/session in the Helicone UI. Cache hits (identical prompts) are free — this alone cuts bills noticeably for repetitive skills.
+Hermes передаёт ID сессии (session) и имя навыка (skill) как пользовательские свойства Helicone, так что вы можете фильтровать трейсы по навыку/сессии в интерфейсе Helicone. Попадания в кэш (идентичные промпты) бесплатны — это само по себе заметно сокращает счета для повторяющихся навыков.
 
-Pick Helicone over Langfuse when:
+Выбирайте Helicone вместо Langfuse, когда:
 
-- You want zero code-level integration
-- You want provider-level prompt caching for free
-- You mostly care about cost + latency dashboards, not prompt management
+- Вы хотите интеграцию без написания кода
+- Вы хотите бесплатное кэширование промптов на уровне провайдера
+- Вас в основном интересуют панели стоимости и задержки, а не управление промптами
 
 ---
 
-## Level 3 — OpenTelemetry → Phoenix (Standards-First)
+## Уровень 3 — OpenTelemetry → Phoenix (в первую очередь стандарты — Standards-First)
 
-If you already run OpenTelemetry (Grafana, Datadog, Honeycomb), wire Hermes into your existing pipeline:
+Если вы уже используете OpenTelemetry (Grafana, Datadog, Honeycomb), подключите Hermes к своему существующему конвейеру:
 
 ```yaml
 observability:
@@ -173,15 +173,15 @@ observability:
       deployment.environment: production
 ```
 
-Hermes emits `gen_ai.*` spans following the [OpenInference](https://github.com/Arize-ai/openinference) conventions. Point them at [Arize Phoenix](https://phoenix.arize.com) (self-hosted or cloud) for an LLM-specific view; or at your existing Grafana/Tempo for a "one pane of glass" view.
+Hermes отправляет спаны (spans) `gen_ai.*` в соответствии с соглашениями [OpenInference](https://github.com/Arize-ai/openinference). Направьте их в [Arize Phoenix](https://phoenix.arize.com) (самостоятельный хостинг или облако) для LLM-специфичного обзора; или в ваш существующий Grafana/Tempo для обзора «единое окно» (one pane of glass).
 
 ---
 
-## Cost Routing Playbook (The One That Actually Saves Money)
+## Сценарий маршрутизации стоимости (Cost Routing Playbook — тот самый, который реально экономит деньги)
 
-### Rule 1: Route by Task Complexity, Not Default
+### Правило 1: Маршрутизация по сложности задачи, а не по умолчанию
 
-Most Hermes cost bloat comes from using your most expensive frontier model for tasks Gemini Flash, Kimi/Moonshot, GLM, MiniMax, Cerebras, or a local model would handle identically. Set up a **task-aware default**:
+Основная причина раздувания стоимости Hermes — использование самой дорогой frontier-модели для задач, с которыми Gemini Flash, Kimi/Moonshot, GLM, MiniMax, Cerebras или локальная модель справились бы не хуже. Настройте **умолчание с учётом задачи (task-aware default)**:
 
 ```yaml
 model_routing:
@@ -206,43 +206,43 @@ model_routing:
       provider: openai
 ```
 
-Hermes classifies intent via a tiny prompt (~100 tokens) and routes accordingly. Empirically:
+Hermes классифицирует намерение (intent) с помощью крошечного промпта (~100 токенов) и маршрутизирует соответствующим образом. Эмпирически:
 
-| Scenario | Naive frontier default | Routed | Savings |
+| Сценарий | Наивное frontier-умолчание | С маршрутизацией | Экономия |
 |----------|----------------------------|--------|---------|
-| Feature implementation (100 calls) | ~$34 | ~$3 (mostly Kimi/GLM) | 91% |
-| Long-doc summarization (10 calls, 200K each) | ~$42 | ~$4 (Gemini Pro) | 90% |
-| Daily classification triage | ~$18/day | ~$1/day (Flash) | 94% |
+| Реализация фичи (100 вызовов) | ~$34 | ~$3 (в основном Kimi/GLM) | 91% |
+| Суммаризация длинного документа (10 вызовов, 200K каждый) | ~$42 | ~$4 (Gemini Pro) | 90% |
+| Ежедневная triage-классификация | ~$18/день | ~$1/день (Flash) | 94% |
 
-### Rule 2: Prompt Caching Is Free Money
+### Правило 2: Кэширование промптов — бесплатные деньги
 
-Every stable chunk (system prompt, skill, SOUL.md, memory digest) should be cached:
+Каждый стабильный блок (системный промпт, навык, SOUL.md, дайджест памяти (memory)) должен кэшироваться:
 
 ```yaml
 prompt_caching:
   enabled: true
   providers: [anthropic, openai, helicone]
-  cache_system_prompt: true          # Biggest win
+  cache_system_prompt: true          # Самый большой выигрыш
   cache_skills: true
   cache_memory_digest: true
-  min_cache_tokens: 1024             # Anthropic's minimum
+  min_cache_tokens: 1024             # Минимум Anthropic
 ```
 
-Anthropic's prompt caching discount is ~90% on cached reads. For a 5K-token system prompt used 100 times a day, that's a real $2–5 a day saved.
+Скидка Anthropic на кэширование промптов составляет ~90% на кэшированных чтениях. Для системного промпта на 5K токенов, используемого 100 раз в день, это реальная экономия $2–5 в день.
 
-### Rule 3: Use Fast Mode Surgically
+### Правило 3: Используйте Fast Mode (Быстрый режим) хирургически
 
-[Fast Mode](./part14-fast-mode-watchers.md) (`/fast`) costs more per token but reduces queue latency. Use it for:
+[Fast Mode (Быстрый режим)](./part14-fast-mode-watchers.md) (`/fast`) стоит дороже за токен, но снижает задержку в очереди. Используйте его для:
 
-- Interactive CLI sessions where you're watching the output
-- Telegram conversations where the user is waiting
-- Real-time voice flows
+- Интерактивных CLI-сессий, где вы следите за выводом
+- Telegram-бесед, где пользователь ждёт ответа
+- Голосовых потоков в реальном времени
 
-Don't use it for:
+Не используйте для:
 
-- Cron / scheduled tasks
-- Nightly analysis jobs
-- Long bulk operations
+- Cron / запланированных задач
+- Ночных заданий анализа
+- Длительных массовых операций
 
 ```yaml
 fast_mode:
@@ -252,31 +252,31 @@ fast_mode:
     discord: on
     cron: off
     webhooks: off
-  user_override: true                # User can toggle with /fast
+  user_override: true                # Пользователь может переключить командой /fast
 ```
 
-### Rule 4: Context Is the Real Cost — Use `/compress`
+### Правило 4: Контекст — это реальная стоимость — используйте `/compress`
 
-Most sessions' 100th turn costs 10x the 10th turn. [`/compress <topic>`](./part14-fast-mode-watchers.md#compress-topic--guided-compression) plus the pluggable context engine can cap per-turn cost:
+100-й шаг большинства сессий стоит в 10 раз дороже 10-го шага. [`/compress <topic>`](./part14-fast-mode-watchers.md#compress-topic--guided-compression) вместе с подключаемым контекстным движком может ограничить стоимость за шаг:
 
 ```yaml
 compression:
   auto:
     enabled: true
-    at_tokens: 48000                 # Compress when session exceeds this
+    at_tokens: 48000                 # Сжимать, когда сессия превышает этот порог
     preserve:
       - last_n_turns: 10
       - tool_results_matching: "error|ERROR|failed"
-    topics_from: active_skill         # Use active skill name as compression topic
+    topics_from: active_skill         # Использовать имя активного навыка (skill) как тему сжатия
 ```
 
-### Rule 5: Alert on Cost Anomalies
+### Правило 5: Оповещения об аномалиях стоимости
 
 ```yaml
 alerts:
   cost_spike:
     window: 1h
-    threshold_usd: 5                 # Alert if > $5 in an hour
+    threshold_usd: 5                 # Оповещение, если > $5 за час
     channel: telegram_private
   token_anomaly:
     window: 10m
@@ -284,33 +284,33 @@ alerts:
     channel: telegram_private
 ```
 
-Catches runaway loops (a skill stuck in a retry tornado) and prompt injection attempts (attacker trying to burn your tokens).
+Ловит зацикленные циклы (навык, застрявший в торнадо повторных попыток — retry tornado) и попытки инъекции промптов (атакующий пытается сжечь ваши токены).
 
 ---
 
-## Eval-Driven Regression Prevention
+## Предотвращение регрессий с помощью оценок (Eval-Driven Regression Prevention)
 
-Once you have Langfuse, add a dataset + evals for your critical paths:
+Как только у вас есть Langfuse, добавьте датасет (dataset) и оценки (evals) для критических путей:
 
 ```bash
-# One-time setup
+# Одноразовая настройка
 hermes evals init
 hermes evals dataset create telegram-support-flows
 hermes evals dataset add telegram-support-flows ~/.hermes/traces/support/*.json
 
-# Run on every release
+# Запускать при каждом релизе
 hermes evals run telegram-support-flows --model anthropic/claude-sonnet
-hermes evals run telegram-support-flows --model zai/glm     # Check if cheaper model still passes
+hermes evals run telegram-support-flows --model zai/glm     # Проверить, проходит ли более дешёвая модель
 hermes evals compare
 ```
 
-This is how you confidently swap a $10/Mtok model for a $0.30/Mtok one — empirically, not by vibes.
+Именно так вы уверенно заменяете модель за $10/Mtok на модель за $0.30/Mtok — эмпирически, а не по ощущениям.
 
 ---
 
-## What's Next
+## Что дальше
 
-- [Part 19: Security Playbook](./part19-security-playbook.md) — set cost alerts as an injection-detection signal
-- [Part 17: MCP Servers](./part17-mcp-servers.md) — MCP sampling costs show up in traces too
-- [Part 14: Fast Mode](./part14-fast-mode-watchers.md) — the fast-mode toggle referenced above
-- [Part 6: Context Compression](./part6-context-compression.md) — the compression system that backs Rule 4
+- [Часть 19: Сценарий безопасности (Security Playbook)](./part19-security-playbook.md) — настройте оповещения о стоимости как сигнал обнаружения инъекций
+- [Часть 17: MCP-серверы](./part17-mcp-servers.md) — затраты на сэмплинг MCP также отображаются в трейсах (traces)
+- [Часть 14: Быстрый режим (Fast Mode)](./part14-fast-mode-watchers.md) — переключатель быстрого режима, упомянутый выше
+- [Часть 6: Сжатие контекста (Context Compression)](./part6-context-compression.md) — система сжатия, лежащая в основе Правила 4

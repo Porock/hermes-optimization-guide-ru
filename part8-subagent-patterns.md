@@ -1,34 +1,34 @@
-# Part 8: Subagent & Orchestrator Patterns (Stop Doing Everything Yourself)
+# Часть 8: Паттерны подагентов и оркестратора (Перестаньте делать всё сами)
 
-*One agent can't do everything well. Delegate.*
+*Один агент не может делать всё хорошо. Делегируйте.*
 
 ---
 
-## The Core Idea
+## Основная идея
 
-Hermes is the orchestrator. It decides what to do, then delegates execution to specialized subagents. Each subagent runs in isolation — own context, own tools, own session.
+Hermes — это оркестратор. Он решает, что делать, затем делегирует выполнение специализированным подагентам. Каждый подагент работает в изоляции — собственный контекст, собственные инструменты, собственная сессия.
 
-**When to delegate:**
-- Reasoning-heavy tasks (debugging, code review, research)
-- Tasks that would flood your context with intermediate data
-- Parallel independent workstreams (research A and B simultaneously)
+**Когда делегировать:**
+- Задачи, требующие много reasoning (debugging, code review, research)
+- Задачи, которые затопят ваш контекст промежуточными данными
+- Параллельные независимые потоки работы (research A и B одновременно)
 
-**When NOT to delegate:**
-- Single tool calls (just call the tool directly)
-- Simple tasks that need 1-2 steps
-- Tasks needing user interaction (subagents can't use clarify)
+**Когда НЕ делегировать:**
+- Одиночные вызовы инструментов (просто вызовите инструмент напрямую)
+- Простые задачи, требующие 1-2 шага
+- Задачи, требующие взаимодействия с пользователем (подагенты не могут использовать clarify)
 
-## delegate_task — The Main Tool
+## delegate_task — Основной инструмент
 
 ```python
-# Single task
+# Одиночная задача
 delegate_task(
     goal="Debug why the API returns 403 on POST requests",
     context="File: src/api/client.py. Error started after adding auth headers. Token is valid.",
     toolsets=["terminal", "file"]
 )
 
-# Parallel batch (up to 3)
+# Параллельный набор (до 3)
 delegate_task(
     tasks=[
         {
@@ -48,33 +48,33 @@ delegate_task(
 )
 ```
 
-**Key details:**
-- Subagents have NO memory of your conversation. Pass everything via `context`.
-- Results come back as a summary. Intermediate tool calls never enter your context.
-- Each subagent gets its own terminal session.
-- Default max iterations: 50. Lower it for simple tasks (`max_iterations=10`).
+**Ключевые детали:**
+- Подагенты НЕ имеют памяти вашего разговора. Передавайте всё через `context`.
+- Результаты возвращаются как сводка. Промежуточные вызовы инструментов никогда не попадают в ваш контекст.
+- Каждый подагент получает собственную терминальную сессию.
+- По умолчанию max iterations: 50. Уменьшите для простых задач (`max_iterations=10`).
 
-## The CEO/COO/Worker Pattern
+## Паттерн CEO/COO/Worker
 
 ```
-CEO (you + Hermes main agent)
+CEO (вы + основной агент Hermes)
   │
-  ├── COO (delegate_task for planning/review)
-  │     └── Returns: strategy, plan, review notes
+  ├── COO (delegate_task для планирования/ревью)
+  │     └── Возвращает: стратегию, план, заметки ревью
   │
-  └── Workers (delegate_task for execution)
-        ├── Worker 1: Build feature A
-        ├── Worker 2: Build feature B
-        └── Worker 3: Write tests
+  └── Workers (delegate_task для выполнения)
+        ├── Worker 1: Создать фичу A
+        ├── Worker 2: Создать фичу B
+        └── Worker 3: Написать тесты
 ```
 
-**CEO:** Makes decisions, assigns tasks, reviews results.
-**COO:** Researches, plans, reviews code. One subagent, reasoning-heavy.
-**Workers:** Execute specific tasks in parallel. Multiple subagents, action-heavy.
+**CEO:** Принимает решения, назначает задачи, проверяет результаты.
+**COO:** Исследует, планирует, ревьювит код. Один подагент, много reasoning.
+**Workers:** Выполняют конкретные задачи параллельно. Множество подагентов, много действий.
 
-## ACP Subagents (Claude Code, Codex)
+## ACP подагенты (Claude Code, Codex)
 
-For coding tasks, delegate to dedicated coding agents via ACP:
+Для задач кодинга делегируйте выделенным кодирующим агентам через ACP:
 
 ```python
 # Claude Code
@@ -93,58 +93,58 @@ delegate_task(
 )
 ```
 
-**When to use ACP vs regular delegate_task:**
-- ACP agents (Claude Code, Codex) are better at coding — tool calling, file editing, running tests
-- Regular delegate_task is better for research, analysis, and multi-tool workflows
-- ACP agents are faster for single-file edits
+**Когда использовать ACP vs обычный delegate_task:**
+- ACP агенты (Claude Code, Codex) лучше в кодинге — tool calling, редактирование файлов, запуск тестов
+- Обычный delegate_task лучше для research, анализа и многоинструментных рабочих процессов
+- ACP агенты быстрее для редактирования одиночных файлов
 
-## SWE-1.6 via Windsurf Cascade
+## SWE-1.6 через Windsurf Cascade
 
-For complex coding tasks, use Windsurf's SWE-1.6:
+Для сложных задач кодинга используйте Windsurf's SWE-1.6:
 
 ```python
-# Send a coding task to Windsurf Cascade
-# Requires Windsurf running with --remote-debugging-port=9222
+# Отправить задачу кодинга в Windsurf Cascade
+# Требует Windsurf запущенный с --remote-debugging-port=9222
 subprocess.run([
-    "python", 
+    "python",
     "~/.hermes/skills/autonomous-ai-agents/windsurf-cascade/scripts/cascade_send.py",
     "Build a React dashboard with real-time WebSocket updates"
 ])
 ```
 
-**Orchestrator pattern:** Hermes handles APIs, data, decisions. SWE-1.6 handles UI, components, bug fixes. Each does what it's best at.
+**Паттерн оркестратора:** Hermes обрабатывает APIs, данные, решения. SWE-1.6 обрабатывает UI, компоненты, исправления багов. Каждый делает то, что лучше всего умеет.
 
-## Parallelization Rules
+## Правила параллелизации
 
-| Scenario | Approach |
+| Сценарий | Подход |
 |----------|----------|
-| 3 independent research tasks | Batch `delegate_task` with `tasks` array |
-| 1 complex coding task | ACP subagent (Claude Code or Codex) |
-| Multiple code changes in different files | SWE-1.6 via Cascade |
-| Single API call | Just call the tool, don't delegate |
-| Task needs user input | Do it yourself, can't delegate interactive work |
+| 3 независимые задачи research | Batch `delegate_task` с массивом `tasks` |
+| 1 сложная задача кодинга | ACP подагент (Claude Code или Codex) |
+| Множественные изменения кода в разных файлах | SWE-1.6 через Cascade |
+| Одиночный API вызов | Просто вызовите инструмент, не делегируйте |
+| Задача требует ввода пользователя | Сделайте сами, нельзя делегировать интерактивную работу |
 
-## Common Mistakes
+## Типичные ошибки
 
-| Mistake | Fix |
+| Ошибка | Исправление |
 |---------|-----|
-| Delegating a single tool call | Just call the tool directly |
-| Not passing enough context to subagent | Subagents know nothing — pass file paths, error messages, constraints |
-| Delegating sequential tasks in parallel | If task B depends on task A's output, run them sequentially |
-| Setting max_iterations too high | Simple tasks don't need 50 iterations — use 10-15 |
-| Forgetting subagents can't use clarify | If a task might need clarification, do it yourself |
+| Делегирование одиночного вызова инструмента | Просто вызовите инструмент напрямую |
+| Недостаточно контекста подагенту | Подагенты ничего не знают — передавайте пути к файлам, сообщения об ошибках, ограничения |
+| Делегирование последовательных задач параллельно | Если задача B зависит от вывода задачи A, запустите их последовательно |
+| Слишком высокий max_iterations | Простым задачам не нужно 50 итераций — используйте 10-15 |
+| Забывание, что подагенты не могут использовать clarify | Если задача может потребовать уточнения, сделайте сами |
 
 ---
 
-## What's Next (April 2026 Additions)
+## Что дальше (дополнения апреля 2026)
 
-The subagent system has grown rapidly. Continue with:
+Система подагентов быстро выросла. Продолжайте с:
 
-- **[Part 18: Delegating to Coding Agents](./part18-coding-agents.md)** — the OpenClaw pattern (thread-bound Telegram topics → persistent Claude Code / Codex / Gemini CLI runtimes). Print-mode vs interactive, ACP-as-server, git branch isolation, routing rules.
-- **[Part 17: MCP Servers](./part17-mcp-servers.md)** — give subagents tools that stay in sync across Hermes, Claude Code, and Cursor.
-- **[Part 21: Remote Sandboxes](./part21-remote-sandboxes.md)** — run your subagents on Modal/Daytona/SSH so a $5 VPS can drive a beefy workspace.
-- **[Part 20: Observability](./part20-observability.md)** — trace every subagent call in Langfuse, with per-skill cost breakdown.
+- **[Часть 18: Делегирование кодирующим агентам](./part18-coding-agents.md)** — паттерн OpenClaw (thread-bound Telegram topics → persistent Claude Code / Codex / Gemini CLI runtimes). Print-mode vs interactive, ACP-as-server, изоляция git branch, правила роутинга.
+- **[Часть 17: MCP-серверы](./part17-mcp-servers.md)** — дайте подагентам инструменты, которые синхронизируются между Hermes, Claude Code и Cursor.
+- **[Часть 21: Удалённые песочницы](./part21-remote-sandboxes.md)** — запускайте ваших подагентов на Modal/Daytona/SSH чтобы $5 VPS мог управлять мощным workspace.
+- **[Часть 20: Observability](./part20-observability.md)** — трассируйте каждый вызов подагента в Langfuse с разбивкой стоимости по навыкам.
 
 ---
 
-*The orchestrator pattern is how you scale. One brain, many hands.*
+*Паттерн оркестратора — как вы масштабируетесь. Один мозг, много рук.*

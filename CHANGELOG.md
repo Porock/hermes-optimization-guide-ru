@@ -1,113 +1,113 @@
-# Changelog
+# История изменений (Changelog)
 
-Dated list of meaningful guide updates. Roughly [Keep a Changelog](https://keepachangelog.com) flavored.
+Датированный список значимых обновлений руководства. В стиле [Keep a Changelog](https://keepachangelog.com).
 
 ## 2026-05-14 — Hermes v0.13.0 Tenacity Refresh
 
-### Added
-- **Part 23 — Tenacity Stack** covering durable Kanban boards, worker lanes, `/goal`, Checkpoints v2, no-agent cron, provider plugins, and the v0.13 upgrade checklist
-- Google Chat coverage in Part 15 as the 20th messaging platform
-- Kanban worker-lane guidance in Part 18 for Codex/Claude/Gemini/OpenCode orchestration
-- v0.13 security-default guidance in Part 19: redaction on by default, guild-scoped Discord role allowlists, WhatsApp stranger rejection, and OAuth/auth.json TOCTOU fixes
+### Добавлено (Added)
+- **Часть 23 — Tenacity Stack**: отказоустойчивые Kanban-доски, воркер-ленты (worker lanes), `/goal`, Checkpoints v2, cron без агента (agent), плагины (plugin) провайдеров (provider) и чеклист обновления до v0.13
+- Google Chat в Части 15 как 20-я платформа обмена сообщениями
+- Руководство по Kanban-лентам воркеров (worker) в Части 18 для оркестрации Codex/Claude/Gemini/OpenCode
+- Рекомендации по безопасности по умолчанию v0.13 в Части 19: редактирование (redaction) включено по умолчанию, allowlist ролей Discord в масштабах гильдии, отклонение незнакомцев в WhatsApp, исправления (fix) TOCTOU для OAuth и auth.json
 
-### Changed
-- README badges, "What's New", table of contents, architecture copy, and model tables now target Hermes v0.13.0 (v2026.5.7)
-- Part 9 model/provider guidance updated for May 2026 SOTA: Claude Sonnet 5 / Opus 4.7, GPT-5.5, Gemini 3.1, Kimi K2.6, DeepSeek V4, Qwen3.6, provider plugins, and media routing
-- Part 12 updated for dashboard Kanban/profile coverage
-- Part 14 updated for `/goal`
-- Part 16 updated for v0.13 debug/redaction language
-- Part 20 updated for Kanban-aware observability
-- Config templates, cron templates, benchmarks, localized READMEs, roadmap, outreach copy, and wizard defaults refreshed for the 24-part guide
+### Изменено (Changed)
+- Бейджи README, раздел «Что нового», оглавление, копия архитектуры и таблицы моделей теперь нацелены на Hermes v0.13.0 (v2026.5.7)
+- Обновлены рекомендации по моделям/провайдерам (provider) в Части 9 для SOTA мая 2026: Claude Sonnet 5 / Opus 4.7, GPT-5.5, Gemini 3.1, Kimi K2.6, DeepSeek V4, Qwen3.6, плагины (plugin) провайдеров и медиа-маршрутизация
+- Часть 12 обновлена для поддержки Kanban/профиля в панели управления (dashboard)
+- Часть 14 обновлена для `/goal`
+- Часть 16 обновлена для терминологии отладки/редактирования (debug/redaction) v0.13
+- Часть 20 обновлена для наблюдаемости (observability) с учётом Kanban
+- Шаблоны конфигов, шаблоны cron, бенчмарки (benchmarks), локализованные README, дорожная карта (roadmap), копия для публикации (outreach), настройки визарда (wizard) обновлены для руководства из 24 частей
 
-### Removed
-- v0.12-as-current framing from top-level guidance
-- Stale April 2026 model recommendations where May 2026 replacements are now the better default
+### Удалено (Removed)
+- Фрейминг v0.12 как актуальной версии (release) из верхнеуровневых указаний
+- Устаревшие рекомендации по моделям от апреля 2026 года, где замены мая 2026 теперь являются лучшим выбором по умолчанию
 
 ## 2026-04-30 — Hermes v0.11/v0.12 Refresh
 
-### Added
-- **Part 22 — Latest Power Moves** covering Curator, TUI steering habits, context-file hygiene, plugins, auxiliary models, cron chaining, and the v0.12 upgrade checklist
-- Curator guidance in Part 5, including dry-run, scheduling, pin/archive behavior, and how it differs from skills/memory/context files
-- v0.12 platform coverage for QQBot, Tencent Yuanbao, and Microsoft Teams as a plugin-shipped gateway
-- AWS Bedrock, Azure AI Foundry, LM Studio, GMI Cloud, Tencent TokenHub, MiniMax OAuth, Gemini OAuth, and remote model catalog notes in Part 9
-- Vercel Sandbox coverage in Part 21
+### Добавлено (Added)
+- **Часть 22 — Latest Power Moves**: куратор (curator), привычки управления через TUI, гигиена контекстных файлов, плагины (plugin), вспомогательные модели, цепочки cron и чеклист обновления до v0.12
+- Руководство по куратору (curator) в Части 5, включая пробный прогон (dry-run), планирование, поведение закрепления/архивации и отличия от навыков (skills)/памяти (memory)/контекстных файлов
+- Поддержка платформ v0.12: QQBot, Tencent Yuanbao и Microsoft Teams как шлюз (gateway) на базе плагина (plugin)
+- Заметки об AWS Bedrock, Azure AI Foundry, LM Studio, GMI Cloud, Tencent TokenHub, MiniMax OAuth, Gemini OAuth и удалённом каталоге моделей в Части 9
+- Поддержка Vercel Sandbox в Части 21
 
-### Changed
-- README "What's New" now reflects landed v0.11.0 and v0.12.0 releases instead of speculative post-v0.10 PR tracking
-- Part 12 updated for dashboard Chat, Models tab, plugins, Curator controls, and `web,pty` install requirements
-- Part 14 updated for `/steer`, `/queue`, `/background`, `/busy`, and current Fast Mode language
-- Part 18 updated for orchestrator-role subagents and file coordination
-- Part 19 updated with MCP/plugin/dashboard threat surfaces and v0.12 hardline block guidance
-- Part 20 updated to prefer the bundled Langfuse observability plugin and auxiliary routing
+### Изменено (Changed)
+- Раздел README «Что нового» теперь отражает выпущенные версии (release) v0.11.0 и v0.12.0 вместо отслеживания предполагаемых PR после v0.10
+- Часть 12 обновлена для вкладок Chat, Models, плагинов (plugin), элементов управления куратором (curator) и требований установки `web,pty`
+- Часть 14 обновлена для `/steer`, `/queue`, `/background`, `/busy` и текущей терминологии Fast Mode
+- Часть 18 обновлена для сабагентов (subagent) в роли оркестратора и координации файлов
+- Часть 19 обновлена с учётом поверхностей угроз MCP/плагин (plugin)/панель управления (dashboard) и инструкций по жёсткой блокировке v0.12
+- Часть 20 обновлена для использования встроенного плагина (plugin) наблюдаемости Langfuse и вспомогательной маршрутизации
 
-### Removed
-- Stale "Cooking on main" framing and example.com disclosure placeholder
-- Old Gemini CLI install requirement for Gemini OAuth
+### Удалено (Removed)
+- Устаревший фрейминг «Cooking on main» и заглушка-раскрытие example.com
+- Старое требование установки Gemini CLI для Gemini OAuth
 
-## 2026-04-17 — Wizard + Reference Architectures + CI
+## 2026-04-17 — Визард (Wizard) + Эталонные Архитектуры + CI
 
-### Added
-- **`docs/wizard/index.html`** — interactive static config wizard; 8 questions → ready-to-drop `config.yaml`, runs entirely in the browser (GitHub Pages friendly)
-- **`docs/reference-architectures/`** — 4 full blueprints: Homelab, Solo Developer, Small Agency, Road Warrior
-- **`docs/outreach/`** — launch-ready drafts: launch tweet thread, Hacker News post, r/LocalLLaMA post, upstream PR body to `NousResearch/hermes-agent`, long-form blog post
-- **4 new skills**: `ops/daily-inbox-triage`, `ops/hermes-weekly`, `security/spam-trap`, `dev/meeting-prep` (total skills: 13)
-- **CI** — `.github/workflows/ci.yml`: markdown-link-check, yamllint, skill-frontmatter validator (`validate_skills.py`), prettier advisory
-- **Localized READMEs** — [`README-zh.md`](./README-zh.md), [`README-ja.md`](./README-ja.md) (entry-level summaries)
+### Добавлено (Added)
+- **`docs/wizard/index.html`** — интерактивный статический конфиг-визард (wizard); 8 вопросов → готовый к использованию `config.yaml`, работает полностью в браузере (совместим с GitHub Pages)
+- **`docs/reference-architectures/`** — 4 полных архитектурных蓝图: Homelab, Solo Developer, Small Agency, Road Warrior
+- **`docs/outreach/`** — готовые к публикации черновики: тред для запуска в Twitter, пост для Hacker News, пост для r/LocalLLaMA, тело PR для апстрима в `NousResearch/hermes-agent`, полноценная статья для блога
+- **4 новых навыка (skill)**: `ops/daily-inbox-triage`, `ops/hermes-weekly`, `security/spam-trap`, `dev/meeting-prep` (всего навыков (skills): 13)
+- **CI** — `.github/workflows/ci.yml`: проверка markdown-ссылок (markdown-link-check), yamllint, валидатор frontmatter навыков (validate_skills.py), дополнительная проверка prettier
+- **Локализованные README** — [`README-zh.md`](./README-zh.md), [`README-ja.md`](./README-ja.md) (краткие вводные)
 
-### Changed
-- README: skills badge 9→13, language links, repo map rows for wizard + reference architectures + outreach, CI badge
-- `templates/config/*.yaml` — quoted `${VAR}` env-var substitutions inside flow mappings so every template is valid YAML
+### Изменено (Changed)
+- README: бейдж навыков (skills) 9→13, ссылки на языки, строки карты репозитория для визарда (wizard) + эталонных архитектур + материалов для публикации, бейдж CI
+- `templates/config/*.yaml` — экранированные подстановки переменных окружения `${VAR}` в потоковых отображениях (flow mappings), чтобы каждый шаблон был валидным YAML
 
-## 2026-04-17 — Installable Artifacts
+## 2026-04-17 — Устанавливаемые Артефакты (Installable Artifacts)
 
-### Added
-- **`skills/`** — 9 runnable `SKILL.md` files (audit-mcp, rotate-secrets, audit-approval-bypass, nightly-backup, weekly-dep-audit, cost-report, telegram-triage, pr-review, release-notes)
-- **`templates/config/`** — 5 opinionated configs (minimum, telegram-bot, production, cost-optimized, security-hardened)
-- **`templates/compose/langfuse-stack.yml`** — self-hosted Langfuse v3 with ClickHouse + MinIO + Redis
-- **`templates/caddy/Caddyfile`** — reverse-proxy + auto TLS reference
-- **`templates/systemd/`** — hardened `hermes.service` + `hermes-dashboard.service`
-- **`templates/cron/production-crons.yaml`** — all recommended scheduled tasks
-- **`scripts/vps-bootstrap.sh`** — fresh Hetzner CX22 → production Hermes in ~10 minutes
-- **`diagrams/architecture.md`** — 6 Mermaid diagrams (top-level, MCP, delegation, sandbox sync, observability, security)
-- **`benchmarks/README.md` + `matrix.yaml`** — reproducible cost/latency table across 12 models × 5 tasks
-- **`ECOSYSTEM.md`** — canonical directory of MCP servers, coding agents, dashboard plugins, observability tools
-- **`ROADMAP.md`** — what's coming next; invites contribution
-- **`CONTRIBUTING.md`**, **`CHANGELOG.md`**, **`CODE_OF_CONDUCT.md`** — standard repo hygiene
-- **GitHub issue + PR templates**
-- **`docs/quickstart.md`** — 5-minute copy-paste from zero to working Telegram bot
+### Добавлено (Added)
+- **`skills/`** — 9 исполняемых файлов `SKILL.md` (audit-mcp, rotate-secrets, audit-approval-bypass, nightly-backup, weekly-dep-audit, cost-report, telegram-triage, pr-review, release-notes)
+- **`templates/config/`** — 5 целевых конфигов (minimum, telegram-bot, production, cost-optimized, security-hardened)
+- **`templates/compose/langfuse-stack.yml`** — самостоятельно размещаемый Langfuse v3 с ClickHouse + MinIO + Redis
+- **`templates/caddy/Caddyfile`** — обратный прокси (reverse-proxy) + эталонный авто TLS
+- **`templates/systemd/`** — усиленные `hermes.service` + `hermes-dashboard.service`
+- **`templates/cron/production-crons.yaml`** — все рекомендованные плановые задачи
+- **`scripts/vps-bootstrap.sh`** — чистый Hetzner CX22 → production Hermes за ~10 минут
+- **`diagrams/architecture.md`** — 6 Mermaid-диаграмм (верхнеуровневая, MCP, делегирование, синхронизация песочницы (sandbox), наблюдаемость (observability), безопасность)
+- **`benchmarks/README.md` + `matrix.yaml`** — воспроизводимая таблица стоимости/задержки для 12 моделей × 5 задач
+- **`ECOSYSTEM.md`** — канонический каталог MCP-серверов, кодинг-агентов (agent), плагинов (plugin) панели управления (dashboard), инструментов наблюдаемости (observability)
+- **`ROADMAP.md`** — планы на будущее; приглашение к участию
+- **`CONTRIBUTING.md`**, **`CHANGELOG.md`**, **`CODE_OF_CONDUCT.md`** — стандартная гигиена репозитория
+- **Шаблоны GitHub issue + PR**
+- **`docs/quickstart.md`** — 5-минутная инструкция «копировать-вставить» от нуля до рабочего Telegram-бота
 
-### Changed
-- README gained badges, "Install everything" section, architecture diagram embed, ecosystem/benchmarks cross-links
+### Изменено (Changed)
+- README получил бейджи, раздел «Установить всё», встроенную диаграмму архитектуры, перекрёстные ссылки на экосистему/бенчмарки
 
-## 2026-04-17 — 72h Research Sweep (PR #6, merged)
+## 2026-04-17 — 72-часовое исследование (72h Research Sweep) (PR #6, слито)
 
-### Added
-- Part 17 — MCP Servers
-- Part 18 — Delegating to Coding Agents (Claude Code, Codex, Gemini CLI, OpenCode, Aider)
-- Part 19 — Security Playbook (defenses against the April 15 "Comment and Control" prompt injection)
-- Part 20 — Observability & Cost Control (Langfuse, Helicone, Phoenix)
-- Part 21 — Remote Sandboxes & Bulk File Sync (#8018)
-- README "Pick Your Path" decision tree
-- README "Cooking on `main`" section (post-v0.10 PRs)
+### Добавлено (Added)
+- Часть 17 — MCP-серверы (MCP Servers)
+- Часть 18 — Делегирование кодинг-агентам (Coding Agents) (Claude Code, Codex, Gemini CLI, OpenCode, Aider)
+- Часть 19 — Учебник по безопасности (Security Playbook) (защита от инъекций промптов «Comment and Control» от 15 апреля)
+- Часть 20 — Наблюдаемость и контроль затрат (Observability & Cost Control) (Langfuse, Helicone, Phoenix)
+- Часть 21 — Удалённые песочницы и массовая синхронизация файлов (Remote Sandboxes & Bulk File Sync) (#8018)
+- README — дерево решений «Выбери свой путь» (Pick Your Path)
+- README — раздел «Cooking on `main`» (PR после v0.10)
 
-### Changed
-- Part 9 — Flagship Model Cheat Sheet, Task Routing cheat sheet, Gemini CLI OAuth, Gemini TTS
-- Cross-links added in parts 3, 5, 8
+### Изменено (Changed)
+- Часть 9 — Шпаргалка по флагманским моделям, шпаргалка по маршрутизации задач, OAuth Gemini CLI, Gemini TTS
+- Добавлены перекрёстные ссылки в частях 3, 5, 8
 
-## 2026-04-16 — Hermes v0.9 + v0.10 refresh (PR #5, merged)
+## 2026-04-16 — Hermes v0.9 + v0.10 refresh (PR #5, слито)
 
-### Added
-- Part 12 — Web Dashboard (`hermes dashboard`)
-- Part 13 — Nous Tool Gateway
-- Part 14 — Fast Mode + Background Watchers + pluggable context engine
-- Part 15 — New platforms (iMessage, WeChat, Android/Termux) — 16-platform total
-- Part 16 — Backup / Import / `/debug` bundler
+### Добавлено (Added)
+- Часть 12 — Веб-панель управления (Web Dashboard) (`hermes dashboard`)
+- Часть 13 — Шлюз инструментов Nous (Nous Tool Gateway)
+- Часть 14 — Fast Mode + Фоновые наблюдатели (Background Watchers) + подключаемый механизм контекста (context engine)
+- Часть 15 — Новые платформы (iMessage, WeChat, Android/Termux) — всего 16 платформ
+- Часть 16 — Резервное копирование (Backup) / Импорт (Import) / сборщик `/debug`
 
-### Changed
-- README TOC bumped from 11 → 17
-- Part 4 Telegram reframed as "flagship of 16 gateways"
-- Part 9 native-adapter matrix added
+### Изменено (Changed)
+- Оглавление README расширено с 11 до 17
+- Часть 4 — Telegram переосмыслен как «флагманский из 16 шлюзов (gateway)»
+- Часть 9 — добавлена матрица нативных адаптеров (native-adapter)
 
-## Earlier
+## Ранее (Earlier)
 
-- Initial 11-part guide covering setup, OpenClaw migration, LightRAG, Telegram, skills, context compression, memory, subagents, custom models, SOUL anti-patterns, gateway recovery.
+- Начальное руководство из 11 частей: установка, миграция с OpenClaw, LightRAG, Telegram, навыки (skills), сжатие контекста, память (memory), сабагенты (subagent), пользовательские модели, антипаттерны SOUL, восстановление шлюза (gateway).

@@ -1,6 +1,6 @@
 # Hermes 优化指南（中文简版）
 
-> [English 完整版](./README.md) · 本页是入口摘要，章节正文仍为英文。
+> [English 完整版](./README.md) · [Русский](./README-ru.md) · 本页是入口摘要，章节正文仍为英文。
 
 实用指南 + 可安装制品（Skills、配置模板、基础设施脚本），针对 [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)（当前覆盖到 v0.13.0）。
 

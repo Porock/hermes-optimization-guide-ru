@@ -1,268 +1,268 @@
-# Part 12: The Local Web Dashboard (Stop Editing YAML)
+# Часть 12: Локальный Веб-дашборд (Перестаньте Редактировать YAML)
 
-*Introduced in v0.9 and substantially upgraded through v0.13. The dashboard is now a browser-based control panel for config, Chat/TUI, Kanban, plugins, profiles, and analytics — not just a YAML editor.*
-
----
-
-## Why This Matters
-
-Before v0.9, managing Hermes meant: edit `config.yaml`, export env vars, grep through logs, and use the CLI to inspect sessions. Great for power users. Terrible for anyone new.
-
-The **web dashboard** (`hermes dashboard`) replaces most of that with a single browser UI:
-
-- Live status of the gateway and all built-in/plugin platform adapters
-- Browser Chat backed by the real `hermes --tui`
-- Form-based editor for every config field (all 150+ of them, auto-discovered from `DEFAULT_CONFIG`)
-- Models tab for main + auxiliary model configuration
-- API key manager for providers, tools, and platforms
-- Full-text search across past sessions (FTS5)
-- Log tailer with level/component filters
-- Usage and cost analytics (daily token + cost breakdown, per-model)
-- Cron job management
-- Kanban boards, worker/task status, comments, blocks, and handoffs
-- Skills, Curator, plugins, profiles, and toolsets browser with enable/disable toggles
-
-Everything runs on `127.0.0.1` — no data leaves your machine.
+*Введено в v0.9 и существенно обновлено до v0.13. Дашборд теперь браузерная панель управления для конфига, Chat/TUI, Kanban, плагинов, профилей и аналитики — не просто YAML редактор.*
 
 ---
 
-## Quick Start
+## Почему это важно
+
+До v0.9 управление Hermes означало: редактировать `config.yaml`, экспортировать переменные окружения, grep-ить логи и использовать CLI для просмотра сессий. Отлично для опытных пользователей. Ужасно для новичков.
+
+**Веб-дашборд** (`hermes dashboard`) заменяет большую часть этого единым браузерным интерфейсом:
+
+- Статус шлюза (gateway) и всех встроенных/плагинных адаптеров платформ
+- Браузерный чат на базе настоящего `hermes --tui`
+- Формовый редактор для каждого поля конфига (все 150+ полей, авто-обнаруженные из `DEFAULT_CONFIG`)
+- Вкладка Models для настройки основной и вспомогательных моделей
+- Менеджер API-ключей для провайдеров, инструментов и платформ
+- Полнотекстовый поиск по прошлым сессиям (FTS5)
+- Просмотр логов с фильтрацией по уровню и компоненту
+- Аналитика использования и стоимости (ежедневные токены + разбивка затрат, по моделям)
+- Управление cron-задачами
+- Kanban-доски, статус воркеров/задач, комментарии, блокировки и передачи
+- Обзор навыков (skills), куратора, плагинов, профилей и наборов инструментов (toolsets) с переключателями вкл/выкл
+
+Всё работает на `127.0.0.1` — никакие данные не покидают вашу машину.
+
+---
+
+## Быстрый старт
 
 ```bash
 hermes dashboard
 ```
 
-That's it. It starts a local server and opens `http://127.0.0.1:9119` in your default browser.
+Вот и всё. Запускается локальный сервер и открывает `http://127.0.0.1:9119` в вашем браузере по умолчанию.
 
-### Install the Dependencies (One Time)
+### Установка зависимостей (однократно)
 
-The dashboard uses FastAPI + Uvicorn + a React frontend. The Chat tab also needs PTY support:
+Дашборд использует FastAPI + Uvicorn + React-фронтенд. Вкладка Chat также требует поддержки PTY:
 
 ```bash
 pip install 'hermes-agent[web,pty]'
 ```
 
-If you installed with `hermes-agent[all]`, you're already done. The `web` extra brings FastAPI/Uvicorn; `pty` lets the Chat tab spawn `hermes --tui` behind a pseudo-terminal on Linux/macOS/WSL. The frontend auto-builds on first launch if `npm` is available.
+Если вы установили с `hermes-agent[all]`, то всё уже готово. Дополнение `web` подтягивает FastAPI/Uvicorn; `pty` позволяет вкладке Chat запускать `hermes --tui` через псевдо-терминал на Linux/macOS/WSL. Фронтенд авто-собирается при первом запуске, если `npm` доступен.
 
-### Options
+### Опции
 
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--port` | `9119` | Port to serve on |
-| `--host` | `127.0.0.1` | Bind address |
-| `--no-open` | — | Don't auto-open the browser |
-| `--insecure` | off | Permit non-localhost binding; dangerous without a proxy/auth |
-| `--tui` | off | Enable the in-browser Chat tab; also available via `HERMES_DASHBOARD_TUI=1` |
+| Флаг | По умолчанию | Описание |
+|------|-------------|----------|
+| `--port` | `9119` | Порт для сервера |
+| `--host` | `127.0.0.1` | Адрес привязки |
+| `--no-open` | — | Не открывать браузер автоматически |
+| `--insecure` | выкл | Разрешить привязку не к localhost; опасно без прокси/аутентификации |
+| `--tui` | выкл | Включить вкладку Chat в браузере; также доступно через `HERMES_DASHBOARD_TUI=1` |
 
 ```bash
-# Custom port
+# Пользовательский порт
 hermes dashboard --port 8080
 
-# Bind to all interfaces (use with caution — see security note below)
+# Привязка ко всем интерфейсам (с осторожностью — см. примечание по безопасности ниже)
 hermes dashboard --host 0.0.0.0
 
-# Start without opening the browser
+# Запуск без открытия браузера
 hermes dashboard --no-open
 ```
 
-> **Security:** The dashboard reads and writes your `.env` file. It has **no authentication of its own**. Keep it on `127.0.0.1`. If you must expose it (e.g., a homelab), put it behind a reverse proxy with authentication or use SSH port-forwarding: `ssh -L 9119:127.0.0.1:9119 user@your-server`.
+> **Безопасность:** Дашборд читает и записывает ваш `.env` файл. У него **нет собственной аутентификации**. Держите его на `127.0.0.1`. Если необходимо открыть доступ (например, в домашней сети), поместите его за обратный прокси с аутентификацией или используйте SSH-проброс портов: `ssh -L 9119:127.0.0.1:9119 user@your-server`.
 
 ---
 
-## Pages at a Glance
+## Страницы кратко
 
 ### Status
 
-Live overview that auto-refreshes every 5 seconds:
+Обзор в реальном времени с автообновлением каждые 5 секунд:
 
-- Agent version + release date
-- Gateway state — running/stopped, PID, every connected platform with its own state
-- Active sessions — everything alive in the last 5 minutes
-- Recent sessions — the last 20, with model, message count, token usage, and a preview
+- Версия агента + дата релиза
+- Состояние шлюза (gateway) — запущен/остановлен, PID, каждая подключенная платформа со своим статусом
+- Активные сессии — всё живое за последние 5 минут
+- Недавние сессии — последние 20, с моделью, количеством сообщений, использованием токенов и превью
 
-This is the page you leave open on a second monitor.
+Это страница, которую вы держите открытой на втором мониторе.
 
 ### Chat
 
-The Chat tab embeds the actual `hermes --tui` process through xterm.js. That matters: slash commands, approval prompts, clarify/sudo/secret prompts, skins, markdown streaming, tool-call cards, `/resume`, `/steer`, `/queue`, and TUI fixes appear here automatically because the dashboard is not maintaining a second chat implementation.
+Вкладка Chat встраивает настоящий процесс `hermes --tui` через xterm.js. Это важно: слеш-команды, запросы подтверждения, подсказки clarify/sudo/secret, скины, стриминг markdown, карточки вызовов инструментов, `/resume`, `/steer`, `/queue` и исправления TUI появляются здесь автоматически, потому что дашборд не использует отдельную реализацию чата.
 
-Requirements:
+Требования:
 
-- Node.js for the Ink TUI bundle
-- `ptyprocess` via `pip install 'hermes-agent[pty]'`
-- POSIX PTY support: Linux, macOS, or WSL; native Windows Python is not supported for the embedded PTY
+- Node.js для сборки Ink TUI
+- `ptyprocess` через `pip install 'hermes-agent[pty]'`
+- Поддержка POSIX PTY: Linux, macOS или WSL; нативная Windows Python не поддерживается для встроенного PTY
 
-Tip: launch from the Sessions page with the play icon to resume a past session directly into `/chat?resume=<id>`.
+Совет: запускайте со страницы Sessions через иконку play, чтобы возобновить прошлую сессию прямо в `/chat?resume=<id>`.
 
 ### Config
 
-Form-based editor for `config.yaml`. Fields are auto-discovered from `DEFAULT_CONFIG` and grouped into tabs:
+Формовый редактор для `config.yaml`. Поля авто-обнаруживаются из `DEFAULT_CONFIG` и сгруппированы по вкладкам:
 
-- **model** — default model, provider, base URL, reasoning settings
-- **terminal** — backend (local / docker / ssh / modal), timeouts, shell preferences
-- **display** — skin, tool progress rendering, spinner settings
-- **agent** — max iterations, gateway timeout, `service_tier` (Fast Mode), `/goal` behavior
-- **delegation** — subagent limits, reasoning effort
-- **memory** — provider, context injection settings
-- **approvals** — dangerous command mode (`ask` / `yolo` / `deny`)
-- **plugins** — enabled/disabled plugin allowlists
-- **curator** — schedule, pruning thresholds, pinned/archived behavior
-- **kanban** — board location, worker profiles, retry budget, stale heartbeat reclaim policy
+- **model** — модель по умолчанию, провайдер, base URL, настройки рассуждений
+- **terminal** — бэкенд (local / docker / ssh / modal), таймауты, настройки оболочки
+- **display** — скин, отображение прогресса инструментов, настройки спиннера
+- **agent** — максимум итераций, таймаут шлюза, `service_tier` (Fast Mode), поведение `/goal`
+- **delegation** — лимиты сабагентов, усилия рассуждений
+- **memory** — провайдер, настройки инъекции контекста
+- **approvals** — режим опасных команд (`ask` / `yolo` / `deny`)
+- **plugins** — разрешённые/запрещённые списки плагинов
+- **curator** — расписание, пороги очистки, поведение закрепления/архивации
+- **kanban** — расположение доски, профили воркеров, бюджет повторов, политика возврата зависших задач
 
-Dropdowns for known-value fields (terminal backend, skin, approval mode). Toggles for booleans. Text inputs for everything else.
+Выпадающие списки для полей с известными значениями (бэкенд терминала, скин, режим подтверждения). Переключатели для булевых значений. Текстовые поля для всего остального.
 
-Actions:
-- **Save** — writes to `config.yaml` immediately
-- **Reset to defaults** — previews reverting everything (still requires Save)
-- **Export** — download current config as JSON
-- **Import** — upload a JSON file to replace values
+Действия:
+- **Save** — записывает в `config.yaml` немедленно
+- **Reset to defaults** — предпросмотр сброса всего (требуется Save)
+- **Export** — скачать текущий конфиг как JSON
+- **Import** — загрузить JSON-файл для замены значений
 
-> Config changes take effect on the next agent session or gateway restart. This edits the exact same file as `hermes config set` and the gateway.
+> Изменения конфига вступают в силу при следующем запуске сессии агента или перезапуске шлюза. Редактируется тот же файл, что и через `hermes config set` и шлюз.
 
 ### API Keys
 
-The `.env` editor you'll actually use. Keys are grouped by category:
+Редактор `.env`, которым вы действительно будете пользоваться. Ключи сгруппированы по категориям:
 
-- **LLM providers** — OpenRouter, Anthropic, OpenAI, z.ai/GLM, Kimi, MiniMax, Xiaomi MiMo, Arcee, etc.
-- **Tool API keys** — Browserbase, Firecrawl, Tavily, ElevenLabs, FAL, etc.
-- **Messaging platforms** — Telegram, Discord, Slack, BlueBubbles, WeChat, etc.
-- **Agent settings** — non-secret env vars like `API_SERVER_ENABLED`
+- **LLM провайдеры** — OpenRouter, Anthropic, OpenAI, z.ai/GLM, Kimi, MiniMax, Xiaomi MiMo, Arcee и др.
+- **API-ключи инструментов** — Browserbase, Firecrawl, Tavily, ElevenLabs, FAL и др.
+- **Платформы обмена сообщениями** — Telegram, Discord, Slack, BlueBubbles, WeChat и др.
+- **Настройки агента** — несекретные переменные окружения типа `API_SERVER_ENABLED`
 
-Each row shows whether a key is set (redacted preview), a one-line description, and a link to the provider's key page.
+Каждая строка показывает, установлен ли ключ (скрытое значение), однострочное описание и ссылку на страницу получения ключа провайдера.
 
-Advanced/rarely-used keys are hidden behind a toggle by default to keep the surface clean.
+Редко используемые ключи по умолчанию скрыты за переключателем, чтобы не загромождать интерфейс.
 
 ### Sessions
 
-Full browse and search across every session you've ever run, across every platform.
+Полный просмотр и поиск по всем сессиям, когда-либо запущенным, на всех платформах.
 
-- **Search** — FTS5 full-text search across message content. Hits are highlighted and auto-scrolled on expand.
-- **Expand** — load the full message history with Markdown + syntax highlighting, color-coded by role (user / assistant / system / tool).
-- **Tool calls** — collapsible blocks showing the function name and JSON arguments for every tool call.
-- **Delete** — remove a session and its messages with the trash icon.
+- **Search** — полнотекстовый поиск FTS5 по содержимому сообщений. Результаты подсвечиваются и автоматически прокручиваются при раскрытии.
+- **Expand** — загружает полную историю сообщений с Markdown + подсветкой синтаксиса, цветовая кодировка по ролям (user / assistant / system / tool).
+- **Tool calls** — сворачиваемые блоки с именем функции и JSON-аргументами для каждого вызова инструмента.
+- **Delete** — удалить сессию и её сообщения по иконке корзины.
 
-Each row shows the title, source platform icon (CLI, Telegram, Discord, Slack, cron, BlueBubbles, WeChat), model, message count, tool call count, and how long since last activity. Live sessions pulse.
+Каждая строка показывает заголовок, иконку платформы-источника (CLI, Telegram, Discord, Slack, cron, BlueBubbles, WeChat), модель, количество сообщений, количество вызовов инструментов и время с последней активности. Живые сессии пульсируют.
 
 ### Logs
 
-Agent, gateway, and error log files with filtering and live tail.
+Файлы логов агента, шлюза и ошибок с фильтрацией и живым просмотром.
 
-- **File** — switch between `agent`, `errors`, `gateway`
+- **File** — переключение между `agent`, `errors`, `gateway`
 - **Level** — ALL / DEBUG / INFO / WARNING / ERROR
 - **Component** — all / gateway / agent / tools / cli / cron
 - **Lines** — 50 / 100 / 200 / 500
-- **Auto-refresh** — live tail polling every 5s
-- Color-coded by severity (red errors, yellow warnings, dim debug)
+- **Auto-refresh** — живой просмотр с опросом каждые 5с
+- Цветовая кодировка по серьезности (красные ошибки, желтые предупреждения, тусклый отладка)
 
 ### Analytics
 
-Usage and cost, computed from session history. Pick a time window (7 / 30 / 90 days):
+Использование и стоимость, вычисляемые из истории сессий. Выберите временной отрезок (7 / 30 / 90 дней):
 
-- Summary cards — total input/output tokens, cache hit %, estimated or actual cost, session count with daily average
-- Daily token chart — stacked input/output bars, hover for exact breakdowns and cost
-- Daily breakdown table — date, sessions, tokens, cache hit rate, cost
-- Per-model breakdown — each model used, sessions, tokens, cost
+- Карточки сводки — всего входных/выходных токенов, % попадания в кэш, расчетная или фактическая стоимость, количество сессий с ежедневным средним
+- Ежедневный график токенов — столбцы входных/выходных токенов, наведение для точной разбивки и стоимости
+- Ежедневная таблица разбивки — дата, сессии, токены, частота попадания в кэш, стоимость
+- Разбивка по моделям — каждая использованная модель, сессии, токены, стоимость
 
-If you're on the Nous Portal Tool Gateway (Part 13), gateway tool usage shows up here too.
+Если вы используете Nous Portal Tool Gateway (Часть 13), использование инструментов шлюза также отображается здесь.
 
 ### Models
 
-Use this page before you edit routing YAML by hand. It exposes:
+Используйте эту страницу, прежде чем редактировать YAML маршрутизации вручную. Она предоставляет:
 
-- Main model/provider selection
-- Auxiliary models for compression, vision, title generation, session search, and curator
-- Remote OpenRouter/Nous picker data when available
-- Per-model usage analytics so "cheap default, expensive opt-in" stays honest
+- Выбор основной модели/провайдера
+- Вспомогательные модели для сжатия, зрения, генерации заголовков, поиска сессий и куратора
+- Данные удаленного OpenRouter/Nous выбора, когда доступны
+- Аналитику использования по моделям, чтобы "дешевая по умолчанию, дорогая опционально" оставалась честной
 
-This is the fastest way to stop wasting your best model on background summaries.
+Это самый быстрый способ перестать тратить лучшую модель на фоновые сводки.
 
 ### Cron
 
-Create and manage scheduled agent prompts.
+Создание и управление запланированными промптами агента.
 
-- **Create** — name, prompt, cron expression (e.g. `0 9 * * *`), delivery target (local / Telegram / Discord / Slack / email)
-- **Job list** — name, prompt preview, schedule, state badge, delivery target, last run, next run
-- **Pause / Resume** — toggle active state
-- **Trigger now** — run a job immediately, outside its normal schedule
-- **Delete** — remove permanently
+- **Create** — имя, промпт, cron-выражение (например `0 9 * * *`), целевая доставка (local / Telegram / Discord / Slack / email)
+- **Job list** — имя, превью промпта, расписание, значок статуса, целевая доставка, последний запуск, следующий запуск
+- **Pause / Resume** — переключение активного состояния
+- **Trigger now** — запустить задачу немедленно, вне обычного расписания
+- **Delete** — удалить навсегда
 
-This replaces the old `hermes cron create …` CLI flow for most people.
+Это заменяет старый CLI-поток `hermes cron create …` для большинства пользователей.
 
 ### Skills
 
-Browse, search, and toggle every skill and toolset.
+Просмотр, поиск и переключение каждого навыка (skill) и набора инструментов (toolset).
 
-- **Search** — filter by name, description, or category
-- **Category filter** — click pills to narrow (MLOps, MCP, Red Teaming, AI, etc.)
-- **Toggle** — enable/disable individual skills per session
-- **Toolsets** — separate section showing built-in toolsets (file, web, browser), with active/inactive state, setup requirements, and the list of tools each one provides
+- **Search** — фильтр по имени, описанию или категории
+- **Category filter** — клик по тегам для сужения (MLOps, MCP, Red Teaming, AI и др.)
+- **Toggle** — включение/отключение отдельных навыков для сессии
+- **Toolsets** — отдельный раздел со встроенными наборами инструментов (file, web, browser), с состоянием активно/неактивно, требованиями к настройке и списком инструментов, которые каждый предоставляет
 
 ### Plugins
 
-Plugins ship disabled. Use the dashboard to review what was discovered from bundled, user, project, pip, and Nix sources before enabling anything with hooks/tools.
+Плагины поставляются отключенными. Используйте дашборд для просмотра того, что было обнаружено из встроенных, пользовательских, проектных, pip и Nix источников, прежде чем включать что-либо с хуками/инструментами.
 
-Good first enables:
+Хорошие первые включения:
 
-- `observability/langfuse` — trace LLM/tool calls to Langfuse
-- `spotify` — native playback/queue/search tools
-- `google_meet` — join, transcribe, speak, and follow up on Meet calls
-- `hermes-achievements` — dashboard achievements from real session history
+- `observability/langfuse` — трассировка LLM/вызовов инструментов в Langfuse
+- `spotify` — нативные инструменты воспроизведения/очереди/поиска
+- `google_meet` — присоединение, транскрибация, речь и последующие действия на созвонах Meet
+- `hermes-achievements` — достижения дашборда из реальной истории сессий
 
-Project-local plugins under `.hermes/plugins/` should stay disabled unless you trust the repository.
+Проектные плагины в `.hermes/plugins/` должны оставаться отключенными, если вы не доверяете репозиторию.
 
 ### Curator
 
-v0.12 adds Curator controls for skill-library hygiene: run dry-runs, inspect proposed archives/merges, pin important skills, and review archived skills before restoring or deleting. See [Part 5](./part5-creating-skills.md#curator-v012-keep-the-skill-library-from-rotting) and [Part 22](./part22-latest-power-moves.md#1-turn-on-curator-before-your-skill-library-becomes-noise).
+v0.12 добавляет элементы управления куратора для гигиены библиотеки навыков: запуск пробных прогонов, просмотр предлагаемых архивов/объединений, закрепление важных навыков и проверка архивных навыков перед восстановлением или удалением. См. [Часть 5](./part5-creating-skills.md#curator-v012-keep-the-skill-library-from-rotting) и [Часть 22](./part22-latest-power-moves.md#1-turn-on-curator-before-your-skill-library-becomes-noise).
 
 ---
 
-## `/reload` — Pick Up `.env` Changes Live
+## `/reload` — Подхват Изменений `.env` На Лету
 
-When you change an API key in the dashboard (or edit `~/.hermes/.env` directly), you don't need to restart an active CLI session anymore.
+Когда вы меняете API-ключ в дашборде (или редактируете `~/.hermes/.env` напрямую), вам больше не нужно перезапускать активную CLI-сессию.
 
-In any interactive CLI:
+В любом интерактивном CLI:
 
 ```text
 You → /reload
   Reloaded .env (3 var(s) updated)
 ```
 
-That re-reads `~/.hermes/.env` into the running process environment. Perfect when you add a new provider key and want to switch to it without losing your session.
+Это перечитывает `~/.hermes/.env` в окружение работающего процесса. Идеально, когда вы добавили ключ нового провайдера и хотите переключиться на него без потери сессии.
 
 ---
 
-## REST API (for Automation)
+## REST API (для автоматизации)
 
-The dashboard frontend is just a client of a documented REST API. You can script against it directly — handy for homelab dashboards, Raycast/Alfred shortcuts, Grafana exporters, etc.
+Фронтенд дашборда — это просто клиент документированного REST API. Вы можете обращаться к нему напрямую из скриптов — удобно для домашних дашбордов, Raycast/Alfred шорткатов, экспортеров Grafana и т.д.
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/status` | Agent version, gateway status, platform states, active session count |
-| `GET /api/sessions` | 20 most recent sessions with metadata |
-| `GET /api/sessions/{id}` | Full message history for a session |
-| `GET /api/config` | Current `config.yaml` as JSON |
-| `GET /api/config/defaults` | Default configuration values |
-| `GET /api/config/schema` | Schema for every config field (type, description, category, options) |
-| `PUT /api/config` | Save a new configuration. Body: `{"config": {...}}` |
-| `GET /api/env` | All known env vars with set/unset status, redacted values, descriptions |
-| `PUT /api/env` | Set a variable. Body: `{"key": "VAR_NAME", "value": "secret"}` |
-| `DELETE /api/env` | Delete a variable |
-| `GET /api/logs` | Tail log files with filters |
-| `GET /api/analytics` | Usage and cost analytics for a time range |
-| `GET /api/cron/jobs` | List cron jobs |
-| `POST /api/cron/jobs` | Create a cron job |
-| `POST /api/cron/jobs/{id}/trigger` | Trigger a job immediately |
-| `GET /api/skills` | List skills and toolsets |
+| Endpoint | Описание |
+|----------|----------|
+| `GET /api/status` | Версия агента, статус шлюза, состояния платформ, количество активных сессий |
+| `GET /api/sessions` | 20 последних сессий с метаданными |
+| `GET /api/sessions/{id}` | Полная история сообщений сессии |
+| `GET /api/config` | Текущий `config.yaml` в формате JSON |
+| `GET /api/config/defaults` | Значения конфигурации по умолчанию |
+| `GET /api/config/schema` | Схема для каждого поля конфига (тип, описание, категория, опции) |
+| `PUT /api/config` | Сохранить новую конфигурацию. Тело: `{"config": {...}}` |
+| `GET /api/env` | Все известные переменные окружения со статусом установлено/не установлено, скрытыми значениями, описаниями |
+| `PUT /api/env` | Установить переменную. Тело: `{"key": "VAR_NAME", "value": "secret"}` |
+| `DELETE /api/env` | Удалить переменную |
+| `GET /api/logs` | Хвост лог-файлов с фильтрами |
+| `GET /api/analytics` | Аналитика использования и стоимости за временной отрезок |
+| `GET /api/cron/jobs` | Список cron-задач |
+| `POST /api/cron/jobs` | Создать cron-задачу |
+| `POST /api/cron/jobs/{id}/trigger` | Запустить задачу немедленно |
+| `GET /api/skills` | Список навыков и наборов инструментов |
 
-Requests are unauthenticated and only listen on `127.0.0.1` — trust the local-machine boundary.
+Запросы не аутентифицированы и слушают только на `127.0.0.1` — доверяйте границе локальной машины.
 
 ---
 
-## Dashboard Plugins (Extend the UI)
+## Плагины Дашборда (Расширение UI)
 
-The dashboard is pluggable. A plugin can add its own tab, call the existing API, and optionally register new backend endpoints — all without touching the dashboard source.
+Дашборд расширяемый. Плагин может добавить свою вкладку, вызывать существующий API и опционально регистрировать новые бэкенд-эндпоинты — всё без изменения исходного кода дашборда.
 
-### Minimum Plugin
+### Минимальный плагин
 
 ```bash
 mkdir -p ~/.hermes/plugins/my-plugin/dashboard/dist
@@ -305,63 +305,63 @@ mkdir -p ~/.hermes/plugins/my-plugin/dashboard/dist
 })();
 ```
 
-Refresh the dashboard — your tab appears in the nav bar.
+Обновите дашборд — ваша вкладка появится в навигации.
 
-Plugins live next to existing CLI/gateway plugins under `~/.hermes/plugins/`. You can ship a plugin that provides a CLI tool *and* a dashboard tab from the same directory.
+Плагины располагаются рядом с существующими CLI/шлюз-плагинами в `~/.hermes/plugins/`. Вы можете создать плагин, предоставляющий CLI-инструмент *и* вкладку дашборда из одной директории.
 
-### Plugin Layout
+### Структура плагина
 
 ```
 ~/.hermes/plugins/my-plugin/
-├── plugin.yaml              # optional — existing CLI/gateway plugin manifest
-├── __init__.py              # optional — existing CLI/gateway hooks
-└── dashboard/               # dashboard extension
-    ├── manifest.json        # required — tab config, icon, entry point
+├── plugin.yaml              # опционально — манифест существующего CLI/шлюз-плагина
+├── __init__.py              # опционально — существующие CLI/шлюз-хуки
+└── dashboard/               # расширение дашборда
+    ├── manifest.json        # обязательно — конфиг вкладки, иконка, точка входа
     ├── dist/
-    │   ├── index.js         # required — pre-built JS bundle
-    │   └── style.css        # optional — custom CSS
-    └── plugin_api.py        # optional — backend API routes
+    │   ├── index.js         # обязательно — пред-собранный JS-бандл
+    │   └── style.css        # опционально — пользовательский CSS
+    └── plugin_api.py        # опционально — бэкенд API-маршруты
 ```
 
 ---
 
-## Troubleshooting
+## Устранение неполадок
 
-### "Missing web dependencies"
+### "Отсутствуют веб-зависимости"
 
 ```bash
 pip install hermes-agent[web]
 ```
 
-Or reinstall with `[all]` to get every optional extra.
+Или переустановите с `[all]`, чтобы получить все опциональные расширения.
 
-### "Frontend not built"
+### "Фронтенд не собран"
 
-The dashboard tries to auto-build the frontend on first launch if `npm` is on PATH. If it can't, build manually:
+Дашборд пытается auto-собрать фронтенд при первом запуске, если `npm` есть в PATH. Если не получается, соберите вручную:
 
 ```bash
 cd ~/.hermes/hermes-agent/hermes_agent/web_dashboard/frontend
 npm install && npm run build
 ```
 
-### "Port 9119 already in use"
+### "Порт 9119 уже используется"
 
 ```bash
 hermes dashboard --port 9200
 ```
 
-### Dashboard shows stale data
+### Дашборд показывает устаревшие данные
 
-Hit the browser refresh button. Status polls every 5s; other pages reload on navigation.
+Нажмите кнопку обновления в браузере. Статус опрашивается каждые 5с; остальные страницы перезагружаются при навигации.
 
-### Changed a config but it didn't take effect
+### Изменил конфиг, но он не вступил в силу
 
-Config is read at session start and gateway start. For an active CLI session, run `/reload` to pick up `.env` changes. For config.yaml changes, start a new session or restart the gateway.
+Конфиг читается при старте сессии и старте шлюза. Для активной CLI-сессии выполните `/reload`, чтобы подхватить изменения `.env`. Для изменений config.yaml запустите новую сессию или перезапустите шлюз.
 
 ---
 
-## What's Next
+## Что дальше
 
-- **Save on API keys:** [Part 13 — Nous Tool Gateway](./part13-tool-gateway.md)
-- **Speed up responses:** [Part 14 — Fast Mode & Background Watchers](./part14-fast-mode-watchers.md)
-- **Expand reach:** [Part 15 — New Platforms (iMessage, WeChat, Android)](./part15-new-platforms.md)
+- **Экономия на API-ключах:** [Часть 13 — Nous Tool Gateway](./part13-tool-gateway.md)
+- **Ускорение ответов:** [Часть 14 — Fast Mode & Background Watchers](./part14-fast-mode-watchers.md)
+- **Расширение охвата:** [Часть 15 — Новые Платформы (iMessage, WeChat, Android)](./part15-new-platforms.md)

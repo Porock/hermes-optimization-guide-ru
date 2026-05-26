@@ -1,78 +1,78 @@
-# Part 7: The Memory System (Three Tiers That Actually Work)
+# Часть 7: Система памяти (Три уровня, которые действительно работают)
 
-*Hermes has three memory systems. Most people only know about one.*
+*У Hermes три системы памяти. Большинство знает только об одной.*
 
 ---
 
-## The Three Tiers
+## Три уровня
 
-| Tool | What It Does | When It Fires | Cost |
+| Инструмент | Что делает | Когда срабатывает | Стоимость |
 |------|-------------|---------------|------|
-| `memory` | Persistent facts across all sessions | User preferences, environment, lessons learned | Free (local) |
-| `session_search` | Search past conversation transcripts | "What did we decide about X?" or "Remember when we..." | Free (local) |
-| `skill_manage` | Procedural memory — reusable workflows | After fixing a bug, building something complex, or discovering a new approach | Free (local) |
+| `memory` | Постоянные факты во всех сессиях | Предпочтения пользователя, окружение, уроки | Бесплатно (локально) |
+| `session_search` | Поиск в прошлых транскриптах разговоров | "Что мы решили насчёт X?" или "Помнишь, когда..." | Бесплатно (локально) |
+| `skill_manage` | Процедурная память — переиспользуемые рабочие процессы | После исправления бага, построения чего-то сложного или обнаружения нового подхода | Бесплатно (локально) |
 
-All three are **local-first**. No API calls, no embedding costs. They use SQLite and full-text search.
+Все три — **local-first**. Никаких API вызовов, никаких затрат на эмбеддинги. Они используют SQLite и полнотекстовый поиск.
 
-## Tier 1: memory (Persistent Facts)
+## Уровень 1: memory (Постоянные факты)
 
-The `memory` tool saves durable facts that get injected into every future session.
+Инструмент `memory` сохраняет долговечные факты, которые внедряются в каждую будущую сессию.
 
-**What to save:**
-- User preferences ("Terp hates manual steps")
-- Environment details ("5090 PC at 192.168.1.67, port 11434")
-- Tool quirks ("PowerShell needs -Encoding utf8 for Unicode files")
-- Stable conventions ("Use OnlyTerp for GitHub repos")
+**Что сохранять:**
+- Предпочтения пользователя ("Терп ненавидит ручные шаги")
+- Детали окружения ("5090 PC на 192.168.1.67, порт 11434")
+- Особенности инструментов ("PowerShell нужен -Encoding utf8 для Unicode файлов")
+- Стабильные конвенции ("Используй OnlyTerp для GitHub репозиториев")
 
-**What NOT to save:**
-- Task progress (use session_search to recall)
-- Temporary state (TODO lists, current status)
-- Anything that changes frequently
+**Что НЕ сохранять:**
+- Прогресс задачи (используйте session_search для восстановления)
+- Временное состояние (TODO списки, текущий статус)
+- Что-либо, что меняется часто
 
-**Format:** Keep entries under 2000 chars total. Be compact. These get injected into every message.
+**Формат:** Держите записи под 2000 символов. Будьте компактны. Они внедряются в каждое сообщение.
 
 ```python
-# Good
-memory(action="add", target="memory", content="OpenClaw migrated. LightRAG: 4528 entities, float16 vectors (4096d). Telegram bot 8624585264, group -5216536760.")
+# Хорошо
+memory(action="add", target="memory", content="OpenClaw мигрирован. LightRAG: 4528 сущностей, float16 векторы (4096d). Telegram бот 8624585264, группа -5216536760.")
 
-# Bad — too verbose, task-specific
-memory(action="add", target="memory", content="Today I worked on the lead gen pipeline. First I fixed the API key issue, then I updated the quality gate scoring to use a new algorithm, then I tested with 50 leads...")
+# Плохо — слишком многословно, специфично для задачи
+memory(action="add", target="memory", content="Сегодня я работал над воронкой лидов. Сначала я исправил проблему с API ключом, потом я обновил scoring quality gate на новый алгоритм, потом я протестировал с 50 лидами...")
 ```
 
-## Tier 2: session_search (Conversation Recall)
+## Уровень 2: session_search (Воспоминания разговора)
 
-`session_search` searches your entire conversation history across all past sessions.
+`session_search` ищет по всей вашей истории разговоров во всех прошлых сессиях.
 
-**Two modes:**
+**Два режима:**
 
 ```python
-# Browse recent sessions (no cost, instant)
+# Просмотр недавних сессий (бесплатно, мгновенно)
 session_search()
 
-# Search for specific topics (uses LLM to summarize)
+# Поиск по конкретным темам (использует LLM для суммирования)
 session_search(query="hermes optimization guide github")
 session_search(query="LightRAG setup OR embedding model")
 ```
 
-**When to use it:**
-- User says "we did this before" or "remember when"
-- You suspect relevant cross-session context exists
-- You want to check if you've solved a similar problem before
+**Когда использовать:**
+- Пользователь говорит "мы это делали раньше" или "помнишь, когда"
+- Вы подозреваете, что существует релевантный кросс-сессионный контекст
+- Вы хотите проверить, решали ли вы подобную проблему раньше
 
-**Key insight:** session_search is your recency backup. memory is for facts that will still matter in 6 months. If a fact is only relevant to the current project phase, session_search is better than bloating memory.
+**Ключевой инсайт:** session_search — ваш backup на недавнее. memory — для фактов, которые будут важны через 6 месяцев. Если факт релевантен только для текущей фазы проекта, session_search лучше, чем раздувать память.
 
-## Tier 3: skill_manage (Procedural Memory)
+## Уровень 3: skill_manage (Процедурная память)
 
-`skill_manage` saves reusable workflows as skills. This is how Hermes learns.
+`skill_manage` сохраняет переиспользуемые рабочие процессы как навыки (skills). Так Hermes учится.
 
-**When to create a skill:**
-- After a complex task (5+ tool calls)
-- After fixing a tricky error
-- After discovering a non-trivial workflow
-- When the user asks you to remember a procedure
+**Когда создавать навык:**
+- После сложной задачи (5+ вызовов инструментов)
+- После исправления хитрой ошибки
+- После обнаружения нетривиального рабочего процесса
+- Когда пользователь просит вас запомнить процедуру
 
 ```python
-# Create a new skill
+# Создать новый навык
 skill_manage(
     action="create",
     name="supabase-migrate",

@@ -1,41 +1,41 @@
-# r/LocalLLaMA — Post Draft
+# r/LocalLLaMA — Черновик поста
 
-**Title:** I shipped a Hermes guide with runnable skills, 5 production configs, and a one-command VPS bootstrap
+**Заголовок:** Я выпустил гайд по Hermes с устанавливаемыми навыками (skills), 5 продакшн-конфигами и скриптом для развёртывания VPS одной командой
 
-**Flair:** `Resources` or `Tutorial | Guide`
+**Метка (Flair):** `Resources` или `Tutorial | Guide`
 
 ---
 
-## Body
+## Тело поста
 
-r/LocalLLaMA skews toward people who **run their own stuff**, so I'm posting the `homelab` angle specifically.
+r/LocalLLaMA ориентируется на людей, которые **запускают свои собственные системы**, поэтому я пишу с уклоном в `homelab`.
 
-I built a Hermes (Nous Research's agent framework) optimization guide that goes beyond docs. Everything's installable — not just explained.
+Я создал гайд по оптимизации Hermes (фреймворк для агентов (agent) от Nous Research), который выходит за рамки обычной документации. Всё можно установить — не просто прочитать.
 
-**Repo:** https://github.com/OnlyTerp/hermes-optimization-guide
+**Репозиторий:** https://github.com/OnlyTerp/hermes-optimization-guide
 
-**What's in it that'll matter to this sub:**
+**Что внутри, что будет полезно этому сабреддиту:**
 
-- **Homelab reference architecture** — full setup for running Hermes + LightRAG + self-hosted Langfuse on your own box, with Ollama as the default provider and routing only the hard stuff to Sonnet. Tailscale instead of port-forwarding. Scaling ceilings + honest tradeoffs (latency, quality, etc.) included.
+- **Эталонная архитектура для homelab** — полная настройка для запуска Hermes + LightRAG + самостоятельно размещённого Langfuse на собственном сервере, с Ollama в качестве провайдера (provider) по умолчанию и маршрутизацией только сложных задач на Sonnet. Tailscale вместо проброса портов. Потолки масштабирования + честные компромиссы (задержка, качество и т. д.).
 
-- **5 production config templates** — one of them is `cost-optimized.yaml`, which uses Gemini Flash + Cerebras Llama for most traffic and only escalates to Sonnet on explicit opt-in. Typical spend is $0.05–0.30/active-hour.
+- **5 шаблонов продакшн-конфигов** — один из них `cost-optimized.yaml`, который использует Gemini Flash + Cerebras Llama для основного трафика и переключается на Sonnet только при явном согласии. Типичные расходы: $0.05–0.30/активный час.
 
-- **Reproducible benchmarks** — 12 flagship models × 5 tasks (triage / summarize / codefix / deepreason / bulk-extract), methodology + `hermes evals run` command to reproduce.
+- **Воспроизводимые бенчмарки** — 12 флагманских моделей × 5 задач (triage / summarize / codefix / deepreason / bulk-extract), методология + команда `hermes evals run` для воспроизведения.
 
-- **13 installable skills** (`SKILL.md` files with YAML frontmatter — drop into `~/.hermes/skills/`): audit-mcp, rotate-secrets, audit-approval-bypass, nightly-backup, weekly-dep-audit, cost-report, telegram-triage, pr-review, release-notes, daily-inbox-triage, hermes-weekly, spam-trap, meeting-prep.
+- **13 устанавливаемых навыков (skill)** (файлы `SKILL.md` с YAML frontmatter — поместите в `~/.hermes/skills/`): audit-mcp, rotate-secrets, audit-approval-bypass, nightly-backup, weekly-dep-audit, cost-report, telegram-triage, pr-review, release-notes, daily-inbox-triage, hermes-weekly, spam-trap, meeting-prep.
 
-- **Security playbook** (Part 19) — 7-layer defense against prompt injection, written after the Apr 15 "Comment and Control" attack hit Claude Code + Gemini CLI + Copilot Agent.
+- **Гайд по безопасности (Playbook)** (Часть 19) — 7 уровней защиты от инъекций промптов (prompt injection), написан после атаки «Comment and Control» от 15 апреля, поразившей Claude Code + Gemini CLI + Copilot Agent.
 
-- **MCP chapter** (Part 17) — stdio/HTTP transports, 14 servers worth installing today, the trust model, writing your own in 30 lines.
+- **Глава про MCP** (Часть 17) — транспорты stdio/HTTP, 14 серверов, которые стоит установить уже сейчас, модель доверия, написание собственного сервера за 30 строк.
 
-- **Remote sandboxes** (Part 21) — phone-drives-cloud pattern, Modal/Daytona/Fly/E2B. The bulk tar-pipe sync from the Apr 17 Hermes PR is documented.
+- **Удалённые песочницы (Remote sandboxes)** (Часть 21) — паттерн «телефон управляет облаком», Modal/Daytona/Fly/E2B. Описан bulk tar-pipe синк из PR от 17 апреля по Hermes.
 
-**One command to go from fresh VPS to working Hermes:**
+**Одна команда — от свежего VPS до работающего Hermes:**
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/OnlyTerp/hermes-optimization-guide/main/scripts/vps-bootstrap.sh | bash
 ```
 
-MIT license. CI lints skill frontmatter + YAML + markdown links. CHANGELOG + ROADMAP are real.
+Лицензия MIT. CI проверяет frontmatter навыков (skills) + YAML + markdown-ссылки. CHANGELOG и ROADMAP — настоящие.
 
-If this is useful — a star helps more people find it. If something's wrong, open an issue or PR.
+Если было полезно — звезда поможет большему числу людей найти это. Если что-то не так — открывайте issue или PR.

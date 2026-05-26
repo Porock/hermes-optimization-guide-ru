@@ -1,6 +1,6 @@
 # Hermes 最適化ガイド（日本語ショート版）
 
-> [英語版はこちら](./README.md) · このページは入口の要約。本文の章は英語のまま。
+> [英語版はこちら](./README.md) · [Русский](./README-ru.md) · このページは入口の要約。本文の章は英語のまま。
 
 [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)（v0.13.0 まで反映）向けの実戦ガイド + インストール可能な成果物（Skills・設定テンプレ・インフラスクリプト）。
 

@@ -1,11 +1,11 @@
-# Outreach Drafts
+# Черновики для публикации (Outreach Drafts)
 
-Copy-ready materials for announcing / linking / promoting the guide. Keep these **out** of `README.md` — they're for posting, not for the repo front.
+Готовые материалы для анонсирования / расшаривания / продвижения гайда. Храните их **вне** `README.md` — они предназначены для публикации, а не для главной страницы репозитория.
 
-- [`launch-tweet-thread.md`](./launch-tweet-thread.md) — X/Twitter launch thread, 8 tweets
-- [`hacker-news-post.md`](./hacker-news-post.md) — HN "Show HN" post + self-comment
-- [`reddit-localllama.md`](./reddit-localllama.md) — r/LocalLLaMA post
-- [`nous-upstream-pr-body.md`](./nous-upstream-pr-body.md) — body for a PR to `NousResearch/hermes-agent` README
-- [`blog-post-long.md`](./blog-post-long.md) — long-form blog post / Substack draft
+- [`launch-tweet-thread.md`](./launch-tweet-thread.md) — тред для X/Twitter, 8 твитов
+- [`hacker-news-post.md`](./hacker-news-post.md) — пост «Show HN» + собственный комментарий
+- [`reddit-localllama.md`](./reddit-localllama.md) — пост для r/LocalLLaMA
+- [`nous-upstream-pr-body.md`](./nous-upstream-pr-body.md) — тело PR в README `NousResearch/hermes-agent`
+- [`blog-post-long.md`](./blog-post-long.md) — развёрнутая статья / черновик для Substack
 
-All drafts are **suggestions**. Fork the tone to yours before posting.
+Все черновики — **рекомендации**. Адаптируйте тон под себя перед публикацией.

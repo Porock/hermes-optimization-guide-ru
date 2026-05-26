@@ -1,82 +1,82 @@
-# Part 13: The Nous Tool Gateway (One Subscription, Four Tools, Zero Extra Keys)
+# Часть 13: Nous Tool Gateway (Одна подписка, четыре инструмента, ноль дополнительных ключей)
 
-*If you have a paid Nous Portal subscription, you already have web search, image generation, text-to-speech, and browser automation — you just haven't turned them on yet.*
+*Если у вас платная подписка Nous Portal, у вас уже есть веб-поиск, генерация изображений, синтез речи и автоматизация браузера — вы просто ещё не включили их.*
 
 ---
 
-## What It Is
+## Что это такое
 
-Historically, if you wanted Hermes to search the web, generate images, speak, or drive a browser, you needed **four separate accounts**:
+Исторически, чтобы Hermes мог искать в интернете, генерировать изображения, говорить или управлять браузером, вам требовалось **четыре отдельные учётные записи**:
 
-- Firecrawl / Exa / Tavily / Parallel for web search
-- FAL for image generation
-- OpenAI / ElevenLabs for TTS
-- Browser Use / Browserbase for browser automation
+- Firecrawl / Exa / Tavily / Parallel для веб-поиска
+- FAL для генерации изображений
+- OpenAI / ElevenLabs для TTS
+- Browser Use / Browserbase для автоматизации браузера
 
-That's four signups, four API keys, four billing pages, and four different free-tier limits.
+Это четыре регистрации, четыре API-ключа, четыре страницы оплаты и четыре разных лимита бесплатного тарифа.
 
-The **Nous Tool Gateway** collapses all of that into one line in your config. If you're a paid [Nous Portal](https://portal.nousresearch.com) subscriber, tool usage bills against your subscription — no extra keys required.
+**Nous Tool Gateway** сводит всё это к одной строке в вашей конфигурации. Если вы платный подписчик [Nous Portal](https://portal.nousresearch.com), использование инструментов списывается с вашей подписки — никаких дополнительных ключей не требуется.
 
-| Tool | Upstream | Direct key you'd otherwise need |
+| Инструмент (tool) | Провайдер (provider) | Прямой ключ, который иначе потребовался бы |
 |------|----------|---------------------------------|
-| Web search & extract | Firecrawl | `FIRECRAWL_API_KEY`, `EXA_API_KEY`, `PARALLEL_API_KEY`, `TAVILY_API_KEY` |
-| Image generation | FAL (FLUX 2 Pro + upscaling) | `FAL_KEY` |
-| Text-to-speech | OpenAI TTS | `VOICE_TOOLS_OPENAI_KEY`, `ELEVENLABS_API_KEY` |
-| Browser automation | Browser Use | `BROWSER_USE_API_KEY`, `BROWSERBASE_API_KEY` |
+| Веб-поиск и извлечение | Firecrawl | `FIRECRAWL_API_KEY`, `EXA_API_KEY`, `PARALLEL_API_KEY`, `TAVILY_API_KEY` |
+| Генерация изображений | FAL (FLUX 2 Pro + апскейлинг) | `FAL_KEY` |
+| Синтез речи | OpenAI TTS | `VOICE_TOOLS_OPENAI_KEY`, `ELEVENLABS_API_KEY` |
+| Автоматизация браузера | Browser Use | `BROWSER_USE_API_KEY`, `BROWSERBASE_API_KEY` |
 
-Each tool is opt-in. You can route **any combination** through the gateway and keep direct keys for the rest — for example, gateway for web + images, your own ElevenLabs key for TTS.
+Каждый инструмент подключается отдельно. Вы можете направлять **любую комбинацию** через шлюз (gateway), а для остального использовать прямые ключи — например, шлюз для веба и изображений, а свой ключ ElevenLabs для TTS.
 
 ---
 
-## Who Gets It
+## Кто его получает
 
-Paid [Nous Portal](https://portal.nousresearch.com/manage-subscription) subscribers. Free-tier accounts don't have gateway access.
+Платные подписчики [Nous Portal](https://portal.nousresearch.com/manage-subscription). Учётные записи бесплатного тарифа не имеют доступа к шлюзу (gateway).
 
-Check your status:
+Проверьте свой статус:
 
 ```bash
 hermes status
 ```
 
-Look for the **Nous Tool Gateway** section. It shows which tools are active via the gateway, which are using direct keys, and which aren't configured yet.
+Найдите секцию **Nous Tool Gateway**. Там показано, какие инструменты активны через шлюз (gateway), какие используют прямые ключи, а какие ещё не настроены.
 
 ---
 
-## Enabling the Gateway
+## Включение шлюза (gateway)
 
-### Option A: During Model Setup (Easiest)
+### Вариант А: При настройке модели (Проще всего)
 
-When you run `hermes model` and pick **Nous Portal** as your provider, Hermes auto-prompts you to enable the Tool Gateway:
+Когда вы запускаете `hermes model` и выбираете **Nous Portal** в качестве провайдера (provider), Hermes автоматически предложит вам включить Tool Gateway:
 
 ```text
-Your Nous subscription includes the Tool Gateway.
-The Tool Gateway gives you access to web search, image generation,
-text-to-speech, and browser automation through your Nous subscription.
-No need to sign up for separate API keys — just pick the tools you want.
+Ваша подписка Nous включает Tool Gateway.
+Tool Gateway даёт вам доступ к веб-поиску, генерации изображений,
+синтезу речи и автоматизации браузера через вашу подписку Nous.
+Не нужно регистрироваться для получения отдельных API-ключей — просто выберите нужные инструменты.
 
-  ○ Web search & extract (Firecrawl)   — not configured
-  ○ Image generation (FAL)             — not configured
-  ○ Text-to-speech (OpenAI TTS)        — not configured
-  ○ Browser automation (Browser Use)   — not configured
-  ● Enable Tool Gateway
-  ○ Skip
+  ○ Web search & extract (Firecrawl)   — не настроено
+  ○ Image generation (FAL)            — не настроено
+  ○ Text-to-speech (OpenAI TTS)        — не настроено
+  ○ Browser automation (Browser Use)   — не настроено
+  ● Включить Tool Gateway
+  ○ Пропустить
 ```
 
-Select **Enable Tool Gateway**. Done.
+Выберите **Включить Tool Gateway**. Готово.
 
-If you already have direct keys for some tools, the prompt adapts — you can enable the gateway for everything (existing keys stay in `.env` but aren't used at runtime), enable it only for tools that aren't configured yet, or skip entirely.
+Если у вас уже есть прямые ключи для некоторых инструментов, запрос адаптируется — вы можете включить шлюз (gateway) для всего (существующие ключи останутся в `.env`, но не будут использоваться во время выполнения), включить его только для инструментов, которые ещё не настроены, или полностью пропустить.
 
-### Option B: Per-Tool via `hermes tools`
+### Вариант Б: Для каждого инструмента через `hermes tools`
 
 ```bash
 hermes tools
 ```
 
-Pick a category (Web, Browser, Image Generation, or TTS), then choose **Nous Subscription** as the provider. That flips `use_gateway: true` for that tool in `config.yaml`.
+Выберите категорию (Web, Browser, Image Generation или TTS), затем выберите **Nous Subscription** в качестве провайдера (provider). Это установит `use_gateway: true` для этого инструмента в `config.yaml`.
 
-### Option C: Manual Config
+### Вариант В: Ручная настройка
 
-Edit `~/.hermes/config.yaml`:
+Отредактируйте `~/.hermes/config.yaml`:
 
 ```yaml
 web:
@@ -97,28 +97,28 @@ browser:
 
 ---
 
-## How Precedence Works
+## Как работает приоритет
 
-Per tool, the runtime checks `use_gateway` first:
+Для каждого инструмента (tool) среда выполнения сначала проверяет `use_gateway`:
 
-- `use_gateway: true` → **always** route through the gateway, even if direct API keys exist in `.env`
-- `use_gateway: false` (or unset) → use direct keys if available, fall back to the gateway only when no direct keys exist
+- `use_gateway: true` → **всегда** направлять через шлюз (gateway), даже если прямые API-ключи существуют в `.env`
+- `use_gateway: false` (или не задано) → использовать прямые ключи, если они доступны, и возвращаться к шлюзу (gateway) только когда прямые ключи отсутствуют
 
-This means you can have an `FAL_KEY` and a Nous subscription in `.env` at the same time and deterministically pick which one to use. No deleting keys, no commenting lines.
+Это означает, что вы можете одновременно иметь `FAL_KEY` и подписку Nous в `.env` и детерминированно выбирать, какой из них использовать. Удалять ключи, закомментировать строки не нужно.
 
-### The Old Env Var Is Gone
+### Старая переменная окружения ушла
 
-`HERMES_ENABLE_NOUS_MANAGED_TOOLS` was a hidden env flag in v0.9. It's gone in v0.10 — replaced by clean subscription-based detection plus the per-tool `use_gateway` config. If you had that set, `hermes upgrade` migrates it for you.
+`HERMES_ENABLE_NOUS_MANAGED_TOOLS` была скрытым флагом окружения в v0.9. В v0.10 она ушла — заменена на чистое определение на основе подписки плюс конфигурацию `use_gateway` для каждого инструмента. Если она была у вас установлена, `hermes upgrade` мигрирует её за вас.
 
 ---
 
-## Verifying It's Working
+## Проверка работы
 
 ```bash
 hermes status
 ```
 
-Look for:
+Ищите:
 
 ```text
 ◆ Nous Tool Gateway
@@ -130,83 +130,83 @@ Look for:
   Modal         ○ available via subscription (optional)
 ```
 
-Rows marked "active via Nous subscription" are routed through the gateway. Rows with their own keys show which provider is active.
+Строки, отмеченные "active via Nous subscription", направляются через шлюз (gateway). Строки со своими ключами показывают, какой провайдер (provider) активен.
 
-You can also see gateway usage in the Dashboard's **Analytics** tab (Part 12) — gateway calls count toward your Nous subscription and are aggregated alongside LLM token usage.
+Вы также можете видеть использование шлюза (gateway) на вкладке **Analytics** панели мониторинга (Часть 12) — вызовы шлюза (gateway) учитываются в вашей подписке Nous и агрегируются вместе с токенами LLM.
 
 ---
 
-## Switching Back to Direct Keys
+## Переключение обратно на прямые ключи
 
-Interactive:
+Интерактивно:
 
 ```bash
 hermes tools
-# Pick the tool → choose a direct provider
+# Выберите инструмент → выберите прямой провайдер
 ```
 
-Manual:
+Вручную:
 
 ```yaml
 web:
   backend: firecrawl
-  use_gateway: false   # now uses FIRECRAWL_API_KEY from .env
+  use_gateway: false   # теперь использует FIRECRAWL_API_KEY из .env
 ```
 
-When you pick a non-gateway provider in `hermes tools`, `use_gateway` is automatically set to `false` to prevent contradictory config.
+Когда вы выбираете непровайдерный провайдер (provider) в `hermes tools`, `use_gateway` автоматически устанавливается в `false`, чтобы предотвратить противоречивую конфигурацию (config).
 
 ---
 
 ## Self-Hosted / Enterprise Gateway
 
-If you're running your own gateway endpoint (enterprise deployments, staging environments), override the defaults in `~/.hermes/.env`:
+Если вы запускаете собственный endpoint шлюза (gateway) (корпоративные развёртывания (deployment), тестовые среды), переопределите значения по умолчанию в `~/.hermes/.env`:
 
 ```bash
-TOOL_GATEWAY_DOMAIN=nousresearch.com     # base domain for routing
-TOOL_GATEWAY_SCHEME=https                # http or https (default: https)
-TOOL_GATEWAY_USER_TOKEN=your-token       # auth token (normally auto-populated)
-FIRECRAWL_GATEWAY_URL=https://...        # override a specific endpoint
+TOOL_GATEWAY_DOMAIN=nousresearch.com     # базовый домен для маршрутизации
+TOOL_GATEWAY_SCHEME=https                # http или https (по умолчанию: https)
+TOOL_GATEWAY_USER_TOKEN=your-token       # токен аутентификации (обычно заполняется автоматически)
+FIRECRAWL_GATEWAY_URL=https://...        # переопределить конкретный endpoint
 ```
 
-These env vars are visible regardless of subscription status — they're here so custom infrastructure works without code changes.
+Эти переменные окружения видны независимо от статуса подписки — они здесь для того, чтобы пользовательская инфраструктура работала без изменений кода.
 
 ---
 
 ## FAQ
 
-### Do I have to delete my existing API keys?
-No. When `use_gateway: true` is set, the runtime skips direct keys and routes through the gateway. Your keys stay in `.env`. Flip back to them any time.
+### Нужно ли удалять существующие API-ключи?
+Нет. Когда установлено `use_gateway: true`, среда выполнения пропускает прямые ключи и направляет через шлюз (gateway). Ваши ключи остаются в `.env`. Переключитесь на них в любое время.
 
-### Can I mix gateway and direct keys?
-Yes — it's per-tool. Gateway for web + images, ElevenLabs for TTS, Browserbase for browsing is a perfectly normal setup.
+### Можно ли смешивать шлюз (gateway) и прямые ключи?
+Да — это для каждого инструмента (tool). Шлюз (gateway) для веба + изображений, ElevenLabs для TTS, Browserbase для браузера — это вполне нормальная настройка.
 
-### What happens if my subscription lapses?
-Tools routed through the gateway stop working. Either renew at [portal.nousresearch.com](https://portal.nousresearch.com/manage-subscription) or switch those tools to direct keys via `hermes tools`.
+### Что произойдёт, если моя подписка истечёт?
+Инструменты, направленные через шлюз (gateway), перестанут работать. Либо продлите на [portal.nousresearch.com](https://portal.nousresearch.com/manage-subscription), либо переключите эти инструменты на прямые ключи через `hermes tools`.
 
-### Does it work on Telegram / Discord / Slack / etc.?
-Yes. The gateway operates at the tool runtime level, not the entry-point level. It works the same whether you're on the CLI, a messaging platform, a cron job, or the dashboard's REST API.
+### Это работает на Telegram / Discord / Slack / и т.д.?
+Да. Шлюз (gateway) работает на уровне среды выполнения инструментов (tool runtime), а не на уровне точки входа. Он работает одинаково, независимо от того, используете ли вы CLI, мессенджер, cron-задачу или REST API панели мониторинга.
 
-### Is Modal (serverless terminal) included?
-No — Modal is an optional subscription add-on. Configure it separately via `hermes setup terminal` or in `config.yaml`. The Tool Gateway prompt doesn't enable it automatically.
+### Включён ли Modal (serverless терминал)?
+Нет — Modal — это дополнительная опция подписки. Настройте его отдельно через `hermes setup terminal` или в `config.yaml`. Запрос Tool Gateway не включает его автоматически.
 
-### Will the gateway auto-fall-back if the upstream is down?
-The gateway itself is a thin proxy — failures return the upstream's error. If you want resilience, keep a direct key as a fallback (`use_gateway: false` + `FIRECRAWL_API_KEY` set) and flip it on when the gateway has an incident.
+### Будет ли шлюз (gateway) автоматически возвращаться к резервному варианту, если upstream недоступен?
+Сам шлюз (gateway) — это тонкий прокси — ошибки возвращают ошибку upstream. Если вам нужна устойчивость, оставьте прямой ключ как резерв (`use_gateway: false` + `FIRECRAWL_API_KEY` установлен) и включите его, когда у шлюза (gateway) будет инцидент.
 
 ---
 
 ## Cost Playbook
 
-Rough guidance for picking between gateway vs direct keys:
+Примерное руководство по выбору между шлюзом (gateway) и прямыми ключами:
 
-- **Heavy web search + browsing + images in the same month:** gateway almost always wins — one subscription covers all four.
-- **Only heavy TTS (audio generation):** ElevenLabs direct is often cheaper than the gateway's OpenAI TTS pricing. Keep TTS off the gateway.
-- **Low volume, experimenting:** gateway is perfect — no signups, no free-tier juggling, no surprise overages.
-- **Enterprise / regulated environment:** self-hosted gateway with the `TOOL_GATEWAY_*` env vars pointing at your own proxy.
+- **Активный веб-поиск + браузинг + изображения в том же месяце:** шлюз (gateway) почти всегда выигрывает — одна подписка покрывает все четыре.
+- **Только активный TTS (генерация аудио):** ElevenLabs часто дешевле, чем TTS OpenAI через шлюз (gateway). Оставьте TTS вне шлюза (gateway).
+- **Низкий объём, эксперименты:** шлюз (gateway) идеален — никаких регистраций, никакой возни с бесплатными тарифами, никаких неожиданных перерасходов.
+- **Корпоративная / регулируемая среда:** self-hosted шлюз (gateway) с переменными окружения `TOOL_GATEWAY_*`, указывающими на ваш собственный прокси.
 
 ---
 
-## What's Next
+## Что дальше
 
-- **Local UI for everything:** [Part 12 — The Local Web Dashboard](./part12-web-dashboard.md)
-- **Faster model responses:** [Part 14 — Fast Mode & Background Watchers](./part14-fast-mode-watchers.md)
-- **Expand to iMessage / WeChat / Android:** [Part 15 — New Platforms](./part15-new-platforms.md)
+- **Локальный UI для всего:** [Часть 12 — Локальная веб-панель мониторинга](./part12-web-dashboard.md)
+- **Более быстрые ответы модели:** [Часть 14 — Fast Mode и фоновые наблюдатели](./part14-fast-mode-watchers.md)
+- **Расширение на iMessage / WeChat / Android:** [Часть 15 — Новые платформы](./part15-new-platforms.md)

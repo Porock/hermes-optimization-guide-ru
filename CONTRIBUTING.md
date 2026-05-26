@@ -1,39 +1,39 @@
-# Contributing
+# Участие в разработке
 
-This guide is built in public. PRs welcome.
+Это руководство создаётся публично. PR приветствуются.
 
-## What's in scope
+## Что входит в scope
 
-- ✅ Corrections (docs drift fast — features, prices, PR numbers)
-- ✅ New skills under `skills/` (runnable `SKILL.md` files)
-- ✅ New config templates under `templates/config/`
-- ✅ New MCP / dashboard / tool entries in `ECOSYSTEM.md`
-- ✅ Benchmark contributions under `benchmarks/` (with methodology notes)
-- ✅ New diagrams in `diagrams/` (Mermaid preferred)
-- ✅ Typo fixes, cross-link fixes, formatting
+- ✅ Исправления (документация быстро устаревает — функции, цены, номера PR)
+- ✅ Новые навыки (skills) в `skills/` (исполняемые файлы `SKILL.md`)
+- ✅ Новые шаблоны конфигов в `templates/config/`
+- ✅ Новые записи MCP / dashboard / инструментов (tools) в `ECOSYSTEM.md`
+- ✅ Вклад в бенчмарки в `benchmarks/` (с заметками о методологии)
+- ✅ Новые диаграммы в `diagrams/` (предпочтительно Mermaid)
+- ✅ Исправление опечаток, перекрёстных ссылок, форматирования
 
-## What's out of scope
+## Что не входит в scope
 
-- ❌ Marketing content for specific commercial products (ecosystem entries should be *descriptive*, not promotional)
-- ❌ Anything relying on private/undocumented Hermes APIs — wait for the public release
-- ❌ Code or configs that embed secrets directly
+- ❌ Маркетинговый контент для коммерческих продуктов (записи в экосистеме должны быть *описательными*, не рекламными)
+- ❌ Всё, что опирается на закрытые/недокументированные API Hermes — дождитесь публичного релиза
+- ❌ Код или конфиги, напрямую содержащие секреты
 
-## PR checklist
+## Чек-лист PR
 
-- [ ] Clear title (`docs:`, `skill:`, `template:`, `bench:`, `fix:` prefixes welcome)
-- [ ] For skills: follow the `skills/README.md` structure (frontmatter, procedure, security notes, cron example if applicable)
-- [ ] For templates: comment every non-obvious field; include a header explaining what the template is *for*
-- [ ] For benchmark entries: include a reproduction command and date of measurement
-- [ ] No secrets, even in examples — use `${VAR}` placeholders
-- [ ] Cross-links use relative paths (`./partN-foo.md`) so they work in GitHub, VSCode, and future static-site renders
+- [ ] Понятный заголовок (префиксы `docs:`, `skill:`, `template:`, `bench:`, `fix:` приветствуются)
+- [ ] Для навыков (skills): следуйте структуре из `skills/README.md` (frontmatter, процедура, заметки по безопасности, пример cron если применимо)
+- [ ] Для шаблонов: комментируйте каждое неочевидное поле; добавьте заголовок с пояснением, для чего шаблон
+- [ ] Для бенчмарков: укажите команду для воспроизведения и дату измерения
+- [ ] Никаких секретов, даже в примерах — используйте плейсхолдеры `${VAR}`
+- [ ] Перекрёстные ссылки используют относительные пути (`./partN-foo.md`), чтобы они работали в GitHub, VSCode и будущих статических сборках
 
-## Repo layout reference
+## Структура репозитория (repository)
 
 ```
 .
 ├── README.md
 ├── CHANGELOG.md
-├── CONTRIBUTING.md                  ← you are here
+├── CONTRIBUTING.md                  ← вы здесь
 ├── ECOSYSTEM.md
 ├── ROADMAP.md
 ├── LICENSE
@@ -61,22 +61,22 @@ This guide is built in public. PRs welcome.
 └── docs/quickstart.md
 ```
 
-## Style notes
+## Заметки по стилю
 
-- **Plain English over jargon.** Explain *why*, not just *what*.
-- **Runnable over explained.** If you can ship a working template or skill alongside a doc section, do.
-- **Receipts.** Link PRs, release notes, advisories. Date anything that drifts (prices, benchmarks).
-- **Opinionated where it matters.** Saying "Sonnet for coding" beats "here are 7 models, pick one."
+- **Простой язык вместо жаргона.** Объясняйте *почему*, а не только *что*.
+- **Работоспособность вместо описаний.** Если можете добавить рабочий шаблон или навык (skill) рядом с разделом документации — сделайте это.
+- **Подтверждения.** Ссылайтесь на PR, релиз-ноуты, уведомления. Указывайте дату для всего, что устаревает (цены, бенчмарки).
+- **Чёткая позиция там, где это важно.** Сказать «Sonnet для кодинга» лучше, чем «вот 7 моделей, выбирайте».
 
-## Local preview
+## Локальный просмотр
 
-Any markdown renderer will do. We test against GitHub's renderer as the source of truth.
+Подойдёт любой рендерер Markdown. Мы тестируем по рендереру GitHub как источнику истины.
 
 ```bash
-npx -y prettier --check "**/*.md"          # optional, soft style check
-npx -y markdown-link-check README.md       # cross-link validation
+npx -y prettier --check "**/*.md"          # опционально, мягкая проверка стиля
+npx -y markdown-link-check README.md       # валидация перекрёстных ссылок
 ```
 
-## Code of Conduct
+## Кодекс поведения
 
-See [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md). TL;DR: be kind, assume good faith, focus on the work.
+См. [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md). Если кратко: будьте добры, исходите из добрых намерений, сосредоточьтесь на работе.

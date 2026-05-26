@@ -1,113 +1,113 @@
-# Benchmarks
+# Тесты производительности (Benchmarks)
 
-Real, reproducible cost + latency benchmarks across flagship models, run on standardized tasks. This folder contains the **methodology**, the **task set**, and the **raw results**.
+Реальные, воспроизводимые тесты производительности (benchmarks) стоимости и задержки на флагманских моделях, запускаемые на стандартизированных задачах. Эта папка содержит **методологию**, **набор задач** и **сырые результаты**.
 
-> ⚠ Benchmark numbers drift as providers re-price and models update. The committed results are a dated April 2026 snapshot; `matrix.yaml` has been refreshed with May 2026 frontier IDs. Re-run with `benchmarks/run.sh` (stub below) before quoting numbers externally.
-
----
-
-## Methodology
-
-1. **Tasks.** Five fixed tasks covering the common Hermes workloads:
-   - `T1_triage`: classify 100 inbound Telegram messages (cheap/short)
-   - `T2_summarize`: summarize a 200K-token research doc into 1 page
-   - `T3_codefix`: diagnose + patch a deliberate bug in a 5K-line repo
-   - `T4_deepreason`: solve a 3-step math-with-explanation problem (MATH subset)
-   - `T5_bulk_extract`: extract structured JSON from 50 web pages
-
-2. **Measurements:**
-   - **$/task** — total provider cost (in + out + cached) in USD
-   - **p50 latency** (seconds)
-   - **p95 latency**
-   - **Quality** — binary pass/fail on a held-out rubric scored by two independent models + 1 human spot-check per cell
-   - **Stability** — % of runs with deterministic output at `temperature=0`
-
-3. **Infra.** All tasks routed through Hermes (`hermes eval run`) on a Hetzner CX22 in `nbg1`. Runs are batched in parallel where the provider allows.
-
-4. **Dedup.** Each task runs 5 times; we report the median (or mean for cost).
+> ⚠ Числа тестов производительности (benchmark) дрейфуют по мере изменения цен провайдеров (providers) и обновления моделей. Зафиксированные результаты — это снимок от апреля 2026; `matrix.yaml` обновлён с идентификаторами frontier-моделей мая 2026. Перезапустите с помощью `benchmarks/run.sh` (см. ниже) перед цитированием чисел вовне.
 
 ---
 
-## Dated results snapshot — 2026-04-17
+## Методология
 
-Retail list prices; some providers may offer committed-use discounts.
+1. **Задачи.** Пять фиксированных задач, покрывающих типовые нагрузки Hermes:
+   - `T1_triage`: классификация 100 входящих Telegram-сообщений (дёшево/коротко)
+   - `T2_summarize`: саммаризация исследовательского документа на 200K токенов в 1 страницу
+   - `T3_codefix`: диагностика и исправление намеренной ошибки в репозитории на 5K строк
+   - `T4_deepreason`: решение 3-шаговой задачи с объяснением (подмножество MATH)
+   - `T5_bulk_extract`: извлечение структурированного JSON из 50 веб-страниц
 
-### T1: Triage / classification (100 Telegram messages)
+2. **Измерения:**
+   - **$/задача** — общая стоимость провайдера (provider) (вход + выход + кэш) в USD
+   - **p50 задержка** (секунды)
+   - **p95 задержка**
+   - **Качество** — бинарный проход/непроход по скрытому рубрикатору, оценённому двумя независимыми моделями + 1 проверка человеком на ячейку
+   - **Стабильность** — % запусков с детерминированным выводом при `temperature=0`
 
-| Model | Cost | p50 | p95 | Pass | Notes |
-|---|---:|---:|---:|---:|---|
-| google/gemini-3.1-flash | $0.018 | 0.9s | 1.6s | 98/100 | Refresh against Gemini 3.1 Flash; was default for this workload |
-| cerebras/qwen-3-32b  | $0.004 | 0.3s | 0.7s | 96/100 | Refresh against Qwen 3 32B; was **fastest**, slightly worse on sarcasm |
-| anthropic/claude-haiku-4 | $0.021 | 1.1s | 2.2s | 98/100 | Overkill |
-| openai/gpt-5.5-mini     | $0.031 | 1.4s | 2.9s | 99/100 | Good but pricier; refresh against GPT-5.5-mini |
+3. **Инфраструктура.** Все задачи маршрутизируются через Hermes (`hermes eval run`) на Hetzner CX22 в `nbg1`. Запуски группируются параллельно там, где позволяет провайдер (provider).
 
-**Recommendation:** Gemini Flash for quality-first, Cerebras/Qwen for latency-first. Re-run before publishing because May 2026 model IDs changed.
-
-### T2: Summarize 200K-token doc
-
-| Model | Cost | p50 | p95 | Pass | Notes |
-|---|---:|---:|---:|---:|---|
-| google/gemini-3.1-pro   | $0.31 | 22s | 38s | ✅ | Refresh against Gemini 3.1 Pro; was best quality, 1M context |
-| google/gemini-3.1-flash | $0.08 | 11s | 19s | ✅ | Refresh against Gemini 3.1 Flash; was 4x cheaper, acceptable quality |
-| anthropic/claude-sonnet-5 | $0.72 | 19s | 31s | ✅ | Caps at 200K; refresh against Sonnet 5 |
-| openai/gpt-5.5 | $0.90 | 26s | 45s | ✅ | Refresh against GPT-5.5 |
-
-**Recommendation:** Flash by default, Pro when you need the extra precision.
-
-### T3: Code fix in 5K-line repo
-
-| Model | Cost | p50 | p95 | Pass | Notes |
-|---|---:|---:|---:|---:|---|
-| anthropic/claude-sonnet-5 | $0.42 | 28s | 58s | ✅ | Refresh against Sonnet 5 |
-| anthropic/claude-opus-4.7     | $2.10 | 44s | 92s | ✅ | Refresh against Opus 4.7 |
-| openai/gpt-5.5              | $0.88 | 35s | 71s | ✅ | Refresh against GPT-5.5 |
-| moonshot/kimi-k2.6          | $0.09 | 19s | 44s | ✅ | Refresh against Kimi K2.6 |
-| zai/glm-5                 | $0.07 | 16s | 39s | ✅ | Refresh against GLM-5 |
-
-**Recommendation:** Kimi K2.6 first, Claude Sonnet 5 on failure/complexity.
-
-### T4: Deep reasoning (3-step MATH)
-
-| Model | Cost | p50 | p95 | Pass | Notes |
-|---|---:|---:|---:|---:|---|
-| openai/gpt-5.5              | $0.11 | 18s | 32s | ✅ | Refresh against GPT-5.5 |
-| anthropic/claude-opus-4.7     | $0.42 | 27s | 46s | ✅ | Refresh against Opus 4.7 |
-| zai/glm-5                 | $0.03 | 9s  | 18s | ✅ | Refresh against GLM-5 |
-| google/gemini-3.1-pro       | $0.08 | 14s | 25s | 4/5 | Refresh against Gemini 3.1 Pro; sometimes skipped steps |
-
-**Recommendation:** GPT-5.5 when stakes are high, GLM-5 for exploration.
-
-### T5: Bulk JSON extraction from 50 web pages
-
-| Model | Cost | p50 | p95 | Pass | Notes |
-|---|---:|---:|---:|---:|---|
-| moonshot/kimi-k2.6          | $0.12 | 38s | 74s | 50/50 | Refresh against Kimi K2.6 |
-| google/gemini-3.1-flash     | $0.29 | 46s | 82s | 50/50 | Refresh against Gemini 3.1 Flash; was slightly slower |
-| cerebras/qwen-3-32b      | $0.08 | 12s | 28s | 48/50 | Refresh against Qwen 3 32B; was **fastest** with some schema drift |
-
-**Recommendation:** Kimi for correctness, Cerebras when latency > perfection.
+4. **Дедупликация.** Каждая задача запускается 5 раз; мы сообщаем медиану (или среднее для стоимости).
 
 ---
 
-## Delta from last snapshot
+## Снимок результатов от 2026-04-17
 
-- 2026-05-14: `benchmarks/matrix.yaml` updated with current frontier IDs (GPT-5.5, Claude Sonnet 5 / Opus 4.7, Gemini 3.1, Kimi K2.6, DeepSeek V4-Pro, Qwen3.6). Results above remain the dated 2026-04-17 run until `hermes evals run` is executed again.
+Розничные цены; некоторые провайдеры (providers) могут предлагать скидки за резервирование.
+
+### T1: Триаж / классификация (100 Telegram-сообщений)
+
+| Модель | Стоимость | p50 | p95 | Проход | Примечания |
+|---|---|---|---:|---:|---:|---:|---|
+| google/gemini-3.1-flash | $0.018 | 0.9s | 1.6s | 98/100 | Обновление Gemini 3.1 Flash; по умолчанию для этой нагрузки |
+| cerebras/qwen-3-32b  | $0.004 | 0.3s | 0.7s | 96/100 | Обновление Qwen 3 32B; **самый быстрый**, немного хуже на сарказме |
+| anthropic/claude-haiku-4 | $0.021 | 1.1s | 2.2s | 98/100 | Избыточно |
+| openai/gpt-5.5-mini     | $0.031 | 1.4s | 2.9s | 99/100 | Хорошо, но дороже; обновление GPT-5.5-mini |
+
+**Рекомендация:** Gemini Flash для качества, Cerebras/Qwen для минимальной задержки. Перезапустите перед публикацией — идентификаторы моделей мая 2026 изменились.
+
+### T2: Саммаризация документа на 200K токенов
+
+| Модель | Стоимость | p50 | p95 | Проход | Примечания |
+|---|---|---|---:|---:|---:|---:|---|
+| google/gemini-3.1-pro   | $0.31 | 22s | 38s | ✅ | Обновление Gemini 3.1 Pro; лучшее качество, контекст 1M |
+| google/gemini-3.1-flash | $0.08 | 11s | 19s | ✅ | Обновление Gemini 3.1 Flash; в 4 раза дешевле, приемлемое качество |
+| anthropic/claude-sonnet-5 | $0.72 | 19s | 31s | ✅ | Ограничение 200K; обновление Sonnet 5 |
+| openai/gpt-5.5 | $0.90 | 26s | 45s | ✅ | Обновление GPT-5.5 |
+
+**Рекомендация:** Flash по умолчанию, Pro когда нужна дополнительная точность.
+
+### T3: Исправление кода в репозитории на 5K строк
+
+| Модель | Стоимость | p50 | p95 | Проход | Примечания |
+|---|---|---|---:|---:|---:|---:|---|
+| anthropic/claude-sonnet-5 | $0.42 | 28s | 58s | ✅ | Обновление Sonnet 5 |
+| anthropic/claude-opus-4.7     | $2.10 | 44s | 92s | ✅ | Обновление Opus 4.7 |
+| openai/gpt-5.5              | $0.88 | 35s | 71s | ✅ | Обновление GPT-5.5 |
+| moonshot/kimi-k2.6          | $0.09 | 19s | 44s | ✅ | Обновление Kimi K2.6 |
+| zai/glm-5                 | $0.07 | 16s | 39s | ✅ | Обновление GLM-5 |
+
+**Рекомендация:** Kimi K2.6 в первую очередь, Claude Sonnet 5 при ошибках/сложности.
+
+### T4: Глубокое рассуждение (3-шаговая MATH)
+
+| Модель | Стоимость | p50 | p95 | Проход | Примечания |
+|---|---|---|---:|---:|---:|---:|---|
+| openai/gpt-5.5              | $0.11 | 18s | 32s | ✅ | Обновление GPT-5.5 |
+| anthropic/claude-opus-4.7     | $0.42 | 27s | 46s | ✅ | Обновление Opus 4.7 |
+| zai/glm-5                 | $0.03 | 9s  | 18s | ✅ | Обновление GLM-5 |
+| google/gemini-3.1-pro       | $0.08 | 14s | 25s | 4/5 | Обновление Gemini 3.1 Pro; иногда пропускает шаги |
+
+**Рекомендация:** GPT-5.5 когда ставки высоки, GLM-5 для исследований.
+
+### T5: Массовое извлечение JSON из 50 веб-страниц
+
+| Модель | Стоимость | p50 | p95 | Проход | Примечания |
+|---|---|---|---:|---:|---:|---:|---|
+| moonshot/kimi-k2.6          | $0.12 | 38s | 74s | 50/50 | Обновление Kimi K2.6 |
+| google/gemini-3.1-flash     | $0.29 | 46s | 82s | 50/50 | Обновление Gemini 3.1 Flash; немного медленнее |
+| cerebras/qwen-3-32b      | $0.08 | 12s | 28s | 48/50 | Обновление Qwen 3 32B; **самый быстрый** с небольшим дрейфом схемы |
+
+**Рекомендация:** Kimi для корректности, Cerebras когда задержка важнее идеала.
 
 ---
 
-## Reproducing
+## Изменения относительно предыдущего снимка
+
+- 2026-05-14: `benchmarks/matrix.yaml` обновлён текущими frontier-идентификаторами (GPT-5.5, Claude Sonnet 5 / Opus 4.7, Gemini 3.1, Kimi K2.6, DeepSeek V4-Pro, Qwen3.6). Результаты выше остаются снимком от 2026-04-17 до повторного запуска `hermes evals run`.
+
+---
+
+## Воспроизведение
 
 ```bash
-# Requires the five eval files in benchmarks/tasks/*.yaml
-# and the model list in benchmarks/matrix.yaml.
+# Требуются пять eval-файлов в benchmarks/tasks/*.yaml
+# и список моделей в benchmarks/matrix.yaml.
 hermes evals run --matrix benchmarks/matrix.yaml --output benchmarks/results/$(date +%Y-%m-%d).json
 python benchmarks/render.py benchmarks/results/*.json > benchmarks/README.md
 ```
 
 ---
 
-## Contributing benchmarks
+## Добавление тестов производительности (benchmarks)
 
-- Add a new task under `benchmarks/tasks/<name>.yaml` with a **held-out rubric** file in `benchmarks/rubrics/<name>.md`.
-- Open a PR — we'll merge after one clean independent run.
-- Please report both the retail price *and* your committed-use rate if different.
+- Добавьте новую задачу в `benchmarks/tasks/<name>.yaml` со **скрытым рубрикатором** в `benchmarks/rubrics/<name>.md`.
+- Откройте PR — мы примем после одного чистого независимого запуска.
+- Пожалуйста, указывайте как розничную цену, так и вашу ставку со скидкой за резервирование, если она отличается.

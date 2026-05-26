@@ -1,31 +1,31 @@
-# Part 18: Delegating to Coding Agents — Claude Code, Codex, Gemini CLI, OpenCode
+# Часть 18: Делегирование агентам кодинга — Claude Code, Codex, Gemini CLI, OpenCode
 
-*Hermes' killer move for developers isn't writing code itself — it's **orchestrating** specialist coding agents from your Telegram chat or Kanban board. Drive Claude Code, Codex, Gemini CLI, OpenCode, and cheap Kimi/GLM lanes from your phone while Hermes keeps state, memory, approvals, and review gates.*
+*Коронный приём Hermes для разработчиков — не написание кода самим собой, а **оркестрация** специализированных агентов кодинга (coding agents) из Telegram-чата или Kanban-доски. Управляйте Claude Code, Codex, Gemini CLI, OpenCode и дешёвыми каналами Kimi/GLM со своего телефона, пока Hermes держит состояние, память (memory), утверждения (approvals) и шлюзы ревью (review gates).*
 
 ---
 
-## Why Delegate Instead of Doing It Yourself
+## Зачем делегировать, а не делать самому
 
-Hermes is excellent at reasoning, memory, conversation, and workflow. It is *not* the best at sustained multi-file code generation. The coding-specialist agents are:
+Hermes отлично справляется с рассуждением, памятью, диалогом и рабочими процессами. Но он *не* лучший в долгой многфайловой генерации кода. Агенты, специализирующиеся на кодинге:
 
-| Agent | Strengths | Auth model |
+| Агент (agent) | Сильные стороны | Модель аутентификации |
 |-------|-----------|------------|
-| **Claude Code** | Best unattended PR work, large refactors, tests, reviews; pair with Sonnet 5/Opus 4.7 | Pro/Max OAuth or `ANTHROPIC_API_KEY` |
-| **Codex** (OpenAI) | Fast sandboxed feedback loop, bug hunts, small/medium edits; strong with GPT-5.5/Codex models | OAuth via `openai` CLI or `OPENAI_API_KEY` |
-| **Gemini CLI** | 1M context and multimodal repo/document sweeps; strongest "read everything first" lane | OAuth via `gemini auth`; Hermes' own Gemini OAuth covers normal model-provider use |
-| **OpenCode** (anomalyco) | Open-source, routes to Kimi K2.6 / GLM / MiMo cheaply | Bring any provider key |
-| **Aider** | Surgical git-based edits, smallest token footprint | Bring any provider key |
+| **Claude Code** | Лучшая безотказная работа с PR, крупные рефакторинги, тесты, ревью; работа в паре с Sonnet 5/Opus 4.7 | Pro/Max OAuth или `ANTHROPIC_API_KEY` |
+| **Codex** (OpenAI) | Быстрый цикл в песочнице, охота на баги, правки малого/среднего размера; силён с GPT-5.5/Codex | OAuth через `openai` CLI или `OPENAI_API_KEY` |
+| **Gemini CLI** | Контекст на 1M токенов и мультимодальное сканирование репозиториев/документов; самый мощный канал «сначала прочитай всё» | OAuth через `gemini auth`; собственный Gemini OAuth Hermes покрывает обычное использование провайдера (provider) моделей |
+| **OpenCode** (anomalyco) | Открытый исходный код, маршрутизация к Kimi K2.6 / GLM / MiMo по низкой цене | Принесите свой ключ любого провайдера |
+| **Aider** | Хирургические git-ориентированные правки, минимальный расход токенов | Принесите свой ключ любого провайдера |
 
-Hermes keeps state, memory, conversation, approvals, Kanban lifecycle, and platform integration; each specialist does what it does best. You get one control plane, many agents.
+Hermes хранит состояние, память, диалог, утверждения, жизненный цикл Kanban и интеграцию с платформами; каждый специалист делает то, что умеет лучше всего. Вы получаете одну панель управления, множество агентов.
 
 ---
 
-## Prerequisites
+## Предварительные требования
 
 ```bash
 # Claude Code
 npm install -g @anthropic-ai/claude-code
-claude auth login                 # Or set ANTHROPIC_API_KEY
+claude auth login                 # Или установите ANTHROPIC_API_KEY
 
 # Codex
 npm install -g @openai/codex-cli
@@ -33,9 +33,9 @@ codex auth login
 
 # Gemini CLI
 npm install -g @google/gemini-cli
-gemini auth                       # Only needed when delegating to Gemini CLI itself
+gemini auth                       # Нужно только при делегировании самому Gemini CLI
 
-# OpenCode (Go variant preferred for Hermes)
+# OpenCode (предпочтительна Go-версия для Hermes)
 curl -fsSL https://opencode.ai/install.sh | bash
 opencode auth                     # BYOK
 
@@ -43,7 +43,7 @@ opencode auth                     # BYOK
 pipx install aider-chat
 ```
 
-Verify from inside Hermes:
+Проверка изнутри Hermes:
 
 ```
 /skill claude-code
@@ -51,23 +51,23 @@ Verify from inside Hermes:
 /skill gemini-cli
 ```
 
-Each skill runs `--version` and `auth status` to confirm the agent is reachable.
+Каждый навык (skill) запускает `--version` и `auth status`, чтобы убедиться, что агент доступен.
 
 ---
 
-## Mode 1: Print Mode (Preferred for Most Tasks)
+## Режим 1: Print Mode (предпочтителен для большинства задач)
 
-Print mode is non-interactive — run once, return the result, exit. No PTY, no approval prompts to manage, clean stdout capture. Ideal for the 80% of tasks that are "here's a change, come back when it's done."
+Print mode — неинтерактивный режим: однократный запуск, возврат результата, завершение. Без PTY, без окон подтверждения, чистый захват stdout. Идеален для 80% задач типа «вот изменение, вернись, когда будет готово».
 
-### From a Skill (Recommended)
+### Через навык (рекомендуется)
 
-Hermes ships with a `claude-code` skill that handles env setup, allowed-tool flags, and error recovery:
+Hermes поставляется с навыком `claude-code`, который управляет настройкой окружения, флагами разрешённых инструментов и восстановлением после ошибок:
 
 ```
 /claude-code refactor src/auth/ to use the new JWT rotation helper
 ```
 
-This runs:
+Это выполняет:
 
 ```bash
 claude -p "refactor src/auth/ to use the new JWT rotation helper" \
@@ -76,11 +76,11 @@ claude -p "refactor src/auth/ to use the new JWT rotation helper" \
        --output-format json
 ```
 
-Captures the JSON, parses the file diff, posts a summary back to your Telegram/Discord/Slack thread with a link to the git diff.
+Захватывает JSON, парсит diff файлов, публикует сводку обратно в ваш Telegram/Discord/Slack-тред со ссылкой на git diff.
 
-### Parallel Delegation
+### Параллельное делегирование
 
-Need three things done? Fire all three at once:
+Нужно сделать три дела? Запустите все три одновременно:
 
 ```
 In parallel:
@@ -89,21 +89,21 @@ In parallel:
 3. /gemini-cli audit dependencies in package.json for security
 ```
 
-Hermes runs them in three independent subagent slots, streams progress, and aggregates.
+Hermes запускает их в трёх независимых слотах сабагентов (subagent), транслирует прогресс и агрегирует результаты.
 
-### Cost-Routing by Task Type
+### Маршрутизация по стоимости в зависимости от типа задачи
 
-Each specialist has a sweet spot. Let Hermes route:
+У каждого специалиста есть своя ниша. Позвольте Hermes маршрутизировать:
 
-| Task | Sweet-spot specialist | Why |
+| Задача | Специалист | Почему |
 |------|-----------------------|-----|
-| Large refactor across 10+ files | Claude Code + Sonnet 5/Opus 4.7 | Best at sustained multi-file edits |
-| Bug reproduction + fix in a single file | Codex + GPT-5.5/Codex | Fast sandboxed turnaround |
-| "Explain this codebase" | Gemini CLI + Gemini 3.1 Pro | 1M context eats any repo whole |
-| Bulk surgical edits with deterministic diffs | Aider | Smallest token footprint, git-native |
-| Anything on a budget | OpenCode + Kimi K2.6 / GLM | Much cheaper than frontier models for routine edits |
+| Крупный рефакторинг в 10+ файлах | Claude Code + Sonnet 5/Opus 4.7 | Лучший в длительных многфайловых правках |
+| Воспроизведение бага + исправление в одном файле | Codex + GPT-5.5/Codex | Быстрый цикл в песочнице |
+| «Объясни эту кодовую базу» | Gemini CLI + Gemini 3.1 Pro | Контекст 1M токенов «съедает» любой репозиторий целиком |
+| Массовые хирургические правки с детерминированными diffs | Aider | Минимальный расход токенов, нативная работа с git |
+| Всё, что нужно сделать бюджетно | OpenCode + Kimi K2.6 / GLM | Намного дешевле фронтирных моделей для рутинных правок |
 
-A sensible `~/.hermes/config.yaml`:
+Разумный `~/.hermes/config.yaml`:
 
 ```yaml
 delegation:
@@ -122,9 +122,9 @@ delegation:
       model: moonshot/kimi-k2.6
 ```
 
-## Mode 1B: Kanban Worker Lanes (Preferred for Long Work)
+## Режим 1B: Kanban Worker Lanes (предпочтительно для долгой работы)
 
-For work that should survive restarts, human review, retries, or multiple handoffs, put the coding agent behind [Part 23's Kanban flow](./part23-tenacity-stack.md#2-add-worker-lanes-instead-of-giant-prompt-swarms):
+Для работы, которая должна переживать перезапуски, человеческое ревью, повторные попытки или множественные передачи, поместите агента кодинга за [Kanban-поток из Части 23](./part23-tenacity-stack.md#2-add-worker-lanes-instead-of-giant-prompt-swarms):
 
 ```text
 /kanban create "Fix flaky checkout tests and open a PR" \
@@ -132,55 +132,55 @@ For work that should survive restarts, human review, retries, or multiple handof
   --workspace worktree
 ```
 
-Good defaults:
+Хорошие значения по умолчанию:
 
-- `codex-worker` for small isolated fixes; successful exit blocks for Hermes/human review instead of auto-completing.
-- `claude-code` for multi-file refactors; require tests and review before marking done.
-- `gemini-cli` for repo-scale audit cards that should produce comments/specs, not commits.
-- `reviewer` as a separate lane so "agent wrote code" and "work is done" stay different states.
+- `codex-worker` для небольших изолированных исправлений; успешный выход блокируется для ревью Hermes/человеком вместо автозавершения.
+- `claude-code` для многфайловых рефакторингов; требует тесты и ревью перед отметкой о завершении.
+- `gemini-cli` для карточек аудита масштаба репозитория, которые должны создавать комментарии/спецификации, а не коммиты.
+- `reviewer` как отдельный канал, чтобы состояния «агент написал код» и «работа завершена» оставались разными.
 
-Use print mode for quick one-shot answers. Use Kanban lanes for anything you would be embarrassed to lose halfway through.
+Используйте print mode для быстрых одноразовых ответов. Используйте Kanban-каналы для всего, что было бы обидно потерять на полпути.
 
 ---
 
-## Mode 2: Thread-Bound Interactive Sessions (OpenClaw Pattern)
+## Режим 2: Привязанные к тредам интерактивные сессии (шаблон OpenClaw)
 
-What you actually want on your phone: a Telegram topic named "Claude Code" where every message lands in a persistent Claude Code session. No re-explaining context. No re-spawning. Just chat with the coding agent directly, with Hermes handling the transport, memory, and voice-to-text.
+То, что вам на самом деле нужно на телефоне: тема Telegram под названием «Claude Code», где каждое сообщение попадает в постоянную сессию (session) Claude Code. Без повторного объяснения контекста. Без перезапусков. Просто общайтесь с агентом кодинга напрямую, а Hermes занимается транспортом, памятью и преобразованием голоса в текст.
 
-This pattern is useful for pair-programming from chat. For unattended work, prefer Kanban worker lanes so task state and review gates survive restarts. The interactive workflow:
+Этот шаблон полезен для парного программирования из чата. Для безотказной работы предпочитайте Kanban-каналы воркеров (worker), чтобы состояние задачи и шлюзы ревью переживали перезапуски. Интерактивный рабочий процесс:
 
 ```bash
-# In Telegram, create a topic, then from the CLI or dashboard:
+# В Telegram создайте тему, затем из CLI или панели управления:
 hermes bind-thread <thread-id> --runtime claude-code --cwd ~/projects/myapp
 ```
 
-From that point:
-- Every message in the topic goes to a persistent Claude Code session
-- File edits happen in `~/projects/myapp` on the Hermes host
-- Orchestrator subagents can spawn their own workers if `max_spawn_depth` allows it
-- Concurrent workers coordinate file state instead of blindly overwriting siblings
-- `/unbind` in the topic detaches and reverts to normal Hermes chat
-- `/runtime gemini-cli` swaps the runtime without losing the thread
+С этого момента:
+- Каждое сообщение в теме уходит в постоянную сессию Claude Code
+- Правки файлов происходят в `~/projects/myapp` на хосте Hermes
+- Оркестратор-сабагенты могут порождать собственных воркеров, если `max_spawn_depth` позволяет
+- Конкурирующие воркеры координируют состояние файлов вместо слепой перезаписи собратьев
+- `/unbind` в теме открепляет сессию и возвращает обычный чат с Hermes
+- `/runtime gemini-cli` меняет среду выполнения без потери треда
 
-The same binding works for Codex, Gemini CLI, OpenCode, and any ACP-compatible coding agent.
+Та же привязка работает для Codex, Gemini CLI, OpenCode и любого ACP-совместимого агента кодинга.
 
-**Remote execution bonus:** combine with the [remote sandbox feature](./part21-remote-sandboxes.md) and the coding agent runs on a Modal/Daytona/SSH host — your phone drives, a beefy remote does the work.
+**Бонус удалённого выполнения:** сочетание с [функцией удалённых песочниц](./part21-remote-sandboxes.md) — агент кодинга работает на хосте Modal/Daytona/SSH, ваш телефон управляет, а всю работу делает мощный удалённый сервер.
 
 ---
 
-## ACP: The Protocol That Makes This Possible
+## ACP: Протокол, который делает это возможным
 
-Agent Client Protocol (ACP) is to coding agents what MCP is to tools — a standard transport for one agent to delegate to another. Hermes supports ACP as both client and server:
+Agent Client Protocol (ACP) — это для агентов кодинга то же, что MCP для инструментов (tools): стандартный транспорт для делегирования одного агента другому. Hermes поддерживает ACP и как клиент, и как сервер:
 
-- **As ACP client:** Hermes invokes Claude Code / Codex / Gemini as subagents via their ACP endpoints.
-- **As ACP server:** you can drive Hermes from another ACP-aware agent (Cursor, Zed, or another Hermes instance).
+- **Как ACP-клиент:** Hermes вызывает Claude Code / Codex / Gemini в качестве сабагентов через их ACP-энпоинты.
+- **Как ACP-сервер:** вы можете управлять Hermes из другого ACP-совместимого агента (Cursor, Zed или другой экземпляр Hermes).
 
 ```yaml
 # ~/.hermes/config.yaml
 acp:
   enabled: true
   server:
-    listen: 127.0.0.1:41212          # Accept inbound ACP from editors
+    listen: 127.0.0.1:41212          # Принимает входящий ACP от редакторов
   clients:
     claude-code:
       command: claude
@@ -193,85 +193,85 @@ acp:
       args: ["--acp"]
 ```
 
-The `/delegate_task` tool then picks an ACP client based on `delegation.routing` rules and streams progress back over a single WebSocket.
+Инструмент (tool) `/delegate_task` затем выбирает ACP-клиента на основе правил `delegation.routing` и транслирует прогресс через единый WebSocket.
 
 ---
 
-## Git Hygiene When Agents Share a Workspace
+## Git-гигиена, когда агенты работают в общем пространстве
 
-The #1 footgun with coding-agent orchestration is two agents touching the same files. Guardrails:
+Главная ловушка при оркестрации агентов кодинга — два агента, изменяющих одни и те же файлы. Защитные механизмы:
 
 ```yaml
 delegation:
   git:
-    isolate_branches: true            # Each delegation gets its own branch
-    branch_prefix: devin/             # Use your convention
-    auto_commit: true                 # Commit before handing back
-    require_clean_tree: true          # Refuse if the working tree is dirty
+    isolate_branches: true            # Каждое делегирование получает свою ветку
+    branch_prefix: devin/             # Используйте своё соглашение
+    auto_commit: true                 # Коммитить перед возвратом управления
+    require_clean_tree: true          # Отказать, если рабочее дерево грязное
   locks:
-    strategy: file-level              # Or "workspace" if you want full serialization
+    strategy: file-level              # Или "workspace" для полной сериализации
 ```
 
-Hermes creates `devin/claude-code-1723487-refactor-auth`, runs the specialist there, commits, returns the branch name, and leaves the merge decision to you. The same pattern works for parallel delegation — each agent gets its own branch.
+Hermes создаёт ветку `devin/claude-code-1723487-refactor-auth`, запускает там специалиста, коммитит, возвращает имя ветки и оставляет решение о слиянии вам. Тот же шаблон работает для параллельного делегирования — каждый агент получает свою ветку.
 
 ---
 
-## Approval Posture
+## Политика утверждений (Approval Posture)
 
-Coding agents run shell commands and write files. You need an approval policy or you'll lose a weekend debugging an accidental `rm -rf node_modules` in the wrong dir.
+Агенты кодинга выполняют shell-команды и записывают файлы. Вам нужна политика утверждений, иначе вы потеряете выходные на отладку случайного `rm -rf node_modules` не в той директории.
 
 ```yaml
 delegation:
   approval:
-    default: prompt                   # Prompt on every write
+    default: prompt                   # Запрашивать подтверждение при каждой записи
     trusted_agents:
-      - claude-code                   # These inherit parent approval posture
-    auto_approve_read: true           # Read-only tools never prompt
+      - claude-code                   # Наследуют политику утверждений родителя
+    auto_approve_read: true           # Инструменты только для чтения никогда не запрашивают подтверждение
     denylist:
       - "rm -rf"
       - "git push --force"
       - "curl * | bash"
 ```
 
-See [Part 19](./part19-security-playbook.md#approval-and-denylist-layers) for the full story. Approval bypass inheritance landed in v0.10 ([Part 16](./part16-backup-debug.md#approval-bypass-for-trusted-subagents)) — use it for trusted specialists, not for every agent.
+Полная история в [Части 19](./part19-security-playbook.md#approval-and-denylist-layers). Наследование обхода утверждений появилось в v0.10 ([Часть 16](./part16-backup-debug.md#approval-bypass-for-trusted-subagents)) — используйте его для доверенных специалистов, а не для каждого агента.
 
 ---
 
-## Recipe: Review My PR From Telegram
+## Рецепт: Ревью моего PR из Telegram
 
 ```
-You (Telegram): /review_pr myorg/myapp#342
-Hermes: *runs the `github-pr-review` skill*
-  1. Pulls the PR diff via GitHub MCP
-  2. Sends to Claude Code with --allowedTools "Read" --max-turns 5
-  3. Claude Code returns a structured review
-  4. Hermes posts a GitHub PR comment with the review
-  5. Replies in Telegram with a summary + link
+Вы (Telegram): /review_pr myorg/myapp#342
+Hermes: *запускает навык `github-pr-review`*
+  1. Скачивает diff PR через GitHub MCP
+  2. Отправляет в Claude Code с --allowedTools "Read" --max-turns 5
+  3. Claude Code возвращает структурированное ревью
+  4. Hermes публикует комментарий к PR на GitHub с этим ревью
+  5. Отвечает в Telegram сводкой + ссылкой
 ```
 
-Skill source: `~/.hermes/skills/github-pr-review/SKILL.md` (bundled, plus the agent-created variants that appear after you use it a few times).
+Исходник навыка: `~/.hermes/skills/github-pr-review/SKILL.md` (встроенный, а также варианты, созданные агентом после нескольких использований).
 
 ---
 
-## Recipe: Nightly Cron Maintenance
+## Рецепт: Ночное cron-обслуживание
 
 ```yaml
 # ~/.hermes/cron.yaml
 - name: weekly-dep-audit
-  schedule: "0 3 * * 1"                # Mondays 3am
+  schedule: "0 3 * * 1"                # Понедельники в 3:00
   task: |
     /gemini-cli audit package.json for security advisories
     If any CRITICAL, open a GitHub issue in this repo with the list
   notify: telegram:#engineering
 ```
 
-Hermes runs the delegation unattended, Gemini's 1M context reads the whole lockfile, a GitHub MCP opens the issue. You wake up to a triage ticket, not a surprise CVE.
+Hermes запускает делегирование без присмотра, Gemini с контекстом 1M токенов читает весь lockfile, GitHub MCP открывает issue. Вы просыпаетесь с тикетом для триажа, а не с неожиданной CVE.
 
 ---
 
-## What's Next
+## Что дальше
 
-- [Part 17: MCP Servers](./part17-mcp-servers.md) — the *tools* layer that these coding agents use
-- [Part 19: Security Playbook](./part19-security-playbook.md) — locking down agents that execute shell commands
-- [Part 21: Remote Sandboxes](./part21-remote-sandboxes.md) — run coding agents on a Modal/Daytona/SSH host from your phone
-- [Part 8: Subagent Patterns](./part8-subagent-patterns.md) — the underlying delegation primitives
+- [Часть 17: MCP Servers](./part17-mcp-servers.md) — слой **инструментов (tools)**, которые используют эти агенты кодинга
+- [Часть 19: Security Playbook](./part19-security-playbook.md) — защита агентов, выполняющих shell-команды
+- [Часть 21: Remote Sandboxes](./part21-remote-sandboxes.md) — запуск агентов кодинга на Modal/Daytona/SSH хосте с вашего телефона
+- [Часть 8: Subagent Patterns](./part8-subagent-patterns.md) — базовые примитивы делегирования

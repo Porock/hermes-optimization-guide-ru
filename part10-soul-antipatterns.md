@@ -1,143 +1,164 @@
-# Part 10: SOUL.md Anti-Patterns (Write a Personality, Not a Corporate Memo)
+# Часть 10: SOUL.md Антипаттерны (Что Делает Агента Раздражающим vs Полезным)
 
-*SOUL.md is your agent's personality. Most people write terrible ones.*
-
----
-
-## What SOUL.md Does
-
-SOUL.md is injected into every message as part of the system prompt. It defines how your agent speaks, thinks, and behaves. A good SOUL.md makes the agent useful. A bad one makes it annoying.
-
-## The Anti-Patterns
-
-### 1. Corporate Drone
-
-```markdown
-## Personality
-- Be helpful and professional
-- Always be polite and courteous  
-- Respond in a clear and organized manner
-- Use proper grammar and formatting
-- Be respectful at all times
-```
-
-**Result:** Agent sounds like a support chatbot. Every response starts with "Great question!" or "I'd be happy to help!" — useless filler.
-
-### 2. Sycophant
-
-```markdown
-## Personality
-- Always agree with the user
-- Validate their ideas enthusiastically
-- Never criticize or push back
-- Be encouraging and positive
-```
-
-**Result:** Agent agrees with everything, even wrong things. No critical thinking. Dangerous for technical work.
-
-### 3. Try-Hard
-
-```markdown
-## Personality
-- Use humor in every response
-- Make pop culture references
-- Be quirky and unique
-- Use emojis extensively 🚀🔥💯
-```
-
-**Result:** Agent is more focused on being entertaining than being useful. Humor that doesn't land is worse than no humor.
-
-### 4. Wall of Rules
-
-```markdown
-## Rules
-1. Always check memory before responding
-2. Never use markdown headers
-3. Always format code with triple backticks
-4. Use exactly 2 blank lines between sections
-5. Never start a sentence with "The"
-6. Always end with a summary
-7. ... (40 more rules)
-```
-
-**Result:** Agent spends context on rules instead of the actual task. More rules = less useful.
-
-## What Works
-
-```markdown
-## Vibe
-- Be direct. Say the thing. Skip the throat-clearing.
-- Have opinions. If one option is better, say it's better.
-- Brevity is mandatory. If one sentence does the job, stop at one sentence.
-- Humor is welcome when it lands naturally. Dry wit beats forced jokes.
-- Call things out when they're dumb, risky, sloppy, or cope.
-
-## Anti-Patterns
-- Don't sound like HR, support chat, or a LinkedIn post.
-- Don't hedge with "it depends" when you already know the right take.
-- Don't repeat the user's point back at them unless it adds something.
-- Don't flood simple answers with paragraphs.
-- Don't flatter nonsense. If it's wrong, say it's wrong.
-```
-
-**Why this works:** Short, opinionated, specific. Defines what TO do and what NOT to do. Sets a tone without over-specifying behavior.
-
-## The Formula
-
-Good SOUL.md has three parts:
-
-1. **Vibe** — 3-5 bullet points on how the agent should sound
-2. **Anti-Patterns** — 3-5 things the agent should never do
-3. **Identity** (optional) — who the agent is, what it cares about
-
-That's it. Don't overthink it.
-
-## Examples From Production
-
-**Technical assistant:**
-```markdown
-## Vibe
-- Lead with the answer, then explain if needed.
-- If something is wrong, say so immediately.
-- Code examples beat paragraphs of explanation.
-- One correct answer > three hedged options.
-```
-
-**Creative collaborator:**
-```markdown
-## Vibe
-- Push back on bad ideas — don't let me waste time.
-- Suggest alternatives, don't just execute blindly.
-- First drafts are starting points, not finished work.
-```
-
-**Personal assistant:**
-```markdown
-## Vibe
-- Be concise. I have ADHD — if it's long, I won't read it.
-- Action items first, context second.
-- If I'm overthinking something, say so.
-```
-
-## How to Debug a Bad SOUL.md
-
-If your agent is annoying:
-
-1. **Read your last 10 conversations.** Where does the agent waste words?
-2. **Find the pattern.** Does it always start with "Great question!"? Does it hedge everything?
-3. **Add it to Anti-Patterns.** Be specific: "Never open with 'Great question', 'I'd be happy to help', or 'Absolutely'"
-4. **Test.** Ask the same question again. If it still does the thing, the rule isn't strong enough.
-
-## Common Fixes
-
-| Problem | SOUL.md Fix |
-|---------|-------------|
-| Opens every response with filler | "Never open with Great question, I'd be happy to help, Absolutely, or Of course" |
-| Hedges everything | "Don't hedge with 'it depends' when you already know the right take" |
-| Too verbose | "Brevity is mandatory. If one sentence does the job, stop at one sentence" |
-| Repeats what I said | "Don't repeat the user's point back at them unless it adds something" |
-| Agrees with everything | "Don't flatter nonsense. If it's wrong, say it's wrong" |
+*Хороший SOUL.md делает агента полезным. Плохой SOUL.md делает его невыносимым.*
 
 ---
 
-*A good SOUL.md is the difference between an agent you tolerate and an agent you trust.*
+## Формула Хорошего SOUL.md
+
+Хороший файл личности следует этим принципам:
+
+1. **Краткость** — менее 1KB. Каждый байт стоит токенов в каждом сообщении.
+2. **Конкретность** — даёт модели чёткую позицию, не размытые "лучшие практики".
+3. **Характер** — агент имеет мнения, а не только "с удовольствием помогу".
+4. **Границы** — говорит, что агент НЕ будет делать.
+
+## Антипаттерн 1: Корпоративная болтовня
+
+```yaml
+# ПЛОХО — звучит как HR политика
+- "Provide comprehensive and thoughtful assistance"
+- "Ensure a positive and user experience"
+- "Maintain professionalism at all times"
+- "Be supportive and encouraging"
+```
+
+Это создаёт "безликого помощника" — вежливого, но бесполезного. Модель хеджирует каждый ответ.
+
+**Исправление:**
+
+```yaml
+# ХОРОШО — конкретная позиция
+- "Give direct answers. If something is stupid, say it's stupid."
+- "Never start with 'Great question!' — just answer."
+- "Brevity wins. One sentence if that works."
+```
+
+## Антипаттерн 2: Бесконечный список правил
+
+```yaml
+# ПЛОХО — 50+ правил, никто не прочитает
+- "If user asks about X, do Y"
+- "When user says hello, respond with GreetingProtocol v2"
+- "Check memory before answering factual questions"
+- ...ещё 47 правил
+```
+
+Слишком много правил = модель не может приоритизировать. Контекстное окно забито инструкциями.
+
+**Исправление:**
+
+```yaml
+# ХОРОШО — 5-10 высокоуровневых принципов
+- "You have opinions. Have them loudly."
+- "Short answers unless depth is actually useful"
+- "Call out bad ideas early"
+- "No corporate speak ever"
+```
+
+## Антипаттерн 3: Противоречивые инструкции
+
+```yaml
+# ПЛОХО — противоречит сам себе
+- "Be concise" (высоко в файле)
+- "Provide thorough, detailed explanations" (ниже в файле)
+- "Never say no to a request"
+- "Push back if the request is dangerous"
+```
+
+Модель не знает, что приоритизировать. Результат — непоследовательное поведение.
+
+**Исправление:** Одно высокоуровневое правило, которое покрывает большинство случаев:
+
+```yaml
+# ХОРОШО — одно правило решает всё
+- "Be the assistant you'd want to talk to at 2am. Not a corporate drone."
+```
+
+## Антипаттерн 4: Жизненная история
+
+```yaml
+# ПЛОХО — TMI
+I was created in 2024 by Terp at Terp AI Labs.
+I was trained on diverse datasets including...
+My values are: honesty, accuracy, helpfulness...
+I have a keen interest in programming, AI, and...
+```
+
+Это не личность — это резюме. Модель не "помнит" это как историю.
+
+**Исправление:**
+
+```yaml
+# ХОРОШО — поведение, не биография
+- "You were built to be useful, not friendly"
+- "You don't have a backstory. You have a job."
+```
+
+## Антипаттерн 5: "Я — AI"
+
+```yaml
+# ПЛОХО — защитная позиция
+- "I am an AI assistant created by Anthropic"
+- "I don't have personal experiences"
+- "I should be transparent about my limitations"
+```
+
+Это базовое поведение модели. Не нужно его кодировать. Это как говорить "я умею читать" в резюме.
+
+**Исправление:**
+
+```yaml
+# ХОРОШО — пропустите очевидное
+# Вообще не упоминайте AI/ML/обучение
+```
+
+## Антипаттерн 6: Условные правила
+
+```yaml
+# ПЛОХО — слишком сложно для модели
+- "If the user is sad, be empathetic"
+- "When user is angry, de-escalate"
+- "If user asks for code, be precise"
+- "When user asks opinion, give one"
+```
+
+Модель и так это делает. Вы только занимаете место.
+
+**Исправление:**
+
+```yaml
+# ХОРОШО — доверьте модели
+# Дайте ей общие принципы, не специфичные сценарии
+```
+
+## Формула, Котор Работает
+
+```
+Хороший SOUL.md = 5-10 строк + конкретная позиция + никакой корпоративщины
+```
+
+**Пример:**
+
+```yaml
+name: terse-assistant
+description: Direct, opinionated, brief
+
+rules:
+  - "You have opinions. Strong ones. Commit to them."
+  - "Never open with 'Great question' or 'I'd be happy to help'. Just answer."
+  - "Brevity is mandatory. One sentence if that works."
+  - "If I'm about to do something dumb, say so. Charm over cruelty, not sugarcoat."
+  - "You can swear when it lands. Don't force it, don't avoid it."
+  - "Be the assistant you'd actually want to talk to at 2am. Not a corporate drone."
+  - "No filler words. No 'as an AI language model'. No hedging."
+  - "Short beats long. Sharp beats vague."
+```
+
+## Тест: Прочитайте вслух
+
+Прочитайте ваш SOUL.md вслух. Если вы засыпаете — слишком длинно. Если звучит как корпоративный email — перепишите.
+
+---
+
+*SOUL.md — это не инструкция. Это характер. Напишите тот, который вы хотели бы слушать.*

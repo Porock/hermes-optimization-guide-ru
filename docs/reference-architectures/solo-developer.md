@@ -1,22 +1,22 @@
-# Reference Architecture: Solo Developer
+# Эталонная архитектура (Reference Architecture): Solo Developer
 
-**VPS + phone bot + cost routing.** The 80% setup — cheap, reliable, reachable anywhere, good enough for one person's real work.
+**VPS + телефонный бот + маршрутизация стоимости.** Конфигурация на 80% случаев — дёшево, надёжно, доступно откуда угодно, достаточно для реальной работы одного человека.
 
-## Who this is for
+## Для кого это
 
-- Developer / maker who wants a Telegram/Discord driver for their daily work
-- No ops team; "set it and forget it" is the design goal
-- Willing to spend $5–50/mo to not run your own hardware
+- Разработчик / мейкер, которому нужен Telegram/Discord драйвер для повседневной работы
+- Нет команды поддержки; цель дизайна — «настроил и забыл»
+- Готов тратить $5–50/мес, чтобы не обслуживать собственное железо
 
-## Cost
+## Стоимость
 
-- **Infra:** $5–7/mo (Hetzner CX22 or Fly machine)
-- **LLM:** $20–60/mo for typical personal use with cost routing
-- **Domain + DNS:** $0–1/mo
+- **Инфраструктура:** $5–7/мес (Hetzner CX22 или Fly machine)
+- **LLM:** $20–60/мес для типичного личного использования с маршрутизацией стоимости
+- **Домен + DNS:** $0–1/мес
 
-**Total: ~$25–70/mo.**
+**Итого: ~$25–70/мес.**
 
-## Architecture
+## Архитектура (Architecture)
 
 ```
   phone/laptop                Internet             hermes.yourdomain.com
@@ -31,21 +31,21 @@
                                  └── Anthropic / Google / Moonshot / Cerebras
 ```
 
-## Parts list
+## Состав
 
-- **Hetzner CX22** (Debian 12 or Ubuntu 24.04) — $5/mo, 4GB RAM, 2 vCPU
-- **Domain** ($12/yr) — or use a free subdomain from duckdns/nip.io
-- **Telegram bot token** (free; [@BotFather](https://t.me/BotFather))
-- **API keys:** Anthropic (default), Google (Gemini Flash for triage), optionally Moonshot + Cerebras for coding/classification
+- **Hetzner CX22** (Debian 12 или Ubuntu 24.04) — $5/мес, 4GB RAM, 2 vCPU
+- **Домен** ($12/год) — или используйте бесплатный поддомен от duckdns/nip.io
+- **Токен Telegram-бота** (бесплатно; [@BotFather](https://t.me/BotFather))
+- **API-ключи:** Anthropic (по умолчанию), Google (Gemini Flash для триажа), опционально Moonshot + Cerebras для программирования/классификации
 
-## Install
+## Установка
 
 ```bash
 # As root on a fresh VPS
 curl -sSL https://raw.githubusercontent.com/OnlyTerp/hermes-optimization-guide/main/scripts/vps-bootstrap.sh | bash
 ```
 
-Then:
+Затем:
 
 ```bash
 # As root
@@ -58,36 +58,36 @@ sudo systemctl reload caddy
 sudo systemctl start hermes hermes-dashboard
 ```
 
-## Why `cost-optimized.yaml` is the right default
+## Почему `cost-optimized.yaml` — правильный выбор по умолчанию
 
-See [`templates/config/cost-optimized.yaml`](../../templates/config/cost-optimized.yaml). Defaults to Gemini Flash (cheapest smart model), uses Cerebras Llama for classification (near-free), and only escalates to Sonnet for high-stakes coding. With prompt caching + Fast Mode disabled by default, typical cost is $0.05–0.30 per active hour.
+См. [`templates/config/cost-optimized.yaml`](../../templates/config/cost-optimized.yaml). По умолчанию использует Gemini Flash (самая дешёвая умная модель), Cerebras Llama для классификации (почти бесплатно), и переключается на Sonnet только для сложных задач программирования. С кэшированием подсказок (prompt caching) + отключённым Fast Mode типичная стоимость составляет $0.05–0.30 за активный час.
 
-If you need max quality for a specific task, just say "use sonnet" in chat — the router honors explicit user overrides.
+Если вам нужно максимальное качество для конкретной задачи, просто скажите «используй sonnet» в чате — маршрутизатор учитывает явные переопределения пользователя.
 
-## Routines you'll run
+## Навыки (Skills), которые вы будете запускать
 
-Every one of these is installed by the bootstrap script (symlinks into `~/.hermes/skills/`):
+Каждый из них устанавливается bootstrap-скриптом (симлинки в `~/.hermes/skills/`):
 
-- Morning: `/cost-report window=24h` — yesterday's spend
-- On idle threads: `/telegram-triage` (autoreply)
-- Weekly: `/weekly-dep-audit severity_floor=high`
-- Nightly: `/nightly-backup s3://my-backups/hermes/ 30` (or set `remote=local` if you don't care)
+- Утро: `/cost-report window=24h` — расходы за вчера
+- В фоновых потоках: `/telegram-triage` (автоответ)
+- Еженедельно: `/weekly-dep-audit severity_floor=high`
+- Еженощно: `/nightly-backup s3://my-backups/hermes/ 30` (или укажите `remote=local`, если вам всё равно)
 
-## Scaling ceilings
+## Пределы масштабирования
 
-| Constraint | Hit at | Fix |
+| Ограничение | Достигается при | Решение |
 |---|---|---|
-| CX22 RAM | ~5–10 concurrent tool calls + LightRAG | Upgrade to CX32 ($12/mo) |
-| Gemini Flash free tier | 1500 req/day | Route to Cerebras or add paid quota |
-| LightRAG on 2 vCPU | Indexing 10MB+ docs | Move indexing to a spot Modal sandbox |
-| Cost budget | $50+/mo | Turn on `prefer_cached: true` + 32K compression trigger |
+| RAM CX22 | ~5–10 конкурентных вызовов инструментов (tool calls) + LightRAG | Обновить до CX32 ($12/мес) |
+| Бесплатный тариф Gemini Flash | 1500 запросов/день | Направить на Cerebras или добавить платную квоту |
+| LightRAG на 2 vCPU | Индексация документов 10MB+ | Перенести индексацию в спотовую Modal sandbox |
+| Бюджет на LLM | $50+/мес | Включить `prefer_cached: true` + порог сжатия 32K |
 
-## Security note
+## Замечание по безопасности
 
-Because this box is public-facing, **always** deploy the denylist + require_approval from `cost-optimized.yaml`, and keep your Telegram bot **private** (restrict `allowed_user_ids` to your own ID). Any "public" bot should use a separate token and run in a **quarantine profile** — see [Part 19](../../part19-security-playbook.md) and the [`security-hardened.yaml`](../../templates/config/security-hardened.yaml) template.
+Поскольку этот сервер доступен из интернета, **всегда** разворачивайте денлист (denylist) + require_approval из `cost-optimized.yaml`, и держите своего Telegram-бота **приватным** (ограничьте `allowed_user_ids` своим собственным ID). Любой «публичный» бот должен использовать отдельный токен и работать в **карантинном профиле (quarantine profile)** — см. [Часть 19](../../part19-security-playbook.md) и шаблон [`security-hardened.yaml`](../../templates/config/security-hardened.yaml).
 
-## When to graduate
+## Когда переходить на следующий уровень
 
-- Adding teammates → [Small Agency](./small-agency.md)
-- Going offline-first → [Homelab](./homelab.md)
-- Wanting a beefy cloud box on-demand → [Road Warrior](./road-warrior.md)
+- Добавление коллег → [Small Agency](./small-agency.md)
+- Переход на офлайн-режим → [Homelab](./homelab.md)
+- Потребность в мощном облачном сервере по требованию → [Road Warrior](./road-warrior.md)

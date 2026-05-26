@@ -1,28 +1,28 @@
 # Hermes Config Wizard
 
-Static single-page wizard that emits a ready-to-drop `config.yaml` from 8 answers. **Runs entirely in the browser** — nothing is uploaded.
+Статический одностраничный визард (wizard), который генерирует готовый к использованию `config.yaml` на основе 8 ответов. **Работает полностью в браузере** — ничего не загружается на сервер.
 
-## Local use
+## Локальное использование
 
 ```bash
-# After cloning the guide:
+# После клонирования гайда:
 cd docs/wizard
 python3 -m http.server 8080
-# then open http://127.0.0.1:8080
+# затем откройте http://127.0.0.1:8080
 ```
 
-Or just open [`docs/wizard/index.html`](./index.html) directly — it works from `file://`.
+Или просто откройте [`docs/wizard/index.html`](./index.html) напрямую — он работает из `file://`.
 
-## Deployment
+## Развёртывание
 
-Served automatically via GitHub Pages once enabled on this repo. See [ROADMAP.md](../../ROADMAP.md) for Pages setup status.
+Автоматически обслуживается через GitHub Pages после включения в этом репозитории. См. [ROADMAP.md](../../ROADMAP.md) для информации о статусе настройки Pages.
 
-## Extending
+## Расширение
 
-Everything lives in one `index.html`. Each form field maps to a case in `generate()`. To add a new persona / option:
+Всё находится в одном `index.html`. Каждое поле формы сопоставляется с кейсом в `generate()`. Чтобы добавить новую персону / опцию:
 
-1. Add the `<input>` under the right `<fieldset>`.
-2. Read it in `generate()` via `val()` / `on()` / `select()`.
-3. Append YAML `lines.push(...)` blocks where it fits.
+1. Добавьте `<input>` в нужный `<fieldset>`.
+2. Считайте его в `generate()` через `val()` / `on()` / `select()`.
+3. Добавьте YAML-блоки `lines.push(...)` в соответствующее место.
 
-No frameworks, no build step, on purpose.
+Никаких фреймворков, никакого шага сборки — это сделано намеренно.

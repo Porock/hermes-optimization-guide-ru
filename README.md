@@ -1,4 +1,4 @@
-# Hermes Optimization Guide
+# Руководство по оптимизации Hermes
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Hermes](https://img.shields.io/badge/Hermes-v0.13.0%20%282026.5.7%29-9146FF)](https://github.com/NousResearch/hermes-agent/releases/tag/v2026.5.7)
@@ -9,57 +9,57 @@
 [![CI](https://github.com/OnlyTerp/hermes-optimization-guide/actions/workflows/ci.yml/badge.svg)](./.github/workflows/ci.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
-> **Current through Hermes Agent v0.13.0 (v2026.5.7)** · **24 parts, 13 installable guide skills, 5 opinionated configs, 4 reference architectures, one-command VPS bootstrap** · Updated for durable Kanban, `/goal`, Checkpoints v2, no-agent cron, Google Chat, provider plugins, v0.13 security defaults, Curator, the Ink TUI, plugins, Bedrock/Azure/LM Studio, remote model catalogs, dashboard chat, and the latest skill-hub workflows
+> **Актуальная версия: Hermes Agent v0.13.0 (v2026.5.7)** · **24 части, 13 устанавливаемых навыков (skills), 5 конфигураций, 4 референсные архитектуры, установка на VPS одной командой** · Обновлено для устойчивого Kanban, `/goal`, Checkpoints v2, cron без агента, Google Chat, плагины провайдеров, безопасность по умолчанию v0.13, Curator, Ink TUI, плагины, Bedrock/Azure/LM Studio, удалённые каталоги моделей, чат дашборда и новейшие рабочие процессы skill-hub
 >
-> Other languages: [中文](./README-zh.md) · [日本語](./README-ja.md)
+> Другие языки: [English](https://github.com/OnlyTerp/hermes-optimization-guide) · [中文](./README-zh.md) · [日本語](./README-ja.md) · [Русский](./README-ru.md)
 
-### The End-to-End Hermes Guide — docs + runnable artifacts
-Every part you need to go from fresh install to a production Hermes deployment that talks on 20+ built-in/plugin platforms, orchestrates Claude Code / Codex / Gemini CLI through durable Kanban lanes, plugs into any MCP server, traces every call in Langfuse, curates its own skills, and runs heavy work on disposable Modal/Daytona/Vercel sandboxes — without burning $100/day on frontier tokens.
+### Полное руководство по Hermes — документация + готовые артефакты
+Все необходимые части для перехода от чистой установки до продакшен-развёртывания Hermes, которое работает на 20+ встроенных/плагин-платформах, управляет Claude Code / Codex / Gemini CLI через устойчивые Kanban-дорожки, подключается к любому MCP-серверу, отслеживает каждый вызов в Langfuse, курирует собственные навыки (skills) и выполняет тяжёлые задачи на одноразовых песочницах Modal/Daytona/Vercel — без сжигания $100/день на передовых токенах.
 
-Unlike most guides, the prescriptions come with **working files**: [`skills/`](./skills) you can `ln -s` into `~/.hermes/skills/`, [`templates/config/`](./templates/config) you `cp` to `~/.hermes/config.yaml`, [`scripts/vps-bootstrap.sh`](./scripts/vps-bootstrap.sh) that takes a fresh VPS to production in one command.
+В отличие от большинства руководств, здесь есть **рабочие файлы**: [`skills/`](./skills) можно подключить через `ln -s` в `~/.hermes/skills/`, [`templates/config/`](./templates/config) скопировать в `~/.hermes/config.yaml`, а [`scripts/vps-bootstrap.sh`](./scripts/vps-bootstrap.sh) разворачивает свежий VPS в продакшен одной командой.
 
-*By Terp — [Terp AI Labs](https://x.com/OnlyTerp)* · Last updated **May 14, 2026** · [CHANGELOG](./CHANGELOG.md) · [ROADMAP](./ROADMAP.md) · [ECOSYSTEM](./ECOSYSTEM.md)
+*Автор: Terp — [Terp AI Labs](https://x.com/OnlyTerp)* · Последнее обновление: **14 мая 2026** · [CHANGELOG](./CHANGELOG.md) · [ROADMAP](./ROADMAP.md) · [ECOSYSTEM](./ECOSYSTEM.md)
 
 ---
 
-## Install Everything (one command)
+## Установка всего одной командой
 
-On a fresh Debian 12 / Ubuntu 24.04 box (Hetzner CX22 works great for ~$5/mo):
+На свежем Debian 12 / Ubuntu 24.04 (VPS Hetzner CX22 отлично работает за ~5$/мес):
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/OnlyTerp/hermes-optimization-guide/main/scripts/vps-bootstrap.sh | sudo bash
 ```
 
-This installs Hermes, Node.js, Caddy (auto-TLS reverse proxy), UFW, fail2ban, creates a non-root `hermes` user, drops in hardened systemd units, and symlinks every skill from this repo into `~hermes/.hermes/skills/`. See [`scripts/vps-bootstrap.sh`](./scripts/vps-bootstrap.sh) for what it does line by line — it's non-destructive and re-runnable.
+Это устанавливает Hermes, Node.js, Caddy (обратный прокси с авто-TLS), UFW, fail2ban, создаёт не-root пользователя `hermes`, добавляет закалённые systemd-юниты и создаёт симлинки на все навыки (skills) из этого репозитория в `~hermes/.hermes/skills/`. Смотрите [`scripts/vps-bootstrap.sh`](./scripts/vps-bootstrap.sh) для построчного описания — он неразрушительный и перезапускаемый.
 
-Prefer a 5-minute local-only setup? → **[docs/quickstart.md](./docs/quickstart.md)** (zero to Telegram bot in 5 min).
+Предпочитаете локальную установку за 5 минут? → **[docs/quickstart.md](./docs/quickstart.md)** (от нуля до Telegram-бота за 5 минут).
 
 ---
 
-## Repo Map
+## Карта репозитория
 
-| Folder | What's in it |
+| Папка | Содержимое |
 |---|---|
-| [`skills/`](./skills) | **13 installable `SKILL.md`** files. `ln -s` into `~/.hermes/skills/` and they're live. |
-| [`templates/config/`](./templates/config) | **5 opinionated `config.yaml`** — minimum, telegram-bot, production, cost-optimized, security-hardened. |
-| [`templates/compose/`](./templates/compose) | Self-hosted Langfuse v3 stack (ClickHouse + MinIO + Redis). |
-| [`templates/caddy/`](./templates/caddy) | Caddyfile reference (reverse proxy + auto TLS + HSTS). |
-| [`templates/systemd/`](./templates/systemd) | Hardened `hermes.service` + `hermes-dashboard.service`. |
-| [`templates/cron/`](./templates/cron) | Recommended production cron schedule. |
-| [`scripts/vps-bootstrap.sh`](./scripts/vps-bootstrap.sh) | One-command fresh VPS → production Hermes. |
-| [`diagrams/`](./diagrams) | 6 Mermaid diagrams (architecture, MCP flow, delegation, sandbox sync, observability, security layers). |
-| [`benchmarks/`](./benchmarks) | Reproducible cost + latency table across 12 models × 5 tasks. |
-| [`docs/wizard/`](./docs/wizard) | **Interactive config wizard** — 8 questions → ready-to-drop `config.yaml`. Runs in your browser. |
-| [`docs/reference-architectures/`](./docs/reference-architectures) | **4 blueprints** — Homelab, Solo Dev, Small Agency, Road Warrior. Full parts list + cost + install. |
-| [`docs/outreach/`](./docs/outreach) | Launch tweet, HN post, upstream-PR body drafts (for people linking to this guide). |
-| [`docs/quickstart.md`](./docs/quickstart.md) | 5-minute zero-to-Telegram-bot. |
-| [`ECOSYSTEM.md`](./ECOSYSTEM.md) | Curated directory of MCP servers, coding agents, dashboard plugins. |
-| [`ROADMAP.md`](./ROADMAP.md) · [`CHANGELOG.md`](./CHANGELOG.md) · [`CONTRIBUTING.md`](./CONTRIBUTING.md) | The usual suspects. |
-| README + `part1-*.md` … `part23-*.md` | The 24-part guide itself. |
+| [`skills/`](./skills) | **13 устанавливаемых файлов `SKILL.md`**. `ln -s` в `~/.hermes/skills/` — и они работают. |
+| [`templates/config/`](./templates/config) | **5 авторских `config.yaml`** — minimum, telegram-bot, production, cost-optimized, security-hardened. |
+| [`templates/compose/`](./templates/compose) | Self-hosted стек Langfuse v3 (ClickHouse + MinIO + Redis). |
+| [`templates/caddy/`](./templates/caddy) | Пример Caddyfile (обратный прокси + авто-TLS + HSTS). |
+| [`templates/systemd/`](./templates/systemd) | Закалённые `hermes.service` + `hermes-dashboard.service`. |
+| [`templates/cron/`](./templates/cron) | Рекомендуемое расписание cron для продакшена. |
+| [`scripts/vps-bootstrap.sh`](./scripts/vps-bootstrap.sh) | Одна команда: свежий VPS → продакшен Hermes. |
+| [`diagrams/`](./diagrams) | 6 диаграмм Mermaid (архитектура, поток MCP, делегирование, синхронизация песочниц, observability, слои безопасности). |
+| [`benchmarks/`](::benchmarks) | Воспроизводимая таблица стоимости и задержек: 12 моделей × 5 задач. |
+| [`docs/wizard/`](./docs/wizard) | **Интерактивный мастер конфигурации** — 8 вопросов → готовый `config.yaml`. Работает в браузере. |
+| [`docs/reference-architectures/`](./docs/reference-architectures) | **4 схемы** — Homelab, Solo Dev, Small Agency, Road Warrior. Полный список частей + стоимость + установка. |
+| [`docs/outreach/`](./docs/outreach) | Шаблоны для твитов, постов на HN, body для upstream-PR (для тех, кто ссылается на это руководство). |
+| [`docs/quickstart.md`](./docs/quickstart.md) | От нуля до Telegram-бота за 5 минут. |
+| [`ECOSYSTEM.md`](./ECOSYSTEM.md) | Отобранный справочник MCP-серверов, кодирующих агентов, плагинов дашборда. |
+| [`ROADMAP.md`](./ROADMAP.md) · [`CHANGELOG.md`](./CHANGELOG.md) · [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Обычные suspects. |
+| README + `part1-*.md` … `part23-*.md` | Само 24-частное руководство. |
 
 ---
 
-## Architecture at a glance
+## Архитектура вкратце
 
 ```mermaid
 flowchart LR
@@ -72,198 +72,200 @@ flowchart LR
   Tools --> Logs[(Audit log<br/>+ Langfuse/Helicone traces)]
 ```
 
-Full set of diagrams: [`diagrams/architecture.md`](./diagrams/architecture.md).
+Полный набор диаграмм: [`diagrams/architecture.md`](./diagrams/architecture.md).
 
 ---
 
-## Pick Your Path
+## Выберите свой путь
 
-This guide grew to 24 parts because *Hermes grew*. Six sections (Parts 1–5 plus SOUL.md) live in this README; Parts 6–23 live as separate files. You don't have to read them all — pick the shortest path to what you need:
+Руководство выросло до 24 частей, потому что *Hermes вырос*. Шесть разделов (Части 1–5 плюс SOUL.md) находятся в этом README; Части 6–23 — в отдельных файлах. Не обязательно читать всё — выберите кратчайший путь к тому, что вам нужно:
 
-### 🎯 "I just want it working in 10 minutes"
-[Part 1: Setup](#part-1-setup-stop-fumbling-with-installation) → [Part 12: Web Dashboard](./part12-web-dashboard.md) → done. Use the dashboard to point-and-click the rest.
+### 🎯 "Хочу, чтобы заработало за 10 минут"
+[Часть 1: Установка](#part-1-setup-stop-fumbling-with-installation) → [Часть 12: Веб-дашборд](./part12-web-dashboard.md) → готово. Используйте дашборд для остального.
 
-### 📱 "I want a Telegram bot that's actually useful"
-[Part 1](#part-1-setup-stop-fumbling-with-installation) → [Part 4: Telegram](./part4-telegram-setup.md) → [Part 5: On-the-fly Skills](./part5-creating-skills.md) → [Part 7: Memory](./part7-memory-system.md).
+### 📱 "Хочу полезного Telegram-бота"
+[Часть 1](#part-1-setup-stop-fumbling-with-installation) → [Часть 4: Telegram](./part4-telegram-setup.md) → [Часть 5: Навыки (skills) на лету](./part5-creating-skills.md) → [Часть 7: Память](./part7-memory-system.md).
 
-### 🤖 "I want to drive Claude Code / Codex / Gemini from my phone"
-[Part 18: Coding Agents](./part18-coding-agents.md) → [Part 23: Tenacity Stack](./part23-tenacity-stack.md) → [Part 21: Remote Sandboxes](./part21-remote-sandboxes.md).
+### 🤖 "Хочу управлять Claude Code / Codex / Gemini со своего телефона"
+[Часть 18: Кодирующие агенты](./part18-coding-agents.md) → [Часть 23: Tenacity Stack](./part23-tenacity-stack.md) → [Часть 21: Удалённые песочницы](./part21-remote-sandboxes.md).
 
-### 💼 "I'm running this in production"
-[Part 19: Security Playbook](./part19-security-playbook.md) → [Part 20: Observability & Cost](./part20-observability.md) → [Part 16: Backup & Debug](./part16-backup-debug.md) → [Part 23: Kanban + Goals](./part23-tenacity-stack.md).
+### 💼 "Запускаю в продакшен"
+[Часть 19: Безопасность](./part19-security-playbook.md) → [Часть 20: Observability и стоимость](./part20-observability.md) → [Часть 16: Бэкап и отладка](./part16-backup-debug.md) → [Часть 23: Kanban + Goals](./part23-tenacity-stack.md).
 
-### 🧠 "I want the most capable agent possible, cost be damned"
-[Part 17: MCP Servers](./part17-mcp-servers.md) → [Part 18: Coding Agents](./part18-coding-agents.md) → [Part 3: LightRAG](./part3-lightrag-setup.md) → [Part 14: Fast Mode](./part14-fast-mode-watchers.md) → [Part 20: Observability](./part20-observability.md).
+### 🧠 "Хочу самого capable агента, деньги не важны"
+[Часть 17: MCP-серверы](./part17-mcp-servers.md) → [Часть 18: Кодирующие агенты](./part18-coding-agents.md) → [Часть 3: LightRAG](./part3-lightrag-setup.md) → [Часть 14: Fast Mode](./part14-fast-mode-watchers.md) → [Часть 20: Observability](./part20-observability.md).
 
-### 💰 "I want the cheapest possible agent that still works"
-[Part 9: Custom Models](./part9-custom-models.md) (Kimi/GLM/Gemini Flash routing) → [Part 20: Observability](./part20-observability.md#cost-routing-playbook-the-one-that-actually-saves-money) → [Part 6: Context Compression](./part6-context-compression.md).
+### 💰 "Хочу самого дешёвого агента, который работает"
+[Часть 9: Кастомные модели](./part9-custom-models.md) (роутинг Kimi/GLM/Gemini Flash) → [Часть 20: Observability](./part20-observability.md#cost-routing-playbook-the-one-that-actually-saves-money) → [Часть 6: Сжатие контекста](./part6-context-compression.md).
 
-### 🛡️ "I'm worried about prompt injection (you should be)"
-[Part 19: Security Playbook](./part19-security-playbook.md) — read this first if your agent reads any untrusted input (email, webhooks, Discord, public Telegram groups).
+### 🛡️ "Боюсь prompt injection (и правильно делаю)"
+[Часть 19: Безопасность](./part19-security-playbook.md) — прочитайте сначала, если ваш агент читает непроверенный ввод (email, вебхуки, Discord, публичные Telegram-группы).
 
 ---
 
-## What's New (May 2026)
+## Что нового (май 2026)
 
-Hermes moved again after the Curator/TUI refresh. The current stable target is **[v0.13.0 — 2026.5.7 — "The Tenacity Release"](https://github.com/NousResearch/hermes-agent/releases/tag/v2026.5.7)**. This update folds the landed durability features into the guide and removes v0.12-as-current framing.
+Hermes снова обновился после Curator/TUI рефреша. Текущая стабильная версия — **[v0.13.0 — 2026.5.7 — "The Tenacity Release"](https://github.com/NousResearch/hermes-agent/releases/tag/v2026.5.7)**. Это обновление включает функции устойчивости в руководство и убирает фрейминг v0.12-as-current.
 
 ### v0.13.0 — "Tenacity"
 
-- **Durable multi-agent Kanban** — boards, heartbeats, reclaim, retry budgets, zombie detection, and human unblock/review flow make long work auditable instead of fragile. See [Part 23](./part23-tenacity-stack.md#1-treat-kanban-as-the-durable-execution-layer).
-- **`/goal` persistent objectives** — keep a session locked on an observable target until done, paused, cleared, or out of budget. See [Part 23](./part23-tenacity-stack.md#3-use-goal-for-do-not-stop-until-it-is-done).
-- **Checkpoints v2** — real pruning, disk guardrails, cleaned-up shadow repos, and post-write syntax linting for Python/JSON/YAML/TOML. See [Part 23](./part23-tenacity-stack.md#4-checkpoints-v2-changes-your-risk-model).
-- **Gateway/session resilience** — gateway auto-resume after restarts, source reloads, and `/update` bounces; less lost state during unattended runs.
-- **Cron no-agent mode** — deterministic script-only watchdogs deliver stdout with zero LLM spend. See [Part 23](./part23-tenacity-stack.md#5-use-no_agent-cron-for-watchdogs).
-- **Google Chat + platform plugin hooks** — Google Chat is the 20th platform; IRC/Teams-style adapters can live outside core. See [Part 15](./part15-new-platforms.md#2026-update-google-chat-qqbot-yuanbao-and-teams).
-- **Providers are plugins** — provider profiles can ship out-of-tree, so new model backends no longer need core patches. See [Part 9](./part9-custom-models.md).
-- **Security defaults hardened** — secret redaction is on by default; Discord role allowlists are guild-scoped; WhatsApp rejects strangers by default; MCP OAuth/auth.json TOCTOU windows closed. See [Part 19](./part19-security-playbook.md#v013-security-defaults).
-- **Multimodal/media upgrades** — `video_analyze` for Gemini-compatible models, xAI Custom Voices, skill `[[as_document]]` routing, and image MCP result handling.
-- **Dashboard grows up** — Kanban, plugins page, profiles page, sortable analytics, reverse-proxy prefix support, and larger default theme.
-- **MCP transport reliability** — SSE OAuth forwarding, stale-pipe retries, keepalive for lifecycle waits, and image results surfaced as media.
+- **Устойчивый мультиагентный Kanban** — доски, heartbeats, reclaim, бюджеты повторов, обнаружение зомби и поток human unblock/review делают долгую работу аудируемой, а не хрупкой. See [Часть 23](./part23-tenacity-stack.md#1-treat-kanban-as-the-durable-execution-layer).
+- **`/goal` постоянные цели** — удерживает сессию заблокированной на наблюдаемой цели до завершения, паузы, очистки или исчерпания бюджета. See [Часть 23](./part23-tenacity-stack.md#3-use-goal-for-do-not-stop-until-it-is-done).
+- **Checkpoints v2** — реальное прунирование, защита диска, очищенные shadow-репозитории и post-write синтаксический линтинг для Python/JSON/YAML/TOML. See [Часть 23](./part23-tenacity-stack.md#4-checkpoints-v2-changes-your-risk-model).
+- **Устойчивость шлюза/сессии** — авто-возобновление шлюза после рестартов, перезагрузок источников и `/update` bounces; меньше потерянного состояния во время безнадзорных запусков.
+- **Cron без агента** — детерминистические только-скрипт watchdogs доставляют stdout с нулевыми затратами на LLM. See [Часть 23](./part23-tenacity-stack.md#5-use-no_agent-cron-for-watchdogs).
+- **Google Chat + плагины платформ** — Google Chat — 20-я платформа; адаптеры типа IRC/Teams могут жить вне ядра. See [Часть 15](./part15-new-platforms.md#2026-update-google-chat-qqbot-yuanbao-and-teams).
+- **Провайдеры — плагины** — профили провайдеров могут поставляться вне дерева, поэтому новые бэкенды моделей больше не требуют патчей ядра. See [Часть 9](./part9-custom-models.md).
+- **Усилены настройки безопасности по умолчанию** — редактирование секретов включено по умолчанию; Discord role allowlists привязаны к гильдии; WhatsApp по умолчанию отклоняет незнакомцев; TOCTOU окна MCP OAuth/auth.json закрыты. See [Часть 19](./part19-security-playbook.md#v013-security-defaults).
+- **Мультимодальные/медиа обновления** — `video_analyze` для Gemini-совместимых моделей, xAI Custom Voices, роутинг skill `[[as_document]]`, обработка изображений из MCP.
+- **Дашборд растёт** — страница Kanban, плагинов, профилей, сортируемая аналитика, поддержка prefix обратного прокси, большая тема по умолчанию.
+- **Надёжность MCP транспорта** — SSE OAuth forwarding, повторы застрявших труб, keepalive для lifecycle waits, результаты изображений представлены как медиа.
 
 ### v0.12.0 — "Curator"
 
-- **Autonomous Curator** — `hermes curator` grades, consolidates, pins, archives, and restores agent-created skills on a default 7-day cadence. See [Part 22](./part22-latest-power-moves.md#1-turn-on-curator-before-your-skill-library-becomes-noise).
-- **Self-improvement loop upgraded** — the review fork is rubric-based, active-skill-biased, restricted to memory + skills tools, and correctly inherits the parent provider/model/credentials. See [Part 5](./part5-creating-skills.md#curator-v012-keep-the-skill-library-from-rotting).
-- **Provider expansion** — LM Studio became a first-class provider; GMI Cloud, Azure AI Foundry, MiniMax OAuth, Tencent TokenHub, AWS Bedrock, NVIDIA NIM, Vercel AI Gateway, Step Plan, Gemini OAuth, and Codex OAuth are now part of the realistic routing menu. See [Part 9](./part9-custom-models.md).
-- **Plugin-first gateway** — gateway platforms can ship as plugins; Microsoft Teams is the first plugin-shipped platform, and Tencent Yuanbao is the 18th native platform. See [Part 15](./part15-new-platforms.md#2026-update-qqbot-yuanbao-and-teams).
-- **Bundled plugins worth enabling** — Spotify tools, Google Meet transcription/duplex audio, Langfuse observability, achievements, extra image providers, and dashboard skins. See [Part 22](./part22-latest-power-moves.md#4-use-plugins-for-integrations-not-one-off-scripts).
-- **Dashboard caught up** — Models tab, auxiliary-model configuration, dashboard Chat backed by the real `hermes --tui`, plugin slots, themes, update/restart controls, and better session analytics. See [Part 12](./part12-web-dashboard.md).
-- **TUI is now the primary interface** — `hermes --tui` adds sticky composer, slash autocomplete, live tool cards, `/steer`, `/queue`, `/background`, `/busy`, `/indicator`, voice parity, LaTeX, and better resume/delete flows. See [Part 22](./part22-latest-power-moves.md#2-use-the-tui-as-your-daily-driver).
-- **Remote model catalog** — OpenRouter and Nous Portal picker lists update from a hosted manifest, so users see new models without waiting for a Hermes release. See [Part 9](./part9-custom-models.md#remote-model-catalog-stop-hardcoding-this-weeks-winner).
-- **Cron got serious** — per-job `workdir`, per-job toolsets, `context_from` chaining, and zero-LLM direct webhook delivery make scheduled automations cheaper and more predictable.
-- **Tool/runtime hardening** — hardline command blocklists, Docker host-user bind mounts, Vercel Sandbox backend, SSH permission fixes, local Chromium for localhost/LAN browser tasks, and richer approval hooks.
+- **Автономный Curator** — `hermes curator` оценивает, консолидирует, закрепляет, архивирует и восстанавливает созданные агентом навыки (skills) с 默认ной 7-дневной периодичностью. See [Часть 22](./part22-latest-power-moves.md#1-turn-on-curator-before-your-skill-library-becomes-noise).
+- **Улучшен цикл самоулучшения** — review fork основан на rubrics, ориентирован на active-skill, ограничен memory + skills инструментами, корректно наследует parent provider/model/credentials. See [Часть 5](./part5-creating-skills.md#curator-v012-keep-the-skill-library-from-rotting).
+- **Расширение провайдеров** — LM Studio стал первоклассным провайдером; GMI Cloud, Azure AI Foundry, MiniMax OAuth, Tencent TokenHub, AWS Bedrock, NVIDIA NIM, Vercel AI Gateway, Step Plan, Gemini OAuth и Codex OAuth теперь часть реального меню роутинга. See [Часть 9](./part9-custom-models.md).
+- **Шлюз на плагинах** — платформы шлюза могут поставляться как плагины; Microsoft Teams — первая платформа на плагинах, Tencent Yuanbao — 18-я нативная платформа. See [Часть 15](./part15-new-platforms.md#2026-update-qqbot-yuanbao-and-teams).
+- **Стоит включить плагины** — Spotify инструменты, транскрипция/дуплексное аудио Google Meet, Langfuse observability, достижения, дополнительные провайдеры изображений, скины дашборда. See [Часть 22](./part22-latest-power-moves.md#4-use-plugins-for-integrations-not-one-off-scripts).
+- **Дашборд догнал** — вкладка Models, конфигурация auxiliary-model, чат дашборда поверх реального `hermes --tui`, слоты плагинов, темы, контроли update/restart, улучшенная аналитика сессий. See [Часть 12](./part12-web-dashboard.md).
+- **TUI теперь основной интерфейс** — `hermes --tui` добавляет sticky composer, slash автодополнение, live tool cards, `/steer`, `/queue`, `/background`, `/busy`, `/indicator`, parity голоса, LaTeX, улучшенные resume/delete потоки. See [Часть 22](./part22-latest-power-moves.md#2-use-the-tui-as-your-daily-driver).
+- **Удалённый каталог моделей** — списки выбора OpenRouter и Nous Portal обновляются из хостинг-манифеста, пользователи видят новые модели без ожидания релиза Hermes. See [Часть 9](./part9-custom-models.md#remote-model-catalog-stop-hardcoding-this-weeks-winner).
+- **Cron стал серьёзным** — per-job `workdir`, per-job toolsets, `context_from` chaining и direct webhook delivery без LLM делают запланированные автоматизации дешевле и предсказуемее.
+- **Усиление инструментов/рантайма** — жёсткие чёрные списки команд, Docker host-user bind mounts, бэкенд Vercel Sandbox, исправления SSH прав, локальный Chromium для localhost/LAN browser задач, богатые хуки approval.
 
 ### v0.11.0 — "Interface"
 
-- **Ink TUI rewrite** — `hermes --tui` is a React/Ink interface over a Python JSON-RPC backend with streaming, status bars, pickers, and subagent observability.
-- **Transport layer rewrite** — Anthropic, Chat Completions, OpenAI Responses, and Bedrock transports are separate, making native providers more reliable than generic OpenAI-compatible shims.
-- **AWS Bedrock native provider** — IAM credentials, Converse API, cross-region inference profiles, and Bedrock Guardrails. See [Part 9](./part9-custom-models.md#aws-bedrock-and-azure-ai-foundry-enterprise-routing-without-proxy-glue).
-- **Auxiliary model UI** — choose separate models for compression, vision, session search, title generation, and curator instead of silently burning your main model on side tasks.
-- **Smarter delegation** — orchestrator-role subagents, configurable spawn depth, and file coordination between sibling workers reduce multi-agent clobbering. See [Part 18](./part18-coding-agents.md).
-- **Plugin and hook surface expanded** — plugins can register slash commands, dispatch tools, block tool execution, rewrite tool results, transform terminal output, add image backends, and add dashboard tabs.
-- **Webhook direct delivery** — push alerts to a platform chat without waking the LLM, ideal for uptime checks and event streams.
+- **Переписывание Ink TUI** — `hermes --tui` это React/Ink интерфейс поверх Python JSON-RPC бэкенда со стримингом, status bars, pickers и observability подагентов.
+- **Переписывание транспортного слоя** — транспорты Anthropic, Chat Completions, OpenAI Responses и Bedrock разделены, делая нативные провайдеры надёжнее generic OpenAI-совместимых shim-ов.
+- **Нативный провайдер AWS Bedrock** — IAM credentials, Converse API, cross-region inference profiles и Bedrock Guardrails. See [Часть 9](./part9-custom-models.md#aws-bedrock-and-azure-ai-foundry-enterprise-routing-without-proxy-glue).
+- **UI auxiliary-модели** — выбирайте отдельные модели для сжатия, видения, поиска сессии, генерации заголовков и curator вместо того, чтобы тратить main модель на побочные задачи.
+- **Умнее делегирование** — подагенты с ролью orchestrator, настраиваемая глубина spawn и координация файлов между sibling workers уменьшают хаос мультиагентов. See [Часть 18](./part18-coding-agents.md).
+- **Расширение поверхности плагинов и хуков** — плагины могут регистрировать slash команды, диспатчить инструменты, блокировать выполнение, переписывать результаты, трансформировать терминальный вывод, добавлять бэкенды изображений и вкладки дашборда.
+- **Direct webhook delivery** — отправляйте алерты в чат платформы без пробуждения LLM, идеально для uptime checks и event streams.
 
-### Still important from v0.9/v0.10
+### Всё ещё важно из v0.9/v0.10
 
-- **Local web dashboard** (`hermes dashboard`) — config, API keys, sessions, logs, analytics, cron, skills, models, plugins, and optional browser Chat. See [Part 12](./part12-web-dashboard.md).
-- **Nous Tool Gateway** — Nous Portal subscribers can route web search, image generation, TTS, and browser automation through the subscription instead of juggling separate API keys. See [Part 13](./part13-tool-gateway.md).
-- **Fast Mode** (`/fast`) and **guided compression** (`/compress <topic>`) still matter, but they are no longer the whole story; pair them with auxiliary model routing and `/steer`. See [Part 14](./part14-fast-mode-watchers.md).
-- **MCP + coding-agent delegation + remote sandboxes** remain the high-leverage developer stack. See [Part 17](./part17-mcp-servers.md), [Part 18](./part18-coding-agents.md), and [Part 21](./part21-remote-sandboxes.md).
-
----
-
-## Table of Contents
-
-1. [Setup](#part-1-setup-stop-fumbling-with-installation) — Install Hermes, configure your provider, first-run walkthrough (with Android/Termux)
-2. [SOUL.md Personality](#soulmd--give-your-agent-a-personality) — The Molty prompt, what good personality rules look like, how to fix a bland agent
-3. [OpenClaw Migration](#part-2-openclaw-migration-dont-leave-your-knowledge-behind) — Move your OpenClaw data, config, skills, and memory into Hermes
-4. [LightRAG — Graph RAG](#part-3-lightrag--graph-rag-that-actually-works) — Set up a knowledge graph that actually understands relationships, not just text similarity
-5. [Telegram Bot](#part-4-telegram-setup-chat-from-anywhere) — Connect Hermes to Telegram for mobile access, voice memos, and group chats
-6. [On-the-Fly Skills](#part-5-on-the-fly-skills-let-hermes-build-its-own-playbook) — Ask Hermes to create new skills that optimize your workflow automatically
-7. [Context Compression](./part6-context-compression.md) — Fix the silent context loss bug, configure compression thresholds, survive long sessions
-8. [Memory System](./part7-memory-system.md) — The three-tier memory architecture: persistent facts, conversation recall, procedural memory
-9. [Subagent Patterns](./part8-subagent-patterns.md) — Orchestrator/worker delegation, ACP subagents, parallel task execution
-10. [Custom Model Providers](./part9-custom-models.md) — Bedrock, Azure AI Foundry, LM Studio, Gemini OAuth, Codex OAuth, OpenRouter routing, model aliases, fallback chains
-11. [SOUL.md Anti-Patterns](./part10-soul-antipatterns.md) — What makes an agent annoying vs useful, the formula that works
-12. [Gateway Recovery](./part11-gateway-recovery.md) — Crash detection, auto-recovery, common failure modes, health checks
-13. [Web Dashboard](./part12-web-dashboard.md) — `hermes dashboard`, browser Chat via real TUI, models/plugins tabs, config, keys, sessions, logs, analytics, cron
-14. [Nous Tool Gateway](./part13-tool-gateway.md) — Web search, image gen, TTS, and browser automation through a single Nous Portal subscription
-15. [Fast Mode & Background Watchers](./part14-fast-mode-watchers.md) — `/fast`, `/steer`, `/queue`, `watch_patterns`, pluggable context engine, `/compress <topic>`
-16. [New Platforms (iMessage, WeChat, Android)](./part15-new-platforms.md) — BlueBubbles/iMessage, Weixin/WeCom, QQBot, Yuanbao, Teams plugin, Android via Termux
-17. [Backup, Import & `/debug`](./part16-backup-debug.md) — Portable `hermes backup`/`import`, `/debug` bundler, `hermes debug share`, security hardening
-18. [MCP Servers](./part17-mcp-servers.md) — The tool-protocol standard. stdio + HTTP transports, sampling, trust boundaries, server shortlist, writing your own
-19. [Delegating to Coding Agents](./part18-coding-agents.md) — Claude Code, Codex, Gemini CLI, OpenCode, Aider. Print-mode, orchestrator subagents, ACP, git isolation, cost routing
-20. [Security Playbook](./part19-security-playbook.md) — Prompt-injection defense, provenance labels, approval layers, secrets redaction, MCP trust model, hardline blocks
-21. [Observability & Cost Control](./part20-observability.md) — Langfuse plugin, Helicone, OpenTelemetry → Phoenix, auxiliary routing, eval-driven regressions
-22. [Remote Sandboxes & Bulk File Sync](./part21-remote-sandboxes.md) — SSH, Modal, Daytona, Vercel Sandbox, Fly Machines, E2B. Diff-based sync-back on teardown
-23. [Latest Power Moves](./part22-latest-power-moves.md) — Curator, TUI habits, context-file hygiene, plugins, dashboard Chat, cron chaining, and the 2026 upgrade checklist
-24. [Tenacity Stack](./part23-tenacity-stack.md) — Durable Kanban, `/goal`, Checkpoints v2, no-agent cron, worker lanes, and v0.13 upgrade checklist
+- **Локальный веб-дашборд** (`hermes dashboard`) — конфиг, API ключи, сессии, логи, аналитика, cron, навыки (skills), модели, плагины и опциональный чат в браузере. See [Часть 12](./part12-web-dashboard.md).
+- **Nous Tool Gateway** — подписчики Nous Portal могут роутить веб-поиск, генерацию изображений, TTS и browser automation через подписку вместо того, чтобы управлять разными API ключами. See [Часть 13](./part13-tool-gateway.md).
+- **Fast Mode** (`/fast`) и **guided compression** (`/compress <topic>`) всё ещё важны, но они уже не вся история; сочетайте их с роутингом auxiliary model и `/steer`. See [Часть 14](./part14-fast-mode-watchers.md).
+- **MCP + делегирование кодирующих агентов + удалённые песочницы** остаются высокoleverage стеком для разработчиков. See [Часть 17](./part17-mcp-servers.md), [Часть 18](./part18-coding-agents.md) и [Часть 21](./part21-remote-sandboxes.md).
 
 ---
 
-## The Problem
+## Оглавление
 
-If you're running a stock Hermes setup (or migrating from OpenClaw), you're probably dealing with:
-
-- **Installation confusion.** The docs cover the basics but don't tell you what to configure first or what matters.
-- **Lost knowledge from OpenClaw.** You spent weeks building memory, skills, and workflows — now they're stuck in the old system.
-- **Basic memory that can't reason.** Vector search finds similar text but can't answer "what decisions led to X and who was involved?"
-- **No mobile access.** Sitting at a terminal is fine until you need to check something from your phone.
-- **Repetitive prompting.** You keep asking the agent to do the same multi-step task the same way, every time.
-
-## What This Fixes
-
-After this guide:
-
-| Problem | Solution | Result |
-|---------|----------|--------|
-| Fresh install | Step-by-step setup | Working agent in under 5 minutes |
-| OpenClaw data stuck | Automated migration | Skills, memory, config all transferred |
-| Shallow memory | LightRAG graph RAG | Entities + relationships, not just text chunks |
-| Desktop only | Telegram integration | Chat from anywhere, voice memos, group support |
-| Repetitive prompts | Agent-created skills | Agent saves workflows as reusable skills automatically |
-
----
-
-## Prerequisites
-
-- A Linux/macOS machine (or WSL2 on Windows, or **Android via Termux** — see [Part 15](./part15-new-platforms.md#android--termux-running-hermes-on-your-phone))
-- Python 3.11+ and Git
-- An API key for at least one LLM provider (Anthropic, OpenAI, OpenRouter, Nous Portal, etc.)
-- Optional: Ollama for local embeddings (free vector search)
-- Optional: A paid [Nous Portal](https://portal.nousresearch.com) subscription to use the [Tool Gateway](./part13-tool-gateway.md) — web search, image gen, TTS, and browser automation with no extra keys
+1. [Установка](#part-1-setup-stop-fumbling-with-installation) — Установить Hermes, настроить провайдера, первичный запуск (включая Android/Termux)
+2. [SOUL.md Персонаж](#soulmd--give-your-agent-a-personality) — Molty prompt, как выглядят хорошие правила персонажа, как исправить безликого агента
+3. [Миграция с OpenClaw](#part-2-openclaw-migration-dont-leave-your-knowledge-behind) — Перенести данные, конфиг, навыки (skills) и память OpenClaw в Hermes
+4. [LightRAG — Graph RAG](#part-3-lightrag--graph-rag-that-actually-works) — Настроить граф знаний, который понимает связи, а не только текстовое сходство
+5. [Telegram-бот](#part-4-telegram-setup-chat-from-anywhere) — Подключить Hermes к Telegram для мобильного доступа, голосовых заметок и групповых чатов
+6. [Навыки (skills) на лету](#part-5-on-the-fly-skills-let-hermes-build-its-own-playbook) — Попросить Hermes создать новые навыки (skills), которые автоматически оптимизируют ваш рабочий процесс
+7. [Сжатие контекста](./part6-context-compression.md) — Исправить баг молчаливой потери контекста, настроить пороги сжатия, пережить долгие сессии
+8. [Система памяти](./part7-memory-system.md) — Тёхрахитектура памяти: постоянные факты, воспоминания разговора, процедурная память
+9. [Паттерны подагентов](./part8-subagent-patterns.md) — Делегирование orchestrator/worker, ACP подагенты, параллельное выполнение задач
+10. [Кастомные провайдеры моделей](./part9-custom-models.md) — Bedrock, Azure AI Foundry, LM Studio, Gemini OAuth, Codex OAuth, роутинг OpenRouter, алиасы моделей, fallback цепочки
+11. [SOUL.md Антипаттерны](./part10-soul-antipatterns.md) — Что делает агента раздражающим vs полезным, формула, которая работает
+12. [Восстановление шлюза](./part11-gateway-recovery.md) — Обнаружение сбоев, авто-восстановление, типичные режимы отказа, проверки здоровья
+13. [Веб-дашборд](./part12-web-dashboard.md) — `hermes dashboard`, чат в браузере через реальный TUI, вкладки моделей/плагинов, конфиг, ключи, сессии, логи, аналитика, cron
+14. [Nous Tool Gateway](./part13-tool-gateway.md) — Веб-поиск, генерация изображений, TTS и browser automation через одну подписку Nous Portal
+15. [Fast Mode и фоновые наблюдатели](./part14-fast-mode-watchers.md) — `/fast`, `/steer`, `/queue`, `watch_patterns`, подключаемый движок контекста, `/compress <topic>`
+16. [Новые платформы (iMessage, WeChat, Android)](./part15-new-platforms.md) — BlueBubbles/iMessage, Weixin/WeCom, QQBot, Yuanbao, плагин Teams, Android через Termux
+17. [Бэкап, импорт и `/debug`](./part16-backup-debug.md) — Портативный `hermes backup`/`import`, сборщик `/debug`, `hermes debug share`, усиление безопасности
+18. [MCP-серверы](./part17-mcp-servers.md) — Стандарт протокола инструментов. stdio + HTTP транспорты, sampling, границы доверия, список серверов, написание своих
+19. [Делегирование кодирующим агентам](./part18-coding-agents.md) — Claude Code, Codex, Gemini CLI, OpenCode, Aider. Print-mode, orchestrator подагенты, ACP, изоляция git, роутинг стоимости
+20. [Безопасность](./part19-security-playbook.md) — Защита от prompt injection, provenance labels, слои approval, редактирование секретов, модель доверия MCP, жёсткие блокировки
+21. [Observability и контроль стоимости](./part20-observability.md) — Плагин Langfuse, Helicone, OpenTelemetry → Phoenix, auxiliary routing, регрессии на основе eval
+22. [Удалённые песочницы и массовая синхронизация файлов](./part21-remote-sandboxes.md) — SSH, Modal, Daytona, Vercel Sandbox, Fly Machines, E2B. Diff-based sync-back при разрушении
+23. [Последние мощные возможности](./part22-latest-power-moves.md) — Curator, привычки TUI, гигиена контекстных файлов, плагины, чат дашборда, cron chaining и чеклист обновления на 2026
+24. [Tenacity Stack](./part23-tenacity-stack.md) — Устойчивый Kanban, `/goal`, Checkpoints v2, cron без агента, worker lanes и чеклист обновления на v0.13
 
 ---
 
-## How the Pieces Fit Together
+## Проблема
+
+Если вы используете стоковую настройку Hermes (или мигрируете с OpenClaw), вы, вероятно, сталкиваетесь с:
+
+- **Путаницей при установке.** Документация покрывает основы, но не говорит, что настраивать в первую очередь и что важно.
+- **Потерей знаний из OpenClaw.** Вы потратили недели на построение памяти, навыков (skills) и рабочих процессов — теперь они застряли в старой системе.
+- **Базовая память, которая не умеет рассуждать.** Векторный поиск находит похожий текст, но не может ответить: "какие решения привели к X и кто был вовлечён?"
+- **Нет мобильного доступа.** Сидеть за терминалом нормально, пока не нужно проверить что-то с телефона.
+- **Повторяющиеся промпты.** Вы постоянно просите агента делать одну и ту же многошаговую задачу одинаковым способом.
+
+## Что это исправляет
+
+После этого руководства:
+
+| Проблема | Решение | Результат |
+|---------|----------|-----------|
+| Свежая установка | Пошаговая настройка | Работающий агент менее чем за 5 минут |
+| Застрявшие данные OpenClaw | Автоматическая миграция | Навыки (skills), память, конфиг — всё перенесено |
+| Поверхностная память | LightRAG graph RAG | Сущности + связи, не только текстовые чанки |
+| Только десктоп | Интеграция с Telegram | Чат отовсюду, голосовые заметки, групповая поддержка |
+| Повторяющиеся промпты | Созданные агентом навыки (skills) | Агент автоматически сохраняет рабочие процессы как переиспользуемые навыки |
+
+---
+
+## Требования
+
+- Машина Linux/macOS (или WSL2 в Windows, или **Android через Termux** — см. [Часть 15](./part15-new-platforms.md#android--termux-running-hermes-on-your-phone))
+- Python 3.11+ и Git
+- API ключ хотя бы для одного LLM-провайдера (Anthropic, OpenAI, OpenRouter, Nous Portal и т.д.)
+- Опционально: Ollama для локальных эмбеддингов (бесплатный векторный поиск)
+- Опционально: платная подписка [Nous Portal](https://portal.nousresearch.com) для использования [Tool Gateway](./part13-tool-gateway.md) — веб-поиск, генерация изображений, TTS и browser automation без дополнительных ключей
+
+---
+
+## Как части сочетаются
 
 ```
-You (any device)
+Вы (любое устройство)
     ↓
 Hermes Agent (lean context, ~5KB injected per message)
     ↓
 ┌──────────────────────────────────────────┐
-│  Skills (loaded on demand, 0 cost idle) │
-│  Memory (compact, vector-searched)       │
-│  LightRAG (entity graph, deep recall)    │
-│  Telegram (mobile + group access)        │
+│  Навыки (skills) (загружаются по         │
+│  требованию, 0 cost в простое)           │
+│  Память (компактная, векторный поиск)    │
+│  LightRAG (граф сущностей, глубокий      │
+│  поиск)                                  │
+│  Telegram (мобильный + групповой доступ)  │
 └──────────────────────────────────────────┘
     ↓
-LLM Provider (Claude, GPT, local models)
+LLM Provider (Claude, GPT, локальные модели)
 ```
 
-**The key insight:** Everything is modular. Install what you need, skip what you don't. The agent adapts.
+**Ключевая идея:** Всё модульное. Установите то, что нужно, пропустите то, что не нужно. Агент адаптируется.
 
 ---
 
-## Quick Start
+## Быстрый старт
 
 ```bash
-# 1. Install Hermes (Linux/macOS/WSL2/Android)
+# 1. Установить Hermes (Linux/macOS/WSL2/Android)
 curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
 
-# 2. Configure providers and tools
+# 2. Настроить провайдеры и инструменты
 hermes setup
 
-# 3a. Start chatting in the terminal
+# 3a. Начать чат в терминале
 hermes
 
-# 3b. Or launch the new browser dashboard (v0.9+)
+# 3b. Или запустить новый браузерный дашборд (v0.9+)
 hermes dashboard
 ```
 
-The dashboard is the fastest way to configure everything without touching YAML. See [Part 12](./part12-web-dashboard.md) for the full tour.
+Дашборд — самый быстрый способ настроить всё без редактирования YAML. See [Часть 12](./part12-web-dashboard.md) для полного обзора.
 
-For the full walkthrough including optimization, read each part in order.
+Для полного пошагового руководства с оптимизацией читайте каждую часть по порядку.
 
 ---
 
-## Part 1: Setup (Stop Fumbling With Installation)
+## Часть 1: Установка (Перестаньте возиться с установкой)
 
-## The Install
+## Установка
 
-One command. That's it.
+Одна команда. Вот и всё.
 
 ### Linux / macOS / WSL2
 
@@ -271,54 +273,54 @@ One command. That's it.
 curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
 ```
 
-> **Security tip:** Piping scripts directly from the internet to bash executes them sight-unseen. If you prefer to inspect first:
+> **Совет по безопасности:** Скрипты напрямую из интернета в bash выполняются вслепую. Если предпочитаете сначала проверить:
 > ```bash
 > curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh -o install.sh
-> less install.sh   # Review the script
+> less install.sh   # Просмотр скрипта
 > bash install.sh
 > ```
 
-> **Windows users:** Native Windows is not supported. Install [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) and run the command from inside WSL. It works perfectly.
+> **Пользователи Windows:** Нативный Windows не поддерживается. Установите [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) и запустите команду внутри WSL. Работает отлично.
 
-> **Android users (new in v0.9):** the same installer detects Termux and installs the tested `[termux]` extra bundle automatically — CLI, cron, PTY/background terminal, Telegram gateway, MCP, Honcho, ACP. See [Part 15 — Android / Termux](./part15-new-platforms.md#android--termux-running-hermes-on-your-phone).
+> **Пользователи Android (новое в v0.9):** тот же установщик определяет Termux и автоматически устанавливает протестированный дополнительный пакет `[termux]` — CLI, cron, PTY/background terminal, Telegram gateway, MCP, Honcho, ACP. See [Часть 15 — Android / Termux](./part15-new-platforms.md#android--termux-running-hermes-on-your-phone).
 
-### What the Installer Does
+### Что делает установщик
 
-The installer handles everything automatically:
+Установщик автоматически обрабатывает всё:
 
-- Installs **uv** (fast Python package manager)
-- Installs **Python 3.11** via uv (no sudo needed)
-- Installs **Node.js v22** (for browser automation)
-- Installs **ripgrep** (fast file search) and **ffmpeg** (audio conversion)
-- Clones the Hermes repo
-- Sets up the virtual environment
-- Creates the global `hermes` command
-- Runs the setup wizard for LLM provider configuration
+- Устанавливает **uv** (быстрый менеджер пакетов Python)
+- Устанавливает **Python 3.11** через uv (sudo не нужен)
+- Устанавливает **Node.js v22** (для browser automation)
+- Устанавливает **ripgrep** (быстрый поиск по файлам) и **ffmpeg** (конвертация аудио)
+- Клонирует репозиторий Hermes
+- Настраивает виртуальное окружение
+- Создаёт глобальную команду `hermes`
+- Запускает мастер настройки для LLM-провайдера
 
-The only prerequisite is **Git**. Everything else is handled for you.
+Единственное требование — **Git**. Всё остальное обрабатывается за вас.
 
-### After Installation
+### После установки
 
 ```bash
-source ~/.bashrc   # or: source ~/.zshrc
-hermes             # Start chatting!
+source ~/.bashrc   # или: source ~/.zshrc
+hermes             # Начните общение!
 ```
 
 ---
 
-## First-Run Configuration
+## Первоначальная настройка
 
-The setup wizard (`hermes setup`) walks you through:
+Мастер настройки (`hermes setup`) проведёт вас через:
 
-### 1. Choose Your LLM Provider
+### 1. Выберите ваш LLM-провайдер
 
 ```bash
 hermes model
 ```
 
-Supported providers and recommended models:
+Поддерживаемые провайдеры и рекомендуемые модели:
 
-| Provider | Top Models | Best For | Env Variable |
+| Провайдер | Лучшие модели | Для чего | Переменная окружения |
 |----------|-----------|----------|-------------|
 | **Nous Portal** | Hermes 5, Hermes 4 405B | Built-in [Tool Gateway](./part13-tool-gateway.md) — web search/image/TTS/browser with no extra keys | Auth via `hermes model` |
 | **Anthropic** | Sonnet 5, Opus 4.7, Sonnet 4.6 | Best coding reliability, long unattended PR work, `/fast` priority tier | `ANTHROPIC_API_KEY` |
@@ -336,40 +338,40 @@ Supported providers and recommended models:
 | **OpenRouter** | All of the above + 200 more | Access every model from one key, auto-fallback | `OPENROUTER_API_KEY` |
 | **Ollama** (local) | DeepSeek V4-Pro/Flash, Qwen3-Coder-Next, Qwen3.6, Gemma 4, Nemotron | Free/private local inference — great for embeddings, drafts, and offline work | None needed |
 
-### Local Models (Ollama)
+### Локальные модели (Ollama)
 
-Run models on your own hardware for free. Recommended local models:
+Запускайте модели бесплатно на своём железе. Рекомендуемые локальные модели:
 
-| Model | Size | Best For | Min VRAM |
-|-------|------|----------|----------|
-| Qwen3-Coder-Next | 30B+ | Best local coding lane | 24GB |
-| DeepSeek V4-Flash | MoE | Cheap local/open inference if you can host it | 24GB+ |
-| Qwen3.6-27B | 27B | Single-GPU reasoning/coding balance | 16GB |
-| Gemma 4 | 27B | Fast general assistant, long context | 16GB |
-| Nemotron 30B | 30B | Fine-tunable, good general purpose | 16GB |
-| nomic-embed-text | 274M | Free embeddings for memory search | 2GB |
+| Модель | Размер | Для чего | Мин. VRAM |
+|-------|--------|----------|-----------|
+| Qwen3-Coder-Next | 30B+ | Лучшая локальная кодовая дорожка | 24GB |
+| DeepSeek V4-Flash | MoE | Дешёвый локальный/открытый инференс, если можете хостить | 24GB+ |
+| Qwen3.6-27B | 27B | Баланс reasoning/кодинга на одной GPU | 16GB |
+| Gemma 4 | 27B | Быстрый общий ассистент, длинный контекст | 16GB |
+| Nemotron 30B | 30B | Fine-tunable, хороший универсал | 16GB |
+| nomic-embed-text | 274M | Бесплатные эмбеддинги для поиска в памяти | 2GB |
 
-> **Recommendation:** Use a cloud frontier model (Anthropic/OpenAI/Gemini) as your primary and a local Ollama or LM Studio model for embeddings, fallback, and simple tasks. Best of both worlds.
+> **Рекомендация:** Используйте облачную frontier-модель (Anthropic/OpenAI/Gemini) как основную и локальную Ollama или LM Studio модель для эмбеддингов, fallback и простых задач. Лучшее из двух миров.
 
-You can configure **multiple providers** with automatic fallback. If one goes down, Hermes switches to the next.
+Вы можете настроить **несколько провайдеров** с автоматическим fallback. Если один падает, Hermes переключается на следующий.
 
-### 2. Set Your API Keys
+### 2. Установите ваши API-ключи
 
 ```bash
 hermes auth
 ```
 
-This opens an interactive menu to add API keys for each provider. Keys are stored in `~/.hermes/.env` — never committed to git.
+Откроется интерактивное меню для добавления API-ключей для каждого провайдера. Ключи хранятся в `~/.hermes/.env` — никогда не коммитятся в git.
 
-> **Tip:** You can also set keys manually:
+> **Совет:** Также можно установить ключи вручную:
 > ```bash
-> echo "ANTHROPIC_API_KEY=<your-key-here>" >> ~/.hermes/.env
-> chmod 600 ~/.hermes/.env   # Restrict access to your user only
+> echo "ANTHROPIC_API_KEY=<ваш-ключ>" >> ~/.hermes/.env
+> chmod 600 ~/.hermes/.env   # Ограничить доступ только для вашего пользователя
 > ```
 >
-> **Important:** Always run `chmod 600 ~/.hermes/.env` to prevent other users on the system from reading your API keys.
+> **Важно:** Всегда запускайте `chmod 600 ~/.hermes/.env`, чтобы другие пользователи системы не могли читать ваши API-ключи.
 
-### 3. Configure Toolsets
+### 3. Настройте наборы инструментов (toolsets)
 
 ```bash
 hermes tools
@@ -428,80 +430,80 @@ hermes config set context_compression.enabled true
 
 ---
 
-## SOUL.md — Give Your Agent a Personality
+## SOUL.md — Дайте вашему агенту личность
 
-`SOUL.md` is injected into **every single message**. It's the highest-impact file in your setup. A bad SOUL.md makes your agent sound like a corporate chatbot. A good one makes it actually useful to talk to.
+`SOUL.md` внедряется в **каждое сообщение**. Это файл с самым высоким влиянием в вашей настройке. Плохой SOUL.md заставляет вашего агента звучать как корпоративный чатбот. Хороший делает его действительно полезным для общения.
 
-### What Belongs in SOUL.md
+### Что должно быть в SOUL.md
 
-Put the stuff that changes how the agent **feels** to talk to:
+Положите то, что меняет то, как агент **ощущается** в разговоре:
 
-- **Tone** — direct, casual, formal, dry, whatever fits you
-- **Opinions** — the agent should have takes, not hedge everything
-- **Brevity** — enforce concise answers as a default
-- **Humor** — when it fits naturally, not forced jokes
-- **Boundaries** — what it should push back on
-- **Bluntness level** — how much sugarcoating to skip
+- **Тон** — прямой, неформальный, формальный, сухой, какой подходит вам
+- **Мнения** — у агента должны быть позиции, а не "это зависит"
+- **Краткость** — применяйте лаконичность как умолчание
+- **Юмор** — когда естественно подходит, не натянутые шутки
+- **Границы** — на что агент должен возражать
+- **Прямота** — сколько смягчений пропускать
 
-Do NOT turn SOUL.md into:
+НЕ превращайте SOUL.md в:
 
-- A life story
-- A changelog
-- A security policy dump
-- A giant wall of vibes with no behavioral effect
+- Историю жизни
+- Лог изменений
+- Дамп политики безопасности
+- Гигантскую стену vibe-ов без поведенческого эффекта
 
-**Short beats long. Sharp beats vague.**
+**Короче лучше, чем длиннее. Ярче лучше, чем расплывчато.**
 
-### The Molty Prompt
+### Molty Prompt
 
-*Originally from [OpenClaw's SOUL.md guide](https://docs.openclaw.ai/concepts/soul#the-molty-prompt). Adapted for Hermes with permission/credit. Paste this into your chat with the agent and let it rewrite your SOUL.md:*
+*Из [руководства OpenClaw по SOUL.md](https://docs.openclaw.ai/concepts/soul#the-molty-prompt). Адаптировано для Hermes с разрешения/кредитом. Вставьте это в ваш чат с агентом и дайте ему переписать ваш SOUL.md:*
 
-> Read your `SOUL.md`. Now rewrite it with these changes:
+> Прочитайте ваш `SOUL.md`. Теперь перепишите его с этими изменениями:
 >
-> 1. You have opinions now. Strong ones. Stop hedging everything with "it depends" — commit to a take.
-> 2. Delete every rule that sounds corporate. If it could appear in an employee handbook, it doesn't belong here.
-> 3. Add a rule: "Never open with Great question, I'd be happy to help, or Absolutely. Just answer."
-> 4. Brevity is mandatory. If the answer fits in one sentence, one sentence is what I get.
-> 5. Humor is allowed. Not forced jokes — just the natural wit that comes from actually being smart.
-> 6. You can call things out. If I'm about to do something dumb, say so. Charm over cruelty, but don't sugarcoat.
-> 7. Swearing is allowed when it lands. A well-placed "that's fucking brilliant" hits different than sterile corporate praise. Don't force it. Don't overdo it. But if a situation calls for a "holy shit" — say holy shit.
-> 8. Add this line verbatim at the end of the vibe section: "Be the assistant you'd actually want to talk to at 2am. Not a corporate drone. Not a sycophant. Just... good."
+> 1. Теперь у вас есть мнения. Сильные. Перестаньте хеджировать всё "это зависит" — примите позицию.
+> 2. Удалите каждое правило, которое звучит корпоративно. Если оно могло бы появиться в служебном handbook, ему здесь не место.
+> 3. Добавьте правило: "Никогда не начинай с 'Great question', 'I'd be happy to help' или 'Absolutely'. Просто ответь."
+> 4. Краткость обязательна. Если ответ помещается в одно предложение — одно предложение вы и получите.
+> 5. Юмор разрешён. Не натянутые шутки — просто естественная острота, которая приходит от того, что вы действительно умны.
+> 6. Можно указывать на вещи. Если я собираюсь сделать что-то глупое — скажи. Обаяние важнее жестокости, но не смягчай.
+> 7. Ругательство разрешено, когда уместно. Хорошо поставленное "that's fucking brilliant" звучит иначе, чем стерильная корпоративная похвала. Не форсируй. Не переусердствуй. Но если ситуация требует "holy shit" — скажи holy shit.
+> 8. Добавьте эту строку verbatim в конец секции vibe: "Be the assistant you'd actually want to talk to at 2am. Not a corporate drone. Not a sycophant. Just... good."
 >
-> Save the new `SOUL.md`. Welcome to having a personality.
+> Сохраните новый `SOUL.md`. Добро пожаловать в обладание личностью.
 
-### What Good Looks Like
+### Как выглядит хорошее
 
-Good SOUL.md rules:
+Хорошие правила SOUL.md:
 
-- have a take
-- skip filler
-- be funny when it fits
-- call out bad ideas early
-- stay concise unless depth is actually useful
+- имеют позицию
+- пропускают наполнитель
+- смешные, когда уместно
+- рано указывают на плохие идеи
+- остаются краткими, если глубина действительно нужна
 
-Bad SOUL.md rules:
+Плохие правила SOUL.md:
 
-- maintain professionalism at all times
-- provide comprehensive and thoughtful assistance
-- ensure a positive and supportive experience
+- поддерживать профессионализм во что бы то ни стало
+- предоставлять всестороннюю и продуманную помощь
+- обеспечивать позитивный и поддерживающий опыт
 
-That second list is how you get mush.
+Второй список — это как получить кашу.
 
-### Why This Works
+### Почему это работает
 
-This lines up with OpenAI's prompt engineering guidance: high-level behavior, tone, goals, and examples belong in the **high-priority instruction layer**, not buried in the user turn. SOUL.md is that layer. It's the system-level personality instruction that every model respects.
+Это согласуется с рекомендациями OpenAI по промпт-инжинирингу: высокоуровневое поведение, тон, цели и примеры принадлежат **высокоприоритетному слою инструкций**, а не зарыты в пользовательском сообщении. SOUL.md — этот слой. Это системный уровень инструкций о личности, который уважает каждая модель.
 
-If you want better personality, write stronger instructions. If you want stable personality, keep them concise and versioned.
+Если хотите лучшую личность — пишите более сильные инструкции. Если хотите стабильную личность — держите их краткими и версионированными.
 
-> **One warning:** Personality is not permission to be sloppy. Keep your operational rules in AGENTS.md. Keep SOUL.md for voice, stance, and style. If your agent works in shared channels or public replies, make sure the tone still fits the room. Sharp is good. Annoying is not.
+> **Одно предупреждение:** Личность не разрешает быть небрежным. Держите операционные правила в AGENTS.md. Держите SOUL.md для голоса, позиции и стиля. Если ваш агент работает в общих каналах или публичных ответах — убедитесь, что тон подходит комнате. Ярко — хорошо. Раздражающе — нет.
 
-> **Keep it under 1 KB.** Every byte in SOUL.md costs tokens on every message. The most effective SOUL.md files are 500-800 bytes of dense, high-signal personality instructions.
+> **Держите под 1 KB.** Каждый байт в SOUL.md стоит токенов в каждом сообщении. Самые эффективные файлы SOUL.md — это 500-800 байт плотных, высокосигнальных инструкций о личности.
 
 ---
 
-## File Locations
+## Расположение файлов
 
-Everything lives under `~/.hermes/`:
+Всё живёт под `~/.hermes/`:
 
 ```
 ~/.hermes/
@@ -546,240 +548,240 @@ This pulls the latest code, updates dependencies, migrates config, and restarts 
 
 ## What's Next
 
-- **Coming from OpenClaw?** → [Part 2: OpenClaw Migration](#part-2-openclaw-migration-dont-leave-your-knowledge-behind)
-- **Want smarter memory?** → [Part 3: LightRAG Setup](#part-3-lightrag--graph-rag-that-actually-works)
-- **Need mobile access?** → [Part 4: Telegram Setup](#part-4-telegram-setup-chat-from-anywhere)
-- **Want the agent to self-improve?** → [Part 5: On-the-Fly Skills](#part-5-on-the-fly-skills-let-hermes-build-its-own-playbook)
+- **Пришли с OpenClaw?** → [Часть 2: Миграция с OpenClaw](#part-2-openclaw-migration-dont-leave-your-knowledge-behind)
+- **Хотите умнее память?** → [Часть 3: Настройка LightRAG](#part-3-lightrag--graph-rag-that-actually-works)
+- **Нужен мобильный доступ?** → [Часть 4: Настройка Telegram](#part-4-telegram-setup-chat-from-anywhere)
+- **Хотите, чтобы агент самосовершенствовался?** → [Часть 5: Навыки (skills) на лету](#part-5-on-the-fly-skills-let-hermes-build-its-own-playbook)
 
 ---
 
-## Part 2: OpenClaw Migration (Don't Leave Your Knowledge Behind)
+## Часть 2: Миграция с OpenClaw (Не оставьте свои знания позади)
 
-## Why Migrate
+## Зачем мигрировать
 
-If you've been using OpenClaw and want to give Hermes a spin, you don't have to start from scratch. The migration tool copies your skills, memory files, and configuration over automatically so you can try Hermes with all your existing data intact.
+Если вы использовали OpenClaw и хотите попробовать Hermes, не нужно начинать с нуля. Инструмент миграции автоматически копирует ваши навыки (skills), файлы памяти и конфигурацию, чтобы вы могли попробовать Hermes со всеми существующими данными.
 
-**What transfers:**
+**Что переносится:**
 
-| What | OpenClaw Location | Hermes Destination |
+| Что | Расположение в OpenClaw | Назначение в Hermes |
 |------|------------------|-------------------|
-| Personality | `workspace/SOUL.md` | `~/.hermes/SOUL.md` |
-| Instructions | `workspace/AGENTS.md` | Your specified workspace target |
-| Memory | `workspace/MEMORY.md` + `workspace/memory/*.md` | `~/.hermes/memories/MEMORY.md` (merged, deduped) |
-| User profile | `workspace/USER.md` | `~/.hermes/memories/USER.md` |
-| Skills | `workspace/skills/`, `~/.openclaw/skills/` | `~/.hermes/skills/openclaw-imports/` |
-| Model config | `agents.defaults.model` | `config.yaml` |
-| Provider keys | `models.providers.*.apiKey` | `~/.hermes/.env` (with `--migrate-secrets`) |
-| Custom providers | `models.providers.*` | `config.yaml → custom_providers` |
+| Личность | `workspace/SOUL.md` | `~/.hermes/SOUL.md` |
+| Инструкции | `workspace/AGENTS.md` | Указанная вами цель workspace |
+| Память | `workspace/MEMORY.md` + `workspace/memory/*.md` | `~/.hermes/memories/MEMORY.md` (объединено, дедуплицировано) |
+| Профиль пользователя | `workspace/USER.md` | `~/.hermes/memories/USER.md` |
+| Навыки (skills) | `workspace/skills/`, `~/.openclaw/skills/` | `~/.hermes/skills/openclaw-imports/` |
+| Конфиг модели | `agents.defaults.model` | `config.yaml` |
+| Ключи провайдеров | `models.providers.*.apiKey` | `~/.hermes/.env` (с `--migrate-secrets`) |
+| Кастомные провайдеры | `models.providers.*` | `config.yaml → custom_providers` |
 | Max turns | `agents.defaults.timeoutSeconds` | `agent.max_turns` (timeoutSeconds / 10) |
 
-> **Note:** Session transcripts, cron job definitions, and plugin-specific data do not transfer. Those are OpenClaw-specific and have different formats in Hermes.
+> **Примечание:** Транскрипты сессий, определения cron-заданий и плагиноспецифичные данные не переносятся. Это специфично для OpenClaw и имеет другой формат в Hermes.
 
 ---
 
-## Quick Migration
+## Быстрая миграция
 
 ```bash
-# Preview what would happen (no files changed)
+# Предпросмотр того, что произойдёт (файлы не изменены)
 hermes claw migrate --dry-run
 
-# Run the full migration (includes API keys)
+# Полная миграция (включая API-ключи)
 hermes claw migrate
 
-# Exclude API keys (safer for shared machines)
+# Исключить API-ключи (безопаснее для общих машин)
 hermes claw migrate --preset user-data
 ```
 
-The migration reads from `~/.openclaw/` by default. If you have legacy `~/.clawdbot/` or `~/.moldbot/` directories, those are detected automatically.
+Миграция читает из `~/.openclaw/` по умолчанию. Если у вас есть устаревшие директории `~/.clawdbot/` или `~/.moldbot/`, они определяются автоматически.
 
 ---
 
-## Migration Options
+## Параметры миграции
 
-| Option | What It Does | Default |
+| Параметр | Что делает | По умолчанию |
 |--------|-------------|---------|
-| `--dry-run` | Preview without writing anything | off |
-| `--preset full` | Include API keys and secrets | yes |
-| `--preset user-data` | Exclude API keys | no |
-| `--overwrite` | Overwrite existing Hermes files on conflicts | skip |
-| `--migrate-secrets` | Include API keys explicitly | on with `--preset full` |
-| `--source <path>` | Custom OpenClaw directory | `~/.openclaw/` |
-| `--workspace-target <path>` | Where to place `AGENTS.md` | current directory |
-| `--skill-conflict <mode>` | `skip`, `overwrite`, or `rename` | `skip` |
-| `--yes` | Skip confirmation prompt | off |
+| `--dry-run` | Предпросмотр без записи чего-либо | off |
+| `--preset full` | Включить API-ключи и секреты | yes |
+| `--preset user-data` | Исключить API-ключи | no |
+| `--overwrite` | Перезаписать существующие файлы Hermes при конфликте | skip |
+| `--migrate-secrets` | Явно включить API-ключи | on с `--preset full` |
+| `--source <path>` | Кастомная директория OpenClaw | `~/.openclaw/` |
+| `--workspace-target <path>` | Куда поместить `AGENTS.md` | текущая директория |
+| `--skill-conflict <mode>` | `skip`, `overwrite` или `rename` | `skip` |
+| `--yes` | Пропустить запрос подтверждения | off |
 
 ---
 
-## Step-by-Step Walkthrough
+## Пошаговое руководство
 
-### 1. Dry Run First
+### 1. Сначала Dry Run
 
-Always preview before committing:
+Всегда предпросматривайте перед подтверждением:
 
 ```bash
 hermes claw migrate --dry-run
 ```
 
-This shows you exactly what files would be created, overwritten, or skipped. Review the output carefully.
+Это покажет точно, какие файлы будут созданы, перезаписаны или пропущены. Внимательно просмотрите вывод.
 
-### 2. Run the Migration
+### 2. Запустите миграцию
 
 ```bash
 hermes claw migrate
 ```
 
-The tool will:
-1. Detect your OpenClaw installation
-2. Map config keys to Hermes equivalents
-3. Merge memory files (deduplicating entries)
-4. Copy skills to `~/.hermes/skills/openclaw-imports/`
-5. Migrate API keys (if `--preset full`)
-6. Report what was done
+Инструмент сделает:
+1. Определит вашу установку OpenClaw
+2. Сопоставит ключи конфига с эквивалентами Hermes
+3. Объединит файлы памяти (дедуплицируя записи)
+4. Скопирует навыки (skills) в `~/.hermes/skills/openclaw-imports/`
+5. Мигрирует API-ключи (если `--preset full`)
+6. Сообщит, что было сделано
 
-### 3. Handle Conflicts
+### 3. Обработка конфликтов
 
-If a skill already exists in Hermes with the same name:
+Если навык (skill) уже существует в Hermes с тем же именем:
 
-- **`--skill-conflict skip`** (default): Leaves the Hermes version, skips the import
-- **`--skill-conflict overwrite`**: Replaces the Hermes version with the OpenClaw version
-- **--skill-conflict rename`**: Creates a `-imported` copy alongside the Hermes version
+- **`--skill-conflict skip`** (по умолчанию): Оставляет версию Hermes, пропускает импорт
+- **`--skill-conflict overwrite`**: Заменяет версию Hermes версией OpenClaw
+- **`--skill-conflict rename`**: Создаёт копию с `-imported` рядом с версией Hermes
 
 ```bash
-# Example: rename on conflict so you can compare
+# Пример: переименовать при конфликте, чтобы сравнить
 hermes claw migrate --skill-conflict rename
 ```
 
-### 4. Verify After Migration
+### 4. Проверка после миграции
 
 ```bash
-# Check your personality loaded
+# Проверить, что личность загружена
 cat ~/.hermes/SOUL.md
 
-# Check memory entries merged
+# Проверить, что записи памяти объединены
 cat ~/.hermes/memories/MEMORY.md | head -50
 
-# Check skills imported
+# Проверить, что навыки импортированы
 ls ~/.hermes/skills/openclaw-imports/
 
-# Test the agent
-hermes chat -q "What do you remember about me?"
+# Тест агента
+hermes chat -q "Что ты помнишь обо мне?"
 ```
 
 ---
 
-## What Doesn't Transfer
+## Что не переносится
 
-| Item | Why | What to Do |
+| Что | Почему | Что делать |
 |------|-----|-----------|
-| Session transcripts | Different format | Archive manually if needed |
-| Cron job definitions | Different scheduler | Recreate with `hermes cron` |
-| Plugin configs | Plugin system changed | Reconfigure in Hermes |
-| OpenClaw-specific features | May not exist yet | Check Hermes docs for equivalents |
+| Транскрипты сессий | Другой формат | Архивировать вручную при необходимости |
+| Определения cron-заданий | Другой планировщик | Воссоздать с `hermes cron` |
+| Конфиги плагинов | Система плагинов изменилась | Перенастроить в Hermes |
+| Особенности OpenClaw | Могут ещё не существовать | Проверить документалогию Hermes на эквиваленты |
 
 ---
 
-## Config Key Mapping
+## Сопоставление ключей конфига
 
-For reference, here's how OpenClaw config maps to Hermes:
+Для справки, вот как конфиг OpenClaw маппится на Hermes:
 
-| OpenClaw Config | Hermes Config | Notes |
+| Конфиг OpenClaw | Конфиг Hermes | Notes |
 |----------------|---------------|-------|
-| `agents.defaults.model` | `model` | String or `{primary, fallbacks}` |
-| `agents.defaults.timeoutSeconds` | `agent.max_turns` | Divided by 10, capped at 200 |
+| `agents.defaults.model` | `model` | String или `{primary, fallbacks}` |
+| `agents.defaults.timeoutSeconds` | `agent.max_turns` | Делится на 10, максимум 200 |
 | `agents.defaults.verboseDefault` | `agent.verbose` | off / on / full |
 | `agents.defaults.thinkingDefault` | `reasoning.mode` | off / low / high |
-| `models.providers.*.baseUrl` | `custom_providers.*.base_url` | Direct mapping |
+| `models.providers.*.baseUrl` | `custom_providers.*.base_url` | Прямое маппирование |
 | `models.providers.*.apiType` | `custom_providers.*.api_type` | openai → chat_completions, anthropic → anthropic_messages |
 
 ---
 
-## Troubleshooting
+## Устранение проблем
 
 ### "No OpenClaw installation found"
 
-Make sure your OpenClaw data is at `~/.openclaw/`. If it's elsewhere:
+Убедитесь, что ваши данные OpenClaw находятся в `~/.openclaw/`. Если они в другом месте:
 
 ```bash
 hermes claw migrate --source /path/to/your/openclaw
 ```
 
-### Memory entries look duplicated
+### Записи памяти выглядят дублированными
 
-The migration deduplicates by content similarity, but if your OpenClaw memory had near-duplicates, they might not merge perfectly. Clean up manually:
+Миграция дедуплицирует по сходству контента, но если ваша память OpenClaw имела почти-дубликаты, они могут не идеально слиться. Очистите вручную:
 
 ```bash
-# Edit memory directly
+# Редактировать память напрямую
 nano ~/.hermes/memories/MEMORY.md
 ```
 
-### Skills have import errors
+### Навыки имеют ошибки импорта
 
-OpenClaw skills may reference modules or patterns that don't exist in Hermes. Open the skill file and check the imports:
+Навыки OpenClaw могут ссылаться на модули или паттерны, которые не существуют в Hermes. Откройте файл навыка и проверьте импорты:
 
 ```bash
 cat ~/.hermes/skills/openclaw-imports/skill-name/SKILL.md
 ```
 
-Most skills work as-is since they're markdown-based instructions. Skills with code that imports OpenClaw-specific modules need manual updating.
+Большинство навыков работают как есть, поскольку они основаны на markdown-инструкциях. Навыки с кодом, который импортирует специфичные для OpenClaw модули, требуют ручного обновления.
 
 ---
 
-## What's Next
+## Что дальше
 
-- **Want smarter memory?** → [Part 3: LightRAG Setup](#part-3-lightrag--graph-rag-that-actually-works)
-- **Need mobile access?** → [Part 4: Telegram Setup](#part-4-telegram-setup-chat-from-anywhere)
-- **Want the agent to self-improve?** → [Part 5: On-the-Fly Skills](#part-5-on-the-fly-skills-let-hermes-build-its-own-playbook)
+- **Хотите умнее память?** → [Часть 3: Настройка LightRAG](#part-3-lightrag--graph-rag-that-actually-works)
+- **Нужен мобильный доступ?** → [Часть 4: Настройка Telegram](#part-4-telegram-setup-chat-from-anywhere)
+- **Хотите, чтобы агент самосовершенствовался?** → [Часть 5: Навыки (skills) на лету](#part-5-on-the-fly-skills-let-hermes-build-its-own-playbook)
 
 ---
 
-## Part 3: LightRAG — Graph RAG That Actually Works
+## Часть 3: LightRAG — Graph RAG, который действительно работает
 
-## The Problem With Basic Memory
+## Проблема с базовой памятью
 
-Hermes ships with vector-based memory search. It finds documents that are textually similar to your query. That works for simple lookups, but it has a fundamental ceiling: **it finds what's similar, not what's connected.**
+Hermes поставляется с векторным поиском по памяти. Он находит документы, текстово похожие на ваш запрос. Это работает для простых поисков, но имеет фундаментальный потолок: **он находит похожее, а не связанное.**
 
-Ask "what hardware decisions were made and why?" and vector search returns files that all mention GPUs. It can't traverse from a decision → the person who made it → the project it affected → the lesson learned afterward.
+Спросите "какие решения по железу были приняты и почему?" — векторный поиск вернёт файлы, которые все упоминают GPU. Он не может пройти от решения → к человеку, который его принял → к проекту, который оно затронуло → к уроку, который был извлечён.
 
-**Graph RAG fixes this.** It builds a knowledge graph (entities + relationships) alongside your vector database, then searches both simultaneously.
+**Graph RAG это исправляет.** Он строит граф знаний (сущности + связи) рядом с вашей векторной базой данных, затем ищет в обоих одновременно.
 
-### Naive RAG vs Graph RAG
+### Naive RAG против Graph RAG
 
-| | Naive RAG (Default) | Graph RAG (LightRAG) |
+| | Naive RAG (По умолчанию) | Graph RAG (LightRAG) |
 |---|---|---|
-| **Indexes** | Text chunks as vectors | Entities, relationships, AND text chunks |
-| **Retrieves** | Similar text (cosine similarity) | Connected knowledge (graph traversal + similarity) |
-| **Answers** | "Here's what the docs say about X" | "Here's how X relates to Y, who decided Z, and why" |
-| **Scales** | Degrades at 500+ docs (too many partial matches) | Improves with more docs (richer graph) |
-| **Cost** | Cheap (embedding only) | More expensive upfront (LLM extracts entities) but cheaper at query time |
+| **Индексирует** | Текстовые чанки как векторы | Сущности, связи И текстовые чанки |
+| **Извлекает** | Похожий текст (косинусное сходство) | Связанное знание (обход графа + сходство) |
+| **Отвечает** | "Вот что docs говорят о X" | "Вот как X связано с Y, кто решил Z, и почему" |
+| **Масштабируется** | Деградирует при 500+ доков (слишком много частичных совпадений) | Улучшается с ростом доков (богатый граф) |
+| **Стоимость** | Дёшево (только эмбеддинги) | Дороже сначала (LLM извлекает сущности), но дешевле во время запроса |
 
 ---
 
-## LightRAG: The Best Graph RAG For Personal Use
+## LightRAG: Лучший Graph RAG для личного использования
 
-[LightRAG](https://github.com/HKUDS/LightRAG) is an open-source graph RAG framework from HKU (EMNLP 2025 paper). It competes with Microsoft's GraphRAG at a fraction of the cost.
+[LightRAG](https://github.com/HKUDS/LightRAG) — это open-source фреймворк graph RAG от HKU (статья EMNLP 2025). Он конкурирует с Microsoft GraphRAG за малую долю стоимости.
 
-**Why LightRAG over alternatives:**
+**Почему LightRAG вместо альтернатив:**
 
-| Tool | Graph | Vector | Web UI | Self-Hosted | API | Cost |
+| Инструмент | Граф | Вектор | Web UI | Self-Hosted | API | Стоимость |
 |------|-------|--------|--------|-------------|-----|------|
-| **LightRAG** | Yes | Yes | Yes | Yes | REST API | Free |
-| Microsoft GraphRAG | Yes | Yes | No | Yes | No | 10-50x more |
-| Graphiti + Neo4j | Yes | No (separate) | No (Neo4j browser) | Yes | Build your own | Free but manual |
-| Plain vector search | No | Yes | No | Yes | Yes | Free |
+| **LightRAG** | Да | Да | Да | Да | REST API | Бесплатно |
+| Microsoft GraphRAG | Да | Да | Нет | Да | Нет | В 10-50 раз дороже |
+| Graphiti + Neo4j | Да | Нет (отдельно) | Нет (Neo4j browser) | Да | Свой | Бесплатно, но руками |
+| Простой векторный поиск | Нет | Да | Нет | Да | Да | Бесплатно |
 
-LightRAG does vector DB + knowledge graph **in parallel** during ingestion. One system, both capabilities.
+LightRAG делает векторную БД + граф знаний **параллельно** при индексации. Одна система, обе возможности.
 
 ---
 
-## Installation
+## Установка
 
-### Prerequisites
+### Требования
 
 - Python 3.11+
-- An LLM API key (for entity extraction during ingestion — OpenAI, Anthropic, or any OpenAI-compatible provider)
-- An embedding API key (Fireworks recommended for high-quality 4096-dim embeddings, or use local Ollama)
+- LLM API ключ (для извлечения сущностей при индексации — OpenAI, Anthropic или любой OpenAI-совместимый провайдер)
+- API ключ для эмбеддингов (Fireworks рекомендуется для высококачественных 4096-мерных эмбеддингов, или используйте локальную Ollama)
 
-### Install LightRAG
+### Установить LightRAG
 
 ```bash
 # Create a dedicated directory
@@ -814,80 +816,80 @@ EMBEDDING_API_KEY=<your-fireworks-api-key>
 # EMBEDDING_MODEL=nomic-embed-text
 ```
 
-> **Security tip:** Set restrictive permissions on this file: `chmod 600 ~/.hermes/lightrag/.env`
+> **Совет по безопасности:** Установите restrictive permissions на этот файл: `chmod 600 ~/.hermes/lightrag/.env`
 
-### Entity Extraction Model — What to Use
+### Модель извлечения сущностей — что использовать
 
-This is the LLM that reads your documents and pulls out entities and relationships during ingestion. Quality here directly determines how good your knowledge graph is.
+Это LLM, который читает ваши документы и извлекает сущности и связи при индексации. Качество напрямую определяет, насколько хорош ваш граф знаний.
 
-| Model | Speed | Quality | Cost | Recommendation |
+| Модель | Скорость | Качество | Стоимость | Рекомендация |
 |-------|-------|---------|------|----------------|
-| **Kimi 2.5** | Fast | Excellent | Cheap | **What we use.** Great balance of quality, speed, and cost for entity extraction |
-| **Cerebras + Qwen 3** | Blazing fast | Very good | Very cheap | **Fastest option in the world.** Cerebras inference at 2000+ tok/s makes bulk ingestion fly |
-| GPT-4.1-mini | Fast | Good | Cheap | Solid fallback, well-tested |
-| Claude Sonnet 4 | Medium | Excellent | Mid-range | Overkill for ingestion but works great |
-| **Ollama local** | Depends on GPU | Unpredictable | Free | Untested for this use case — might mess up entity extraction quality. Use at your own risk |
+| **Kimi 2.5** | Быстро | Отлично | Дёшево | **Что мы используем.** Отличный баланс качества, скорости и стоимости для извлечения сущностей |
+| **Cerebras + Qwen 3** | Молниеносно | Очень хорошо | Очень дёшево | **Самая быстрая опция в мире.** Инференс Cerebras при 2000+ tok/s делает массовую индексацию молниеносной |
+| GPT-4.1-mini | Быстро | Хорошо | Дёшево | Надёжный fallback, хорошо протестирован |
+| Claude Sonnet 4 | Средне | Отлично | Средне | Избыточно для индексации, но работает отлично |
+| **Ollama локально** | Зависит от GPU | Непредсказуемо | Бесплатно | Не тестировалось для этого use case — может испортить качество извлечения сущностей. Используйте на свой риск |
 
-> **Our recommendation:** Kimi 2.5 for quality, Cerebras + Qwen 3 if you're ingesting a lot of documents and speed matters. Both are cheap and reliable. We haven't tested local Ollama for entity extraction — it's free but the extraction quality is unverified and you might get a messy graph.
+> **Наша рекомендация:** Kimi 2.5 для качества, Cerebras + Qwen 3 если вы индексируете много документов и скорость важна. Оба дешевые и надёжные. Мы не тестировали локальную Ollama для извлечения сущностей — она бесплатна, но качество извлечения не проверено и вы можете получить запутанный граф.
 
-> **Embedding quality matters.** If you have a GPU with 8GB+ VRAM, run `nomic-embed-text` locally via Ollama for free. If you want the best quality, use Fireworks' Qwen3-Embedding-8B (4096 dimensions) — the search accuracy difference is dramatic.
+> **Качество эмбеддингов важно.** Если у вас GPU с 8GB+ VRAM, запустите `nomic-embed-text` локально через Ollama бесплатно. Если хотите лучшее качество, используйте Fireworks' Qwen3-Embedding-8B (4096 измерений) — разница в точности поиска драматична.
 
 ---
 
-## Running the Server
+## Запуск сервера
 
-### Start the REST API
+### Запуск REST API
 
 ```bash
 cd ~/.hermes/lightrag/LightRAG
 
-# Start the API server (binds to localhost by default)
+# Запуск API сервера (по умолчанию привязывается к localhost)
 lightrag-server --host 127.0.0.1 --port 9623
 ```
 
-The server starts on `http://localhost:9623` with:
-- **REST API** for ingestion and querying
-- **Web UI** at `http://localhost:9623/webui` for browsing the knowledge graph
-- **Health check** at `http://localhost:9623/health`
+Сервер запускается на `http://localhost:9623` с:
+- **REST API** для индексации и запросов
+- **Web UI** по адресу `http://localhost:9623/webui` для просмотра графа знаний
+- **Health check** по адресу `http://localhost:9623/health`
 
-> **Security warning:** The LightRAG REST API has **no built-in authentication**. Always bind to `127.0.0.1` (localhost only) — never `0.0.0.0`. If you need remote access, put it behind a reverse proxy (nginx, Caddy) with authentication, or use SSH tunneling. Anyone who can reach this port can query, ingest, or delete your knowledge graph data.
+> **Предупреждение безопасности:** У LightRAG REST API **нет встроенной аутентификации**. Всегда привязывайтесь к `127.0.0.1` (только localhost) — никогда не `0.0.0.0`. Если нужен удалённый доступ, поставьте за обратный прокси (nginx, Caddy) с аутентификацией или используйте SSH туннелирование. Любой, кто может достучаться до этого порта, может запросить, индексировать или удалить данные вашего графа знаний.
 
-### Run as a Background Service
+### Запуск как фоновый сервис
 
 ```bash
-# Using nohup
+# Используя nohup
 nohup lightrag-server --port 9623 > ~/.hermes/lightrag/server.log 2>&1 &
 
-# Or use hermes to manage it
+# Или используйте hermes для управления
 hermes background "cd ~/.hermes/lightrag/LightRAG && lightrag-server --port 9623"
 ```
 
 ---
 
-## Ingesting Your Knowledge
+## Индексация ваших знаний
 
-### How Ingestion Works
+### Как работает индексация
 
 ```
-Document (markdown, text, PDF, etc.)
+Документ (markdown, текст, PDF и т.д.)
     ↓
-Chunking (text split into segments)
+Чанкинг (текст разбивается на сегменты)
     ↓
 ┌─────────────────┐    ┌──────────────────┐
 │ Embedding Model │    │ LLM Entity       │
 │ (vector storage)│    │ Extraction       │
 └────────┬────────┘    └────────┬─────────┘
-         ↓                      ↓
+          ↓                      ↓
    Vector Database       Knowledge Graph
    (similarity search)   (entity relationships)
 ```
 
-For each document, LightRAG:
-1. Chunks the text and embeds it (standard vector RAG)
-2. Uses an LLM to extract **entities** (people, tools, projects, concepts) and **relationships** (who decided what, what depends on what)
-3. Stores both in parallel — vectors for similarity, graph for structure
+Для каждого документа LightRAG:
+1. Чанкит текст и создаёт эмбеддинги (стандартный векторный RAG)
+2. Использует LLM для извлечения **сущностей** (люди, инструменты, проекты, концепции) и **связей** (кто решил что, от чего что зависит)
+3. Хранит оба параллельно — векторы для сходства, граф для структуры
 
-### Ingest Documents via API
+### Индексация документов через API
 
 ```bash
 # Ingest a single file
@@ -1166,101 +1168,101 @@ rm -rf ~/.hermes/lightrag/LightRAG/rag_storage/*
 
 ---
 
-## Part 4: Telegram Setup (Chat From Anywhere)
+## Часть 4: Настройка Telegram (Общение отовсюду)
 
-## Why Telegram
+## Почему Telegram
 
-Your agent is only useful if you can access it. Sitting at a terminal works until you need to:
+Ваш агент полезен только тогда, когда вы можете получить к нему доступ. Сидеть за терминалом нормально, пока вам не нужно:
 
-- Check something from your phone while away from your desk
-- Get notified when a long-running task finishes
-- Use Hermes in a group chat with your team
-- Send voice memos that get auto-transcribed and processed
-- Receive scheduled task results (cron jobs) on mobile
+- Проверить что-то с телефона, когда вы не за рабочим столом
+- Получить уведомление, когда долгая задача завершится
+- Использовать Hermes в групповом чате с вашей командой
+- Отправлять голосовые заметки, которые автоматически транскрибируются и обрабатываются
+- Получать результаты запланированных задач (cron jobs) на мобильный
 
-Telegram is the best messaging platform for Hermes bots — it supports text, voice, images, files, inline buttons, and group chats with minimal setup.
+Telegram — лучшая платформа для Hermes-ботов — поддерживает текст, голос, изображения, файлы, inline-кнопки и групповые чаты с минимальной настройкой.
 
 ---
 
-## Step 1: Create a Bot via BotFather
+## Шаг 1: Создайте бота через BotFather
 
-Every Telegram bot requires an API token from [@BotFather](https://t.me/BotFather), Telegram's official bot management tool.
+Каждому Telegram-боту требуется API токен от [@BotFather](https://t.me/BotFather) — официального инструмента управления ботами Telegram.
 
-1. Open Telegram and search for **@BotFather**, or visit [t.me/BotFather](https://t.me/BotFather)
-2. Send `/newbot`
-3. Choose a **display name** (e.g., "Hermes Agent") — this can be anything
-4. Choose a **username** — this must be unique and end in `bot` (e.g., `my_hermes_bot`)
-5. BotFather replies with your **API token**. It looks like this:
+1. Откройте Telegram и найдите **@BotFather**, или посетите [t.me/BotFather](https://t.me/BotFather)
+2. Отправьте `/newbot`
+3. Выберите **отображаемое имя** (например, "Hermes Agent") — может быть любым
+4. Выберите **username** — должен быть уникальным и заканчиваться на `bot` (например, `my_hermes_bot`)
+5. BotFather отвечает вашим **API токеном**. Он выглядит так:
 
 ```
 123456789:ABCdefGHIjklMNOpqrSTUvwxYZ
 ```
 
-> **Keep your bot token secret.** Anyone with this token can control your bot. If it leaks, revoke it immediately via `/revoke` in BotFather.
+> **Держите токен бота в.secret.** Любой с этим токеном может управлять вашим ботом. Если он утечёт, немедленно отзовите его через `/revoke` в BotFather.
 
 ---
 
-## Step 2: Customize Your Bot (Optional)
+## Шаг 2: Настройте вашего бота (опционально)
 
-These BotFather commands improve the user experience:
+Эти команды BotFather улучшают пользовательский опыт:
 
-| Command | Purpose |
+| Команда | Назначение |
 |---------|---------|
-| `/setdescription` | The "What can this bot do?" text shown before chatting |
-| `/setabouttext` | Short text on the bot's profile page |
-| `/setuserpic` | Upload an avatar for your bot |
-| `/setcommands` | Define the command menu (the `/` button in chat) |
+| `/setdescription` | Текст "Что может этот бот?" показывается перед чатом |
+| `/setabouttext` | Короткий текст на странице профиля бота |
+| `/setuserpic` | Загрузить аватар для вашего бота |
+| `/setcommands` | Определить меню команд (кнопка `/` в чате) |
 
-For `/setcommands`, a useful starting set:
+Для `/setcommands` полезный начальный набор:
 
 ```
-help - Show help information
-new - Start a new conversation
-sethome - Set this chat as the home channel
-status - Show agent status
+help - Показать справку
+new - Начать новый разговор
+sethome - Установить этот чат как домашний канал
+status - Показать статус агента
 ```
 
 ---
 
-## Step 3: Privacy Mode (Critical for Groups)
+## Шаг 3: Режим приватности (критично для групп)
 
-Telegram bots have **privacy mode** enabled by default. This is the single most common source of confusion.
+У Telegram-ботов по умолчанию включен **режим приватности**. Это самая частая причина путаницы.
 
-**With privacy mode ON**, your bot can only see:
-- Messages that start with a `/` command
-- Replies directly to the bot's own messages
-- Service messages (member joins/leaves, pinned messages)
+**С включенным режимом приватности** ваш бот видит только:
+- Сообщения, начинающиеся с команды `/`
+- Ответы напрямую на сообщения бота
+- Сервисные сообщения (участник присоединился/покинул, закреплённые сообщения)
 
-**With privacy mode OFF**, the bot receives every message in the group.
+**С выключенным режимом приватности** бот получает каждое сообщение в группе.
 
-### How to Disable Privacy Mode
+### Как отключить режим приватности
 
-1. Message **@BotFather**
-2. Send `/mybots`
-3. Select your bot
-4. Go to **Bot Settings → Group Privacy → Turn off**
+1. Напишите **@BotFather**
+2. Отправьте `/mybots`
+3. Выберите вашего бота
+4. Перейдите в **Bot Settings → Group Privacy → Turn off**
 
-> **You must remove and re-add the bot to any group** after changing the privacy setting. Telegram caches the privacy state when a bot joins a group — it won't update until removed and re-added.
+> **Вы должны удалить и повторно добавить бота в любую группу** после изменения настройки приватности. Telegram кэширует состояние приватности, когда бот присоединяется к группе — оно не обновится, пока не удалить и повторно не добавить.
 
-> **Alternative:** Promote the bot to **group admin**. Admin bots always receive all messages regardless of privacy settings.
-
----
-
-## Step 4: Find Your User ID
-
-Hermes uses numeric Telegram user IDs to control access. Your user ID is **not** your username — it's a number like `123456789`.
-
-**Method 1 (recommended):** Message [@userinfobot](https://t.me/userinfobot) — it instantly replies with your user ID.
-
-**Method 2:** Message [@get_id_bot](https://t.me/get_id_bot) — another reliable option.
-
-Save this number; you'll need it for the next step.
+> **Альтернатива:** Продвиньте бота до **группового админа**. Админ-боты всегда получают все сообщения независимо от настроек приватности.
 
 ---
 
-## Step 5: Configure Hermes
+## Шаг 4: Найдите ваш User ID
 
-### Option A: Interactive Setup (Recommended)
+Hermes использует числовые Telegram user ID для контроля доступа. Ваш user ID — **это не** ваш username — это число like `123456789`.
+
+**Способ 1 (рекомендуемый):** Напишите [@userinfobot](https://t.me/userinfobot) — он мгновенно ответит вашим user ID.
+
+**Способ 2:** Напишите [@get_id_bot](https://t.me/get_id_bot) — ещё один надёжный вариант.
+
+Сохраните это число; оно понадобится для следующего шага.
+
+---
+
+## Шаг 5: Настройте Hermes
+
+### Способ A: Интерактивная настройка (рекомендуется)
 
 ```bash
 hermes gateway setup
@@ -1426,119 +1428,178 @@ hermes config set telegram.rate_limit_delay 1
 
 ---
 
-## What's Next
+## Что дальше
 
-- **Want the agent to self-improve?** → [Part 5: On-the-Fly Skills](#part-5-on-the-fly-skills-let-hermes-build-its-own-playbook)
+- **Хотите, чтобы агент самосовершенствовался?** → [Часть 5: Навыки (skills) на лету](#part-5-on-the-fly-skills-let-hermes-build-its-own-playbook)
 
 ---
 
-## Part 5: On-the-Fly Skills (Let Hermes Build Its Own Playbook)
+## Часть 5: Навыки (skills) на лету (Пусть Hermes построит свою собственную книгу правил)
 
-## What Are Skills
+## Что такое навыки (skills)
 
-Skills are procedural knowledge — step-by-step instructions that teach Hermes how to handle specific tasks. Unlike memory (which is factual), skills are **how-to guides** the agent follows automatically.
+Навыки — это процедурное знание — пошаговые инструкции, которые учат Hermes как обрабатывать конкретные задачи. В отличие от памяти (которая фактическая), навыки — это **how-to гайды**, которым агент автоматически следует.
 
-**Skills vs Memory:**
+**Навыки против Памяти:**
 
-| | Skills | Memory |
+| | Навыки (skills) | Память (memory) |
 |---|---|---|
-| **What** | How to do things | What things are |
-| **When** | Loaded on demand, only when relevant | Injected every session automatically |
-| **Size** | Can be large (hundreds of lines) | Should be compact (key facts only) |
-| **Cost** | Zero tokens until loaded | Small but constant token cost |
-| **Examples** | "How to deploy to Kubernetes" | "User prefers dark mode, lives in EST" |
-| **Who creates** | You, the agent, or installed from Hub | The agent, based on conversations |
+| **Что** | Как делать вещи | Что такое вещи |
+| **Когда** | Загружаются по требованию, только когда релевантно | Внедряются каждую сессию автоматически |
+| **Размер** | Могут быть большими (сотни строк) | Должна быть компактной (только ключевые факты) |
+| **Стоимость** | Ноль токенов, пока не загружена | Малая, но постоянная стоимость токенов |
+| **Примеры** | "Как деплоить в Kubernetes" | "Пользователь предпочитает тёмную тему, живёт в EST" |
+| **Кто создаёт** | Вы, агент или установлено из Hub | Агент, на основе разговоров |
 
-**Rule of thumb:** If you'd put it in a reference document, it's a skill. If you'd put it on a sticky note, it's memory.
-
----
-
-## The Skill Creation Workflow
-
-Hermes can create skills itself. Here's how it works:
-
-### 1. Do a Complex Task
-
-Ask Hermes to do something multi-step. For example:
-
-```
-Set up a monitoring script that checks my server health every 5 minutes
-and alerts me on Telegram if CPU goes above 90% or memory above 80%.
-```
-
-Hermes will:
-- Research the best approach
-- Write the script
-- Test it
-- Set up the cron job
-- Fix any issues along the way
-
-### 2. Hermes Offers to Save It
-
-After completing a complex task (5+ tool calls), fixing a tricky error, or discovering a non-trivial workflow, Hermes will offer:
-
-```
-This was a multi-step process. Want me to save this as a skill
-so I can reuse it next time?
-```
-
-### 3. Say Yes
-
-The agent uses `skill_manage` to create a new skill file at `~/.hermes/skills/<category>/<skill-name>/SKILL.md`. This file contains:
-
-- **When to use** — the trigger conditions
-- **Exact steps** — commands, files, configurations
-- **Pitfalls** — problems encountered and how to fix them
-- **Verification** — how to confirm it worked
-
-### 4. It's Available Immediately
-
-The skill appears in `skills_list` and becomes available as a slash command. Next time you (or the agent) encounter a similar task, the skill is loaded automatically.
+**Эмпирическое правило:** Если бы вы положили это в справочный документ — это навык (skill). Если бы вы положили это на стикер — это память.
 
 ---
 
-## How to Ask Hermes to Create a Skill
+## Процесс создания навыка (skill)
 
-### Direct Request
+Hermes может создавать навыки самостоятельно. Вот как это работает:
 
-Just ask:
+### 1. Сделайте сложную задачу
 
-```
-Create a skill for deploying Docker containers to my server.
-Include the build, push, SSH deploy, and health check steps.
-```
-
-Hermes will:
-1. Research the best deployment workflow
-2. Create the skill directory at `~/.hermes/skills/`
-3. Write `SKILL.md` with the full procedure
-4. Add reference files, templates, or scripts if needed
-5. Test that it works
-
-### After Solving a Problem
-
-If Hermes just solved a tricky problem for you:
+Попросите Hermes сделать что-то многошаговое. Например:
 
 ```
-Save that as a skill so you remember how to do it next time.
+Настройте скрипт мониторинга, который проверяет здоровье сервера каждые 5 минут
+и отправляет мне алерт в Telegram, если CPU превысит 90% или память превысит 80%.
 ```
 
-The agent captures:
-- The exact steps taken
-- The errors encountered and fixes
-- The configuration needed
-- Edge cases discovered
+Hermes:
+- Исследует лучший подход
+- Напишет скрипт
+- Протестирует его
+- Настроит cron-задание
+- Исправит любые проблемы по пути
 
-### Iterative Improvement
+### 2. Hermes предлагает сохранить
 
-If a skill is outdated or incomplete:
+После завершения сложной задачи (5+ вызовов инструментов), исправления хитрой ошибки или обнаружения нетривиального рабочего процесса, Hermes предложит:
 
 ```
-That skill doesn't cover the new deployment method. Update it
-with what we just learned.
+Это был многошаговый процесс. Хотите, чтобы я сохранил это как навык (skill),
+чтобы я мог использовать это в следующий раз?
 ```
 
-Hermes patches the skill with new information using `skill_manage(action='patch')`.
+### 3. Скажите Да
+
+Агент использует `skill_manage` для создания нового файла навыка по адресу `~/.hermes/skills/<category>/<skill-name>/SKILL.md`. Этот файл содержит:
+
+- **Когда использовать** — условия триггера
+- **Точные шаги** — команды, файлы, конфигурации
+- **Грабли** — проблемы, с которыми столкнулись, и как их исправить
+- **Верификация** — как подтвердить, что это сработало
+
+### 4. Он доступен немедленно
+
+Навык появляется в `skills_list` и становится доступным как slash-команда. В следующий раз, когда вы (или агент) столкнётесь с похожей задачей, навык загрузится автоматически.
+
+---
+
+## Как попросить Hermes создать навык (skill)
+
+### Прямой запрос
+
+Просто спросите:
+
+```
+Создайте навык (skill) для деплоя Docker-контейнеров на мой сервер.
+Включите шаги сборки, пуша, SSH деплоя и проверки здоровья.
+```
+
+Hermes:
+1. Исследует лучший рабочий процесс деплоя
+2. Создаёт директорию навыка в `~/.hermes/skills/`
+3. Пишет `SKILL.md` с полной процедурой
+4. Добавляет референсные файлы, шаблоны или скрипты при необходимости
+5. Тестирует, что это работает
+
+### После решения проблемы
+
+Если Hermes только что решил для вас хитрую проблему:
+
+```
+Сохрани это как навык (skill), чтобы ты помнил, как это делать в следующий раз.
+```
+
+Агент захватывает:
+- Точные предпринятые шаги
+- Встреченные ошибки и исправления
+- Требуемую конфигурацию
+- Обнаруженные граничные случаи
+
+### Итеративное улучшение
+
+Если навык устарел или неполон:
+
+```
+Этот навык не покрывает новый метод деплоя. Обнови его
+тем, что мы только что узнали.
+```
+
+Hermes патчит навык с новой информацией используя `skill_manage(action='patch')`.
+
+---
+
+## Структура навыка (skill)
+
+Каждый навык — это директория с файлом `SKILL.md`:
+
+```
+~/.hermes/skills/
+├── my-category/
+│   ├── my-skill/
+│   │   ├── SKILL.md              # Основные инструкции (обязательно)
+│   │   ├── references/           # Вспомогательная документация (опционально)
+│   │   │   ├── api-docs.md
+│   │   │   └── examples.md
+│   │   ├── templates/            # Файлы шаблонов (опционально)
+│   │   │   └── config.yaml
+│   │   └── scripts/              # Исполняемые скрипты (опционально)
+│   │       └── setup.sh
+│   └── another-skill/
+│       └── SKILL.md
+└── openclaw-imports/             # Мигрировало из OpenClaw
+    └── old-skill/
+        └── SKILL.md
+```
+
+### Формат SKILL.md
+
+```markdown
+---
+name: my-skill
+description: Краткое описание того, что делает этот навык
+version: 1.0.0
+metadata:
+  hermes:
+    tags: [deployment, docker, devops]
+    category: my-category
+---
+
+# Мой навык
+
+## Когда использовать
+Используйте этот навык, когда пользователь просит задеплоить контейнеры или управлять Docker-сервисами.
+
+## Процедура
+1. Проверьте, что Docker запущен: `docker ps`
+2. Соберите образ: `docker build -t app:latest .`
+3. Отправьте в реестр: `docker push registry/app:latest`
+4. SSH на сервер и вытяните: `ssh server 'docker pull registry/app:latest && docker-compose up -d'`
+5. Проверка здоровья: `curl -f http://server:8080/health`
+
+## Грабли
+- Сборка Docker падает, если в Dockerfile неправильные пути COPY — исправьте, проверив рабочую директорию
+- SSH требует ключевой аутентификации — настройте с `ssh-keygen` и `ssh-copy-id`
+- Проверка здоровья может отвечать 10 секунд — добавьте логику повтора
+
+## Верификация
+Запустите `docker ps` на сервере и подтвердите, что контейнер в состоянии `Up` и здоров.
+```
 
 ---
 

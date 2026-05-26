@@ -1,20 +1,20 @@
-# Reference Architecture: Road Warrior
+# Эталонная архитектура (Reference Architecture): Road Warrior
 
-**Phone drives, disposable cloud boxes do the heavy lifting.** Inspired by [Part 21](../../part21-remote-sandboxes.md). You carry a tiny $5 always-on VPS; it orchestrates Modal / Daytona / Fly sandboxes that spin up on demand for real work.
+**Телефон управляет, одноразовые облачные боксы делают тяжёлую работу.** Вдохновлено [Частью 21](../../part21-remote-sandboxes.md). У вас есть крошечный VPS за $5, работающий постоянно; он оркестрирует Modal / Daytona / Fly sandbox'ы, которые запускаются по требованию для реальной работы.
 
-## Who this is for
+## Для кого это
 
-- Traveling developers / nomads
-- People who code from their phone via Telegram
-- Anyone who wants "I can fix prod from a train" energy
+- Путешествующие разработчики / номады
+- Люди, которые программируют с телефона через Telegram
+- Все, кто хочет энергетику «я могу починить прод из поезда»
 
-## Cost
+## Стоимость
 
-- **Always-on driver box:** $5/mo (Hetzner CX22)
-- **On-demand remote compute:** $0–50/mo (only pay when you're actually running things)
-- **LLM:** $20–60/mo
+- **Постоянно работающий управляющий сервер:** $5/мес (Hetzner CX22)
+- **Удалённые вычисления по требованию:** $0–50/мес (платите только когда реально запускаете задачи)
+- **LLM:** $20–60/мес
 
-## Architecture
+## Архитектура (Architecture)
 
 ```
  Phone (Telegram) ──→ Driver VPS ($5/mo, always-on)
@@ -31,23 +31,23 @@
                        SSH (your own beast)
 ```
 
-Your phone → Telegram → 5¢/mo VPS → spins up a $0.05/hr Modal sandbox → runs Claude Code, pulls the repo, does the work → syncs files back on teardown → pushes PR.
+Ваш телефон → Telegram → VPS за 5¢/мес → запускает Modal sandbox за $0.05/час → выполняет Claude Code, клонирует репозиторий, делает работу → синхронизирует файлы обратно при остановке → отправляет PR.
 
-## Parts list
+## Состав
 
-- **Hetzner CX22** as the driver ($5/mo)
-- **Modal account** (free $30/mo credits) OR **Daytona** OR **Fly Machines** — see [Part 21](../../part21-remote-sandboxes.md)
-- **Telegram bot** + your user ID
-- **API keys:** Anthropic (for Claude Code inside sandbox), optional Google (for Hermes triage on the driver)
+- **Hetzner CX22** в качестве управляющего сервера ($5/мес)
+- **Аккаунт Modal** (бесплатные $30/мес кредиты) ИЛИ **Daytona** ИЛИ **Fly Machines** — см. [Часть 21](../../part21-remote-sandboxes.md)
+- **Telegram-бот** + ваш user ID
+- **API-ключи:** Anthropic (для Claude Code внутри sandbox'а), опционально Google (для триажа Hermes на управляющем сервере)
 
-## Install
+## Установка
 
 ```bash
 # On the driver VPS — as root
 curl -sSL https://raw.githubusercontent.com/OnlyTerp/hermes-optimization-guide/main/scripts/vps-bootstrap.sh | bash
 ```
 
-Then customize:
+Затем настройте:
 
 ```yaml
 # /home/hermes/.hermes/config.yaml
@@ -94,7 +94,7 @@ skills:
     - remote-run          # triggers a sandbox
 ```
 
-## The workflow
+## Рабочий процесс (Workflow)
 
 ```
 you: "@bot fix the null-check in auth.ts"
@@ -109,14 +109,14 @@ bot:  tests green. Pushed PR #342 → https://…
 bot:  sandbox torn down (ran 4m 12s, $0.014)
 ```
 
-## Key wins from Part 21 + PR #8018
+## Ключевые преимущества из Части 21 + PR #8018
 
-- **Bulk tar-pipe sync** — 30s cold start beats 5 minutes of 100× `scp`
-- **SIGINT-safe sync-back** — lose signal mid-run, the sandbox still flushes on teardown
-- **Hash-only sync** — only changed files come back, not the whole tree
-- **Local `git push`** — the driver VPS keeps your authenticated git creds; sandbox never sees them
+- **Пакетная tar-pipe синхронизация** — холодный старт за 30s против 5 минут при 100× `scp`
+- **SIGINT-безопасная обратная синхронизация** — потеряйте сигнал на полпути, sandbox всё равно сохранит данные при остановке
+- **Синхронизация только по хешам** — возвращаются только изменённые файлы, а не всё дерево
+- **Локальный `git push`** — управляющий VPS хранит ваши аутентифицированные git-учётные данные; sandbox их никогда не видит
 
-## Skill setup
+## Настройка навыков (Skill setup)
 
 ```bash
 # Symlink all the guide skills
@@ -129,26 +129,26 @@ done
 hermes /reload
 ```
 
-## Safety rails
+## Защитные ограничения (Safety rails)
 
-- Sandbox = **quarantine profile** (as if it were untrusted input) — Claude Code in the sandbox cannot touch the driver's MCP servers or secrets
-- Driver has read-only GitHub PAT (for triage/search)
-- The **write** PAT only exists inside the sandbox, short-lived, piped through stdin so it's never on disk
+- Sandbox = **карантинный профиль (quarantine profile)** (как если бы это был ненадёжный ввод) — Claude Code в sandbox'е не может получить доступ к MCP-серверам или секретам управляющего сервера
+- У управляющего сервера есть GitHub PAT только на чтение (для триажа/поиска)
+- **Записывающий (write)** PAT существует только внутри sandbox'а, живёт недолго, передаётся через stdin и никогда не сохраняется на диск
 
-## Costs in the wild
+## Реальные затраты
 
-Typical month for an active user:
+Типичный месяц для активного пользователя:
 
-| Line | Cost |
-|---|---:|
-| CX22 driver | $5 |
-| Modal compute (3h/day × 30 days × $0.05/h) | $4.50 |
-| Anthropic (Claude Code, routed) | $20–40 |
-| Google Gemini Flash (triage) | ~$0.50 |
-| **Total** | **~$30–50/mo** |
+| Статья | Стоимость |
+|---|---:|---:|
+| Управляющий сервер CX22 | $5 |
+| Вычисления Modal (3ч/день × 30 дней × $0.05/ч) | $4.50 |
+| Anthropic (Claude Code, с маршрутизацией) | $20–40 |
+| Google Gemini Flash (триаж) | ~$0.50 |
+| **Итого** | **~$30–50/мес** |
 
-## When to graduate
+## Когда переходить на следующий уровень
 
-- You're running 10+ sandbox hours a day → migrate to a persistent Fly Machine + scale up
-- You need GPU in the sandbox → Modal A10G is ~$1.10/hr, still cheap for spot usage
-- You want *multi-user* → [Small Agency](./small-agency.md)
+- Вы запускаете 10+ часов sandbox'ов в день → мигрируйте на постоянную Fly Machine + масштабируйтесь
+- Вам нужен GPU в sandbox'е → Modal A10G ~$1.10/ч, всё ещё дёшево для эпизодического использования
+- Вам нужна *многопользовательская* работа → [Small Agency](./small-agency.md)

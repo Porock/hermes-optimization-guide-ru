@@ -1,14 +1,14 @@
-# Architecture Diagrams
+# Диаграммы архитектуры (architecture)
 
-All diagrams are Mermaid — they render natively on GitHub. Copy-paste into your own docs as needed.
+Все диаграммы выполнены в Mermaid — они рендерятся нативно на GitHub. Копируйте в свои документы по необходимости.
 
 ---
 
-## Top-level Hermes architecture
+## Архитектура (architecture) Hermes верхнего уровня
 
 ```mermaid
 flowchart LR
-  subgraph Inputs[16 Inputs]
+  subgraph Inputs[Inputs]
     CLI[CLI]
     Telegram
     Discord
@@ -79,7 +79,7 @@ flowchart LR
 
 ---
 
-## MCP integration flow
+## Поток интеграции MCP
 
 ```mermaid
 sequenceDiagram
@@ -105,7 +105,7 @@ sequenceDiagram
 
 ---
 
-## Coding-agent delegation (OpenClaw pattern)
+## Делегирование кодинг-агенту (агент) (паттерн OpenClaw)
 
 ```mermaid
 flowchart TB
@@ -136,7 +136,7 @@ flowchart TB
 
 ---
 
-## Remote-sandbox sync flow (PR #8018)
+## Поток синхронизации удалённой песочницы (sandbox) (PR #8018)
 
 ```mermaid
 sequenceDiagram
@@ -158,7 +158,7 @@ sequenceDiagram
 
 ---
 
-## Observability stack
+## Стек observability
 
 ```mermaid
 flowchart LR
@@ -176,7 +176,7 @@ flowchart LR
 
 ---
 
-## Security layers (Part 19)
+## Уровни безопасности (security) (Часть 19)
 
 ```mermaid
 flowchart LR

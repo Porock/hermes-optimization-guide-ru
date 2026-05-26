@@ -1,70 +1,70 @@
-# Part 16: Backup, Import, and `/debug` — Your Recovery Kit
+# Часть 16: Бэкап (Backup), Импорт (Import) и `/debug` — Ваш Набор Для Восстановления
 
-*First-class backup/import, debug bundles, update preflights, and the hardening details you need before you let Hermes run unattended.*
+*First-классное резервное копирование/импорт, отладочные (debug) бандлы, предварительная проверка обновлений и детали по усилению безопасности, необходимые перед тем, как позволить Hermes работать без присмотра.*
 
 ---
 
-## `hermes backup` and `hermes import`
+## `hermes backup` и `hermes import`
 
-### Why This Is a Big Deal
+### Почему Это Важно
 
-Until v0.9, migrating a Hermes install between machines meant `rsync -a ~/.hermes user@new-host:`. Which mostly worked — except for:
+До v0.9 миграция установки Hermes между машинами означала `rsync -a ~/.hermes user@new-host:`. Это в основном работало — за исключением:
 
-- Absolute paths baked into config (Docker mounts, log paths, skill script paths)
-- Machine-specific provider endpoints (local Ollama, LAN-only LightRAG)
-- SQLite session DB file locks if the source machine was still running
-- Secrets you didn't actually want to copy (old dev keys, disabled provider API keys)
+- Абсолютных путей, вшитых в конфиг (Docker-монтирования, пути к логам, пути к скриптам скиллов)
+- Машино-специфичных эндпоинтов провайдеров (локальный Ollama, LAN-only LightRAG)
+- Блокировок файла SQLite-сессий (sessions DB), если исходная машина всё ещё работала
+- Секретов, которые вы на самом деле не хотели копировать (старые dev-ключи, отключённые API-ключи провайдеров)
 
-`hermes backup` produces a portable archive that handles all of that. `hermes import` replays it on the new machine with interactive conflict resolution.
+`hermes backup` создаёт портативный архив, который обрабатывает всё это. `hermes import` воспроизводит его на новой машине с интерактивным разрешением конфликтов.
 
-### Creating a Backup
+### Создание Бэкапа (Backup)
 
 ```bash
 hermes backup
 ```
 
-Produces `~/.hermes/backups/hermes-YYYY-MM-DD-HHMMSS.tar.zst` containing:
+Создаёт `~/.hermes/backups/hermes-ГГГГ-ММ-ДД-ЧЧММСС.tar.zst`, содержащий:
 
-| Path | Included | Notes |
-|------|----------|-------|
-| `config.yaml` | yes | Machine-specific paths (Docker mounts, local provider URLs) are rewritten to portable placeholders |
-| `.env` | yes (redacted by default) | Secret values are zeroed; key names kept. Pass `--include-secrets` to include values in plaintext (use with care) |
-| `memories/` | yes | All memory files |
-| `skills/` | yes | All skills including executable scripts and references |
-| `sessions.db` | yes | SQLite DB is dumped via `VACUUM INTO` so it's consistent even with a running gateway |
-| `plugins/` | yes | Both CLI and dashboard plugins |
-| `logs/` | no by default | Use `--include-logs` if you need them for debugging |
-| `auth.json` | no | Never backed up — re-authenticate on the new machine |
+| Путь (Path) | Включён | Примечания |
+|-------------|---------|------------|
+| `config.yaml` | да | Машино-специфичные пути (Docker-монтирования, локальные URL провайдеров) перезаписываются в портативные заполнители |
+| `.env` | да (редактирован по умолчанию) | Значения секретов обнулены; имена ключей сохранены. Передайте `--include-secrets` для включения значений в открытом виде (используйте с осторожностью) |
+| `memories/` | да | Все файлы памяти (memory) |
+| `skills/` | да | Все навыки (skills), включая исполняемые скрипты и ссылки |
+| `sessions.db` | да | SQLite БД выгружается через `VACUUM INTO`, поэтому она консистентна даже при работающем шлюзе (gateway) |
+| `plugins/` | да | Плагины (plugins) как CLI, так и панели управления |
+| `logs/` | нет по умолчанию | Используйте `--include-logs`, если они нужны для отладки (debugging) |
+| `auth.json` | нет | Никогда не бэкапится — повторно аутентифицируйтесь на новой машине |
 
-### Options
+### Опции (Options)
 
-| Flag | Description |
-|------|-------------|
-| `--output <path>` | Write to a specific path instead of the default backups directory |
-| `--include-secrets` | Include `.env` values in plaintext (default: redacted) |
-| `--include-logs` | Include `logs/` in the archive |
-| `--exclude <path>` | Exclude a specific subpath (repeatable) |
-| `--no-sessions` | Skip `sessions.db` (useful for sharing skill/memory libraries) |
+| Флаг (Flag) | Описание |
+|-------------|---------|
+| `--output <путь>` | Запись в конкретный путь вместо директории бэкапов по умолчанию |
+| `--include-secrets` | Включить значения `.env` в открытом виде (по умолчанию: редактированы) |
+| `--include-logs` | Включить `logs/` в архив |
+| `--exclude <путь>` | Исключить конкретный подпуть (повторяемый) |
+| `--no-sessions` | Пропустить `sessions.db` (полезно для обмена библиотеками навыков/памяти) |
 
-### Common Recipes
+### Типовые Сценарии (Common Recipes)
 
-**Full portable backup for migrating to a new machine:**
+**Полный портативный бэкап для миграции на новую машину:**
 
 ```bash
 hermes backup --include-secrets --output ~/hermes-$(hostname).tar.zst
 ```
 
-Treat that archive like a password manager vault — it contains every key.
+Относитесь к этому архиву как к хранилищу менеджера паролей — он содержит все ключи.
 
-**Share skills + memory with a teammate (no secrets, no sessions):**
+**Поделиться навыками (skills) и памятью (memory) с коллегой (без секретов, без сессий):**
 
 ```bash
 hermes backup --no-sessions --output ~/hermes-share.tar.zst
 ```
 
-Safe to email. Contains your prompting knowledge and procedural skills, nothing private.
+Безопасно для отправки по email. Содержит ваши знания по составлению промптов и процедурные навыки, ничего приватного.
 
-**Scheduled backups to a mounted drive:**
+**Регулярные бэкапы на смонтированный диск:**
 
 ```bash
 hermes cron create \
@@ -75,73 +75,73 @@ hermes cron create \
 
 ---
 
-### Importing a Backup
+### Импорт Бэкапа (Importing a Backup)
 
-On the target machine:
+На целевой машине:
 
 ```bash
 hermes import ~/hermes-2026-04-17-030000.tar.zst
 ```
 
-The importer walks through each section interactively:
+Импортёр проходит по каждому разделу интерактивно:
 
 ```text
 config.yaml
-  ✓ No existing config. Importing.
+  ✓ Нет существующего конфига. Импортирую.
 
 .env
-  ⚠ 12 existing keys, 18 in backup.
-    [m] Merge (keep existing for duplicates)
-    [r] Replace (backup overrides everything)
-    [s] Skip
-    [d] Diff before deciding
-  Choice [m]:
+  ⚠ 12 существующих ключей, 18 в бэкапе.
+    [m] Merge (объединить — оставить существующие при дубликатах)
+    [r] Replace (заменить — бэкап перезаписывает всё)
+    [s] Skip (пропустить)
+    [d] Diff (показать различия перед решением)
+  Выбор [m]:
 
 memories/
-  ⚠ 47 existing files, 52 in backup, 14 differ.
-    [m] Merge (newer file wins)
-    [r] Replace
-    [s] Skip
-    [d] Diff each conflicting file
-  Choice [m]:
+  ⚠ 47 существующих файлов, 52 в бэкапе, 14 различаются.
+    [m] Merge (объединить — побеждает новый файл)
+    [r] Replace (заменить)
+    [s] Skip (пропустить)
+    [d] Diff (сравнить каждый конфликтующий файл)
+  Выбор [m]:
 
 skills/
-  ✓ Non-conflicting, importing 23 skills.
+  ✓ Нет конфликтов, импортирую 23 навыка.
 
 sessions.db
-  ⚠ Existing sessions.db has 1,247 sessions. Backup has 892.
-    [m] Merge (session IDs already deduped — safe)
-    [r] Replace
-    [s] Skip
-  Choice [m]:
+  ⚠ Существующая sessions.db содержит 1,247 сессий. В бэкапе — 892.
+    [m] Merge (объединить — ID сессий уже дедуплицированы — безопасно)
+    [r] Replace (заменить)
+    [s] Skip (пропустить)
+  Выбор [m]:
 ```
 
-### Options
+### Опции (Options)
 
-| Flag | Description |
-|------|-------------|
-| `--dry-run` | Print what would happen without touching disk |
-| `--strategy <merge\|replace\|skip>` | Non-interactive default for all conflicts |
-| `--only <path>` | Import only a subpath (e.g. `--only skills/`) |
-| `--rewrite-paths` | Re-scan config for paths that don't exist on this machine and prompt to fix them |
+| Флаг (Flag) | Описание |
+|-------------|---------|
+| `--dry-run` | Показать, что произойдёт, без изменения диска |
+| `--strategy <merge\|replace\|skip>` | Неинтерактивное поведение по умолчанию для всех конфликтов |
+| `--only <путь>` | Импортировать только подпуть (например, `--only skills/`) |
+| `--rewrite-paths` | Повторно просканировать конфиг на предмет путей, не существующих на этой машине, и предложить их исправить |
 
-### Cross-Platform Notes
+### Кросс-платформенные Заметки (Cross-Platform Notes)
 
-- **Sessions DB** — merges are deduplicated by session UUID; no risk of collisions.
-- **Skills with shell scripts** — Unix permissions (`+x`) are preserved inside the archive. On Windows, you'll need WSL to run script-based skills anyway.
-- **Config path rewriting** — on import, Hermes detects stale paths (e.g. `/home/alice/...` on a machine where `alice` doesn't exist) and prompts you to fix them before writing.
-- **LightRAG data** — lives outside `~/.hermes`, so it's not in the backup. Back up `~/.hermes/lightrag` separately with `tar` or re-ingest on the new machine.
+- **БД сессий (Sessions DB)** — при слиянии дубликаты удаляются по UUID сессии; риска коллизий нет.
+- **Навыки (Skills) с shell-скриптами** — Unix-права (`+x`) сохраняются внутри архива. На Windows вам понадобится WSL для запуска скриптовых навыков в любом случае.
+- **Перезапись путей в конфиге** — при импорте Hermes обнаруживает устаревшие пути (например, `/home/alice/...` на машине, где `alice` не существует) и предлагает их исправить перед записью.
+- **Данные LightRAG** — находятся вне `~/.hermes`, поэтому не включаются в бэкап. Резервируйте `~/.hermes/lightrag` отдельно с помощью `tar` или повторно загрузите данные на новой машине.
 
 ---
 
-## `/debug` and `hermes debug share`
+## `/debug` и `hermes debug share`
 
-### The New Diagnostic Flow
+### Новый Диагностический Процесс (The New Diagnostic Flow)
 
-When something goes weird, the old flow was: grep through `~/.hermes/logs/`, paste 800 lines into a GitHub issue, hope you got the right ones. The modern flow is:
+Когда что-то идёт не так, старый процесс был: grep по `~/.hermes/logs/`, вставка 800 строк в GitHub issue, надежда, что вы взяли правильные. Современный процесс:
 
 ```text
-You → /debug
+Вы → /debug
   Collecting diagnostics…
   ✓ Agent version: v0.13.0 (v2026.5.7)
   ✓ Platform: Linux 6.8.0 / Python 3.12.3
@@ -156,84 +156,84 @@ You → /debug
   Upload with: hermes debug share ~/.hermes/debug/debug-2026-04-17-030000.tar.gz
 ```
 
-Then:
+Затем:
 
 ```bash
 hermes debug share ~/.hermes/debug/debug-2026-04-17-030000.tar.gz
 ```
 
-That uploads the bundle to the Hermes public debug endpoint and returns a short URL you can paste into a bug report. The upload:
+Это загружает бандл на публичный debug-эндпоинт Hermes и возвращает короткий URL, который можно вставить в баг-репорт. Загрузка:
 
-- Redacts all `.env` secrets before leaving your machine
-- Strips message content by default — only metadata (session ID, model, message count, tool calls)
-- Expires after 14 days
-- Is only readable by Nous support staff with the link
+- Редактирует (redacts) все секреты `.env` перед отправкой с вашей машины
+- Удаляет содержимое сообщений по умолчанию — только метаданные (ID сессии, модель, количество сообщений, вызовы инструментов)
+- Истекает через 14 дней
+- Доступна для чтения только сотрудникам поддержки Nous, имеющим ссылку
 
-### What Gets Included
+### Что Включается (What Gets Included)
 
-| Section | Content |
-|---------|---------|
-| `system.json` | OS, Python, Hermes version, installed extras |
-| `config.yaml` | Your config, with `.env` values redacted |
-| `logs/agent.log` | Last N lines (default 200, `--lines` to change) |
-| `logs/errors.log` | Last N lines |
-| `logs/gateway.log` | Last N lines |
-| `gateway-state.json` | Connected platforms, PIDs, last event times |
-| `session-metadata.json` | Session IDs, models, message counts (no content) |
-| `pip-freeze.txt` | Exact dependency versions |
+| Раздел (Section) | Содержание (Content) |
+|------------------|----------------------|
+| `system.json` | ОС, Python, версия Hermes, установленные дополнения |
+| `config.yaml` | Ваш конфиг, со значениями `.env` отредактированными |
+| `logs/agent.log` | Последние N строк (по умолчанию 200, `--lines` для изменения) |
+| `logs/errors.log` | Последние N строк |
+| `logs/gateway.log` | Последние N строк |
+| `gateway-state.json` | Подключённые платформы, PID, время последних событий |
+| `session-metadata.json` | ID сессий, модели, количество сообщений (без содержимого) |
+| `pip-freeze.txt` | Точные версии зависимостей |
 
-### Opt-In for More
+### Расширенный Режим (Opt-In for More)
 
 ```bash
 /debug --full
 ```
 
-Includes message content for the active session, recent session tool call arguments, and LLM request/response pairs (with auth headers stripped). Only use this when a bug genuinely requires reproducing your exact prompt chain — it's more revealing than the default bundle.
+Включает содержимое сообщений для активной сессии (session), аргументы вызовов инструментов (tools) недавних сессий и пары запрос/ответ LLM (с удалёнными заголовками аутентификации). Используйте это, только если баг действительно требует воспроизведения вашей точной цепочки промптов — это более раскрывающий режим, чем бандл по умолчанию.
 
-### Without the Share Step
+### Без Шага Загрузки (Without the Share Step)
 
-`/debug` always creates the local bundle. `hermes debug share` is a separate step. If you don't want to upload, just attach the tarball directly to a GitHub issue yourself.
+`/debug` всегда создаёт локальный бандл. `hermes debug share` — отдельный шаг. Если вы не хотите загружать, просто прикрепите tarball напрямую к GitHub issue самостоятельно.
 
 ---
 
-## Pluggable Context Engine + `/compress <topic>`
+## Подключаемый Контекстный Движок (Pluggable Context Engine) + `/compress <тема>`
 
-Covered in more depth in [Part 14](./part14-fast-mode-watchers.md). TL;DR:
+Подробно рассмотрено в [Части 14](./part14-fast-mode-watchers.md). Кратко:
 
-### Custom context engine
+### Пользовательский контекстный движок (Custom context engine)
 
-Plug-and-play replacement for what gets injected into each agent turn:
+Подключаемая замена того, что внедряется в каждый шаг агента (agent):
 
 ```yaml
 # ~/.hermes/config.yaml
 context_engine: my-custom-engine
 ```
 
-Use it to filter memory by project, pre-summarize tool output, pull from LightRAG or a private vector DB, etc. See Part 14 for a minimal implementation.
+Используйте его для фильтрации памяти по проекту, предварительного сжатия вывода инструментов, получения данных из LightRAG или частной векторной БД и т.д. См. Часть 14 для минимальной реализации.
 
-### `/compress <topic>`
+### `/compress <тема>`
 
-The context compressor (Part 6) now takes an optional focus topic:
+Компрессор контекста (context compressor, Часть 6) теперь принимает опциональную фокус-тему:
 
 ```text
-You → /compress migration to Fly.io
+Вы → /compress migration to Fly.io
   Compressing 47 messages with focus: "migration to Fly.io".
   Kept 6 messages verbatim, summarized 41 into 2 bullet blocks.
 ```
 
-Preserves detail relevant to the topic and aggressively compresses everything else. Perfect for salvaging a long debugging session after you've solved the problem and want to keep the decision trail but ditch 200 exploratory tool calls.
+Сохраняет детали, относящиеся к теме, и агрессивно сжимает всё остальное. Идеально для сохранения длительной отладочной (debug) сессии после того, как вы решили проблему и хотите сохранить историю решений, но избавиться от 200 исследовательских вызовов инструментов.
 
 ---
 
-## Security Hardening Notes
+## Заметки по Усилению Безопасности (Security Hardening Notes)
 
-A handful of hardening changes landed in the "everywhere" + "gateway" releases worth calling out explicitly:
+Ряд изменений по усилению безопасности, появившихся в релизах "everywhere" + "gateway", заслуживают отдельного упоминания:
 
-### v0.13 redaction + hardline blocklist
+### v0.13 редактирование + жёсткий блоклист (hardline blocklist)
 
-Hermes v0.13 turns secret redaction on by default and keeps the hardline blocklist for commands that should not be recoverable through casual approval prompts. Keep your own denylist too, but do not rely on "the model will know this is dangerous" for commands that delete homes, scrape credentials, or hit metadata services.
+Hermes v0.13 включает редактирование секретов по умолчанию и сохраняет жёсткий блоклист для команд, которые не должны быть восстанавливаемы через случайные запросы на одобрение. Ведите и свой собственный денилист, но не полагайтесь на "модель поймёт, что это опасно" для команд, которые удаляют домашние директории, крадут учётные данные или обращаются к метаданным-сервисам.
 
-Useful custom denylist additions:
+Полезные дополнения в пользовательский денилист:
 
 ```yaml
 security:
@@ -247,48 +247,49 @@ security:
       - 'ssh-keyscan'
 ```
 
-### `hermes update --check` before upgrades
+### `hermes update --check` перед обновлениями
 
-Before a major upgrade:
+Перед крупным обновлением:
 
 ```bash
 hermes update --check
 hermes backup
 ```
 
-The preflight catches obvious incompatibilities and the backup gives you a rollback point for `HERMES_HOME`.
+Предварительная проверка (preflight) выявляет очевидные несовместимости, а бэкап даёт точку отката для `HERMES_HOME`.
 
-### Webhook secrets validated on startup
+### Секреты вебхуков проверяются при запуске
 
-Every webhook-based adapter (Telegram, BlueBubbles, WeCom, Feishu, WeChat, generic Webhook) now validates its signing secret at gateway startup. A missing/empty/weak secret produces a startup error instead of silently accepting forged requests.
+Каждый вебхук-адаптер (Telegram, BlueBubbles, WeCom, Feishu, WeChat, generic Webhook) теперь проверяет свой секрет подписи (signing secret) при запуске шлюза (gateway). Отсутствующий/пустой/слабый секрет приводит к ошибке запуска вместо молчаливого принятия поддельных запросов.
 
-Generate strong ones:
+Генерируйте надёжные:
 
 ```bash
 openssl rand -hex 32
 ```
 
-### SSRF protection on outbound media
+### SSRF-защита на исходящих медиа
 
-WeChat, Telegram, and BlueBubbles download inbound media through a validator that blocks:
-- Private/loopback IPs (`10.0.0.0/8`, `192.168.0.0/16`, `127.0.0.0/8`, etc.)
-- Link-local addresses (`169.254.0.0/16`)
-- Metadata endpoints (`169.254.169.254` — AWS/GCP IMDS)
-- `file://`, `data://`, and other non-HTTP schemes
+WeChat, Telegram и BlueBubbles загружают входящие медиа через валидатор, который блокирует:
 
-Set `HERMES_ALLOW_PRIVATE_MEDIA_URLS=true` only on trusted networks where your agent legitimately needs to fetch from an internal host.
+- Приватные/loopback IP (`10.0.0.0/8`, `192.168.0.0/16`, `127.0.0.0/8` и т.д.)
+- Link-local адреса (`169.254.0.0/16`)
+- Эндпоинты метаданных (`169.254.169.254` — AWS/GCP IMDS)
+- Схемы `file://`, `data://` и другие не-HTTP схемы
 
-### Env values redacted in all logs
+Устанавливайте `HERMES_ALLOW_PRIVATE_MEDIA_URLS=true` только в доверенных сетях, где ваш агент (agent) легитимно должен получать данные с внутреннего хоста.
 
-Every log line now runs through a redactor by default that replaces values of known secret env vars with `<redacted:VAR_NAME>` before printing. Prevents accidental secret leakage to log aggregators or shared debug bundles.
+### Значения Env редактируются во всех логах
 
-### `sudo` and `rm -rf` still require explicit approval
+Каждая строка лога теперь по умолчанию проходит через редактор, который заменяет значения известных секретных переменных окружения на `<redacted:VAR_NAME>` перед выводом. Предотвращает случайную утечку секретов в агрегаторы логов или общие отладочные (debug) бандлы.
 
-Nothing new, but worth restating: dangerous commands still trigger the approval UI (`ask` / `yolo` / `deny`) regardless of service tier, gateway platform, or cron runner. `/fast` does not bypass approvals.
+### `sudo` и `rm -rf` всё ещё требуют явного одобрения
 
-### Approval bypass for trusted subagents
+Ничего нового, но стоит повторить: опасные команды по-прежнему вызывают UI одобрения (`ask` / `yolo` / `deny`) независимо от сервис-тира, платформы шлюза (gateway) или планировщика cron. `/fast` не обходит одобрения.
 
-Subagents spawned by the orchestrator now inherit the parent session's approval posture by default. If the parent session is in `yolo` mode (every tool call auto-approved), so is the subagent. If the parent is in `ask` mode, subagents prompt the user on dangerous calls. Override per delegation:
+### Обход одобрения для доверенных сабагентов (subagents)
+
+Сабагенты (subagents), порождённые оркестратором, теперь наследуют режим одобрения родительской сессии (session) по умолчанию. Если родительская сессия в режиме `yolo` (все вызовы инструментов авто-одобрены), сабагент тоже в нём. Если родитель в режиме `ask`, сабагенты запрашивают у пользователя одобрение опасных вызовов. Переопределение для каждой делегации:
 
 ```python
 delegate_task(
@@ -300,14 +301,14 @@ delegate_task(
 
 ---
 
-## What's Next
+## Что Далее (What's Next)
 
-You've now seen the backup/debug slice of the current feature surface:
+Теперь вы увидели срез текущей функциональности бэкапа/отладки:
 
-- [Part 12 — Web Dashboard](./part12-web-dashboard.md)
-- [Part 13 — Nous Tool Gateway](./part13-tool-gateway.md)
-- [Part 14 — Fast Mode & Background Watchers](./part14-fast-mode-watchers.md)
-- [Part 15 — New Platforms (iMessage, WeChat, Android)](./part15-new-platforms.md)
-- [Part 23 — Tenacity Stack](./part23-tenacity-stack.md)
+- [Часть 12 — Веб-панель управления](./part12-web-dashboard.md)
+- [Часть 13 — Nous Tool Gateway](./part13-tool-gateway.md)
+- [Часть 14 — Быстрый режим и Фоновые наблюдатели](./part14-fast-mode-watchers.md)
+- [Часть 15 — Новые платформы (iMessage, WeChat, Android)](./part15-new-platforms.md)
+- [Часть 23 — Tenacity Stack](./part23-tenacity-stack.md)
 
-If you installed fresh on v0.13.0 and walked through [Part 1](./part1-setup.md) and this series, you're running the most capable Hermes configuration to date.
+Если вы установили свежую версию v0.13.0 и прошли [Часть 1](./part1-setup.md) и эту серию, у вас работает самая производительная конфигурация Hermes на сегодняшний день.

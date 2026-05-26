@@ -1,72 +1,72 @@
-# Part 11: Gateway Recovery (When Things Break at 3am)
+# Часть 11: Восстановление Шлюза (Когда Что-то Ломается в 3 Ночи)
 
-*The gateway is the brain stem. When it crashes, everything stops.*
+*Шлюз — это мозговой ствол. Когда он падает, всё останавливается.*
 
 ---
 
-## What the Gateway Does
+## Что Делает Шлюз
 
-The gateway (`hermes gateway`) is the always-on process that:
-- Receives messages from Telegram, Discord, Slack, CLI
-- Routes them to the agent
-- Manages sessions and context
-- Runs cron jobs
+Шлюз (`hermes gateway`) — это всегда-running процесс, который:
+- Получает сообщения из Telegram, Discord, Slack, CLI
+- Маршрутизирует их к агенту
+- Управляет сессиями и контекстом
+- Запускает cron задачи
 
-If the gateway dies, your agent is unreachable.
+Если шлюз умирает, ваш агент недоступен.
 
-## Detecting a Crash
+## Обнаружение Сбоя
 
 ```bash
-# Check if gateway is running
+# Проверить, работает ли шлюз
 hermes status
 
-# Or directly
+# Или напрямую
 ps aux | grep hermes-gateway
 
-# Check logs
+# Проверить логи
 tail -50 ~/.hermes/logs/gateway.log
 ```
 
-## Common Crash Causes
+## Типичные Причины Сбоев
 
-### 1. Context Window Overflow
+### 1. Переполнение Контекстного Окна
 
-**Symptoms:** Gateway dies mid-response, logs show token count errors.
+**Симптомы:** Шлюз умирает посреди ответа, логи показывают ошибки подсчёта токенов.
 
-**Fix:** Reduce context injection in `~/.hermes/.env`:
+**Исправление:** Уменьшите контекстную инъекцию в `~/.hermes/.env`:
 
 ```bash
-# Lower the max context (default is usually model max)
+# Уменьшите max контекст (по умолчанию обычно max модели)
 MAX_CONTEXT_TOKENS=80000
 
-# Enable compression earlier
+# Включите сжатие раньше
 CONTEXT_COMPRESSION_THRESHOLD=70
 ```
 
-### 2. OOM (Out of Memory)
+### 2. OOM (Недостаток Памяти)
 
-**Symptoms:** Gateway killed by OOM killer, `dmesg` shows `Out of memory: Killed process`.
+**Симптомы:** Шлюз убит OOM killer, `dmesg` показывает `Out of memory: Killed process`.
 
-**Fix:**
+**Исправление:**
 
 ```bash
-# Check memory usage
+# Проверить использование памяти
 free -h
 
-# If using local models via Ollama, they eat VRAM/RAM
-# Move Ollama to a separate machine or reduce model size
+# Если используете локальные модели через Ollama, они едят VRAM/RAM
+# Переместите Ollama на другую машину или уменьшите размер модели
 
-# Limit gateway memory
-# In systemd service or launcher script:
+# Ограничьте память шлюза
+# В systemd сервисе или скрипте запуска:
 systemctl edit hermes-gateway
-# Add: MemoryMax=4G
+# Добавить: MemoryMax=4G
 ```
 
-### 3. API Provider Down
+### 3. API Провайдер Упал
 
-**Symptoms:** Gateway running but all responses fail, logs show connection errors.
+**Симптомы:** Шлюз работает, но все ответы падают, логи показывают ошибки подключения.
 
-**Fix:** Configure fallback providers (see Part 9):
+**Исправление:** Настройте fallback провайдеров (см. Часть 9):
 
 ```yaml
 model_fallback:
@@ -78,51 +78,51 @@ model_fallback:
     model: nemotron:latest
 ```
 
-### 4. Disk Full
+### 4. Диск Полный
 
-**Symptoms:** Gateway can't write session files, logs, or memory database.
+**Симптомы:** Шлюз не может записать файлы сессий, логи или базу данных памяти.
 
-**Fix:**
+**Исправление:**
 
 ```bash
-# Check disk space
+# Проверить место на диске
 df -h
 
-# Clean old session files (safe to delete)
+# Очистить старые файлы сессий (безопасно удалять)
 find ~/.hermes/sessions -mtime +30 -delete
 
-# Clean old logs
+# Очистить старые логи
 find ~/.hermes/logs -mtime +7 -delete
 
-# Check LightRAG data size
+# Проверить размер данных LightRAG
 du -sh ~/.hermes/skills/research/lightrag/data/
 ```
 
-### 5. Crash Loop
+### 5. Цикл Сбоев
 
-**Symptoms:** Gateway starts, crashes immediately, repeats.
+**Симптомы:** Шлюз запускается, сразу падает, повторяется.
 
-**Fix:**
+**Исправление:**
 
 ```bash
-# Check the last crash log
+# Проверить последний лог сбоя
 tail -100 ~/.hermes/logs/gateway.log
 
-# Common cause: corrupted session file
-# Move sessions out temporarily
+# Частая причина: повреждённый файл сессии
+# Временно переместите сессии
 mv ~/.hermes/sessions ~/.hermes/sessions.bak
 mkdir ~/.hermes/sessions
 
-# Restart
+# Перезапустите
 hermes gateway
 
-# If it works, the issue was a corrupt session
-# Move sessions back one by one to find the bad one
+# Если работает, проблема была в повреждённой сессии
+# Перемещайте сессии обратно по одной, чтобы найти плохую
 ```
 
-## Auto-Recovery (systemd)
+## Авто-Восстановление (systemd)
 
-Set up systemd to auto-restart the gateway:
+Настройте systemd для авто-перезапуска шлюза:
 
 ```ini
 # /etc/systemd/system/hermes-gateway.service
@@ -148,45 +148,45 @@ sudo systemctl daemon-reload
 sudo systemctl enable hermes-gateway
 sudo systemctl start hermes-gateway
 
-# Check status
+# Проверить статус
 sudo systemctl status hermes-gateway
 
-# View logs
+# Смотреть логи
 journalctl -u hermes-gateway -f
 ```
 
-## Auto-Recovery (Cron Fallback)
+## Авто-Восстановление (Cron Fallback)
 
-If you can't use systemd, use a cron watchdog:
+Если не можете использовать systemd, используйте cron watchdog:
 
 ```bash
-# Add to crontab -e
+# Добавить в crontab -e
 * * * * * pgrep -f "hermes.*gateway" > /dev/null || (cd ~/.hermes && nohup ./venv/bin/python -m hermes_gateway >> logs/watchdog.log 2>&1 &)
 ```
 
-Checks every minute. If gateway isn't running, starts it.
+Проверяет каждую минуту. Если шлюз не работает, запускает его.
 
-## Health Check
+## Проверка Здоровья
 
-Quick script to verify everything is working:
+Быстрый скрипт для проверки, что всё работает:
 
 ```bash
 #!/bin/bash
 # ~/.hermes/scripts/health-check.sh
 
-# Gateway running?
+# Шлюз работает?
 if ! pgrep -f "hermes.*gateway" > /dev/null; then
     echo "CRITICAL: Gateway not running"
     exit 1
 fi
 
-# Can we reach the API?
+# Можем ли мы достучаться до API?
 if ! curl -s http://localhost:8642/health > /dev/null 2>&1; then
     echo "CRITICAL: Gateway not responding"
     exit 1
 fi
 
-# Disk space OK?
+# Место на диске OK?
 USAGE=$(df -h ~/.hermes | awk 'NR==2 {print $5}' | tr -d '%')
 if [ "$USAGE" -gt 90 ]; then
     echo "WARNING: Disk usage at ${USAGE}%"
@@ -198,4 +198,4 @@ echo "OK"
 
 ---
 
-*The gateway should be boring. If it's interesting, something's wrong.*
+*Шлюз должен быть скучным. Если он интересен, что-то не так.*

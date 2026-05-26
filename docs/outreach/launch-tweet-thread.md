@@ -1,29 +1,29 @@
-# Launch Tweet Thread — Draft
+# Запуск треда в Twitter/X — Черновик
 
-**Tone:** matter-of-fact, receipts-forward, no hype language. Replace `@OnlyTerp` / repo URL as needed.
+**Тон:** по делу, упор на факты, без хайповых формулировок. Замените `@OnlyTerp` / URL репозитория по необходимости.
 
 ---
 
 **1/8**
-I got tired of Hermes guides that explain the architecture but don't give you anything to run, so I shipped the opposite:
+Меня достали гайды по Hermes, которые объясняют архитектуру, но не дают ничего запускаемого, поэтому я сделал наоборот:
 
-24 parts of documentation **plus** 13 installable skills, 5 production configs, 4 reference architectures, a VPS bootstrap script, hardened systemd units, a reproducible cost benchmark, and an in-browser config wizard.
+24 части документации **плюс** 13 устанавливаемых навыков (skills), 5 продакшн-конфигов, 4 эталонные архитектуры, скрипт развёртывания VPS, ужесточённые systemd-юниты, воспроизводимый бенчмарк расходов и конфигурационный визард (wizard) в браузере.
 
 github.com/OnlyTerp/hermes-optimization-guide
 
 ---
 
 **2/8**
-The 5 configs: `minimum`, `telegram-bot`, `production`, `cost-optimized`, `security-hardened`.
+5 конфигов: `minimum`, `telegram-bot`, `production`, `cost-optimized`, `security-hardened`.
 
-Each one is a single `cp` into `~/.hermes/config.yaml`. They're opinionated — not generic starters — and every field is commented.
+Каждый — это один `cp` в `~/.hermes/config.yaml`. Они конкретные — не универсальные заготовки — и каждое поле снабжено комментарием.
 
 `templates/config/`
 
 ---
 
 **3/8**
-Every skill the guide promises — audit-mcp, rotate-secrets, nightly-backup, weekly-dep-audit, cost-report, telegram-triage, pr-review, release-notes, audit-approval-bypass — is a real runnable `SKILL.md`.
+Каждый навык (skill), обещанный в гайде — audit-mcp, rotate-secrets, nightly-backup, weekly-dep-audit, cost-report, telegram-triage, pr-review, release-notes, audit-approval-bypass — это настоящий запускаемый файл `SKILL.md`.
 
 ```bash
 hermes skills install github://OnlyTerp/hermes-optimization-guide/skills/ops/nightly-backup
@@ -32,53 +32,53 @@ hermes skills install github://OnlyTerp/hermes-optimization-guide/skills/ops/nig
 ---
 
 **4/8**
-One command from fresh Hetzner CX22 → working hardened production Hermes:
+Одна команда от свежего Hetzner CX22 до работающего ужесточённого продакшн-решения Hermes:
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/OnlyTerp/hermes-optimization-guide/main/scripts/vps-bootstrap.sh | bash
 ```
 
-Caddy + UFW + fail2ban + systemd + unattended-upgrades + skill symlinks. ~10 min.
+Caddy + UFW + fail2ban + systemd + unattended-upgrades + симлинки навыков (skills). ~10 минут.
 
 ---
 
 **5/8**
-MCP (Model Context Protocol) went viral last week. The guide has a full chapter — stdio/HTTP transports, 14 servers worth installing, `sampling/createMessage`, trust model, troubleshooting.
+MCP (Model Context Protocol) стал вирусным на прошлой неделе. В гайде есть целая глава — транспорты stdio/HTTP, 14 серверов, которые стоит установить, `sampling/createMessage`, модель доверия, устранение неполадок.
 
-The ecosystem directory (ECOSYSTEM.md) links 40+ MCP servers + coding agents + dashboard plugins.
+Директория экосистемы (ECOSYSTEM.md) содержит ссылки на 40+ MCP-серверов, кодинг-агентов (coding agents) и плагинов (plugins) для панелей управления.
 
 ---
 
 **6/8**
-The Apr 15 "Comment and Control" cross-vendor prompt-injection attack hit Claude Code + Gemini CLI + Copilot Agent.
+Атака «Comment and Control» от 15 апреля — межвендорная инъекция промптов (prompt injection), поразившая Claude Code + Gemini CLI + Copilot Agent.
 
-Part 19 is the defensive playbook: 7 layers (provenance, approval, secret isolation, webhook sigs, SSRF, MCP trust, quarantine). If your agent reads your inbox, please read this one.
+Часть 19 — это руководство по защите: 7 уровней (происхождение, подтверждение, изоляция секретов, подписи вебхуков, SSRF, доверие MCP, карантин). Если ваш агент (agent) читает вашу почту — пожалуйста, прочтите это.
 
 ---
 
 **7/8**
-Cost routing playbook (Part 20) drops a typical workload by ~90%:
-- Triage → Gemini Flash or Cerebras
-- Classification → Cerebras Llama (~free)
-- Default coding → Kimi/Moonshot
-- Hard coding → Sonnet (explicit opt-in)
-- Long context → Gemini 2.5 Pro
+Руководство по маршрутизации расходов (Часть 20) снижает типичную нагрузку на ~90%:
+- Triage → Gemini Flash или Cerebras
+- Классификация → Cerebras Llama (почти бесплатно)
+- Кодинг по умолчанию → Kimi/Moonshot
+- Сложный кодинг → Sonnet (явное согласие)
+- Длинный контекст → Gemini 2.5 Pro
 
-Benchmarks + methodology in `benchmarks/`.
+Бенчмарки + методология в `benchmarks/`.
 
 ---
 
 **8/8**
-Everything's MIT-licensed, `CONTRIBUTING.md` is real, CI lints skill frontmatter + YAML + markdown links, and there's a ROADMAP.
+Всё под лицензией MIT, `CONTRIBUTING.md` настоящий, CI проверяет frontmatter навыков (skills) + YAML + markdown-ссылки, и есть ROADMAP.
 
-If this saves you an afternoon, a star helps more people find it. Issues + PRs welcome.
+Если это сэкономит вам полдня — звезда поможет большему числу людей найти это. Issues и PRs приветствуются.
 
 github.com/OnlyTerp/hermes-optimization-guide
 
 ---
 
-## Replies / follow-ups to prep
+## Ответы / дальнейшие шаги для подготовки
 
-- "Why not [other framework]?" → I'm not trying to push Hermes; this guide was a need *because* we run Hermes. The config-wizard + skill pattern is copy-able for any agent framework.
-- "Does this work with local models?" → Yes. `homelab` reference architecture covers Ollama routing. See `docs/reference-architectures/homelab.md`.
-- "Will you maintain it?" → CHANGELOG + ROADMAP are live. Bus factor = 1 right now, actively looking for co-maintainers.
+- «Почему не [другой фреймворк]?» → Я не пытаюсь продвигать Hermes; этот гайд был нужен *потому что* мы используем Hermes. Паттерн с конфиг-визардом (config-wizard) и навыками (skills) можно скопировать для любого фреймворка агентов (agent).
+- «Работает ли это с локальными моделями?» → Да. Эталонная архитектура `homelab` охватывает маршрутизацию через Ollama. См. `docs/reference-architectures/homelab.md`.
+- «Будете ли вы его поддерживать?» → CHANGELOG и ROADMAP — в актуальном состоянии. Фактор автобуса = 1, активно ищу со-мейнтейнеров.

@@ -1,121 +1,121 @@
-# Part 9: Custom Model Providers (Use Any Model You Want)
+# Часть 9: Кастомные провайдеры моделей (Используйте любую модель)
 
-*Hermes supports any OpenAI-compatible API, plus first-class native adapters for Nous Portal, Anthropic, OpenAI/Codex, OpenRouter, AWS Bedrock, Azure AI Foundry, Google Gemini, Gemini OAuth, LM Studio, xAI, Xiaomi MiMo, Kimi/Moonshot, z.ai/GLM, MiniMax, Arcee, GMI Cloud, Tencent TokenHub, Hugging Face, Cerebras, Groq, Fireworks, Vercel AI Gateway, Ollama, and provider plugins. This is the May 14, 2026 cheat sheet.*
+*Hermes поддерживает любой OpenAI-совместимый API, плюс первоклассные нативные адаптеры для Nous Portal, Anthropic, OpenAI/Codex, OpenRouter, AWS Bedrock, Azure AI Foundry, Google Gemini, Gemini OAuth, LM Studio, xAI, Xiaomi MiMo, Kimi/Moonshot, z.ai/GLM, MiniMax, Arcee, GMI Cloud, Tencent TokenHub, Hugging Face, Cerebras, Groq, Fireworks, Vercel AI Gateway, Ollama и плагины провайдеров. Это шпаргалка от 14 мая 2026 года.*
 
-> **What's new since the v0.12 guide refresh** — v0.13 makes providers pluggable, adds media-aware routing such as `video_analyze`, improves MCP media handling, keeps Gemini OAuth inside `hermes model`, and makes OpenRouter/Nous/Vercel model pickers rely on live manifests instead of hardcoded release snapshots.
+> **Что нового с обновления руководства v0.12** — v0.13 делает провайдеров подключаемыми, добавляет роутинг с учётом медиа типа `video_analyze`, улучшает обработку медиа в MCP, держит Gemini OAuth внутри `hermes model`, и делает выборщики моделей OpenRouter/Nous/Vercel зависимыми от live-манифестов вместо захардкоженных снапшотов релизов.
 
 ---
 
-## Native Adapters vs Generic OpenAI-Compatible
+## Нативные адаптеры против.generic OpenAI-совместимых
 
-As of v0.13.0 (May 2026), Hermes ships **native adapters** for a large provider set, plus a provider-plugin surface for out-of-tree backends. Native adapters know about provider-specific features that a generic OpenAI-compatible wrapper can't:
+По состоянию на v0.13.0 (май 2026), Hermes поставляется с **нативными адаптерами** для большого набора провайдеров, плюс поверхность плагинов провайдеров для бэкендов вне дерева. Нативные адаптеры знают о специфичных для провайдера функциях, которые generic OpenAI-совместимый враппер не может:
 
-| Provider | Native adapter? | Notable feature |
+| Провайдер | Нативный адаптер? | Примечательная функция |
 |----------|-----------------|-----------------|
-| **Nous Portal** | Yes | Auth via `hermes model` (no bare API key). Unlocks the [Tool Gateway](./part13-tool-gateway.md). |
-| **Anthropic** | Yes | Native prompt caching, extended thinking, `/fast` priority tier |
-| **OpenAI** | Yes | Native responses API, reasoning effort levels, `/fast` priority tier |
-| **OpenAI Codex OAuth** | Yes | ChatGPT/Codex login through `hermes model`, no API key |
-| **AWS Bedrock** | Yes | Converse API, IAM credentials, cross-region inference profiles, Bedrock Guardrails |
-| **Azure AI Foundry** | Yes | Auto-detects OpenAI-style vs Anthropic-style deployments and context length |
-| **LM Studio** | Yes | Local `/models` discovery, optional auth, reasoning transport, `hermes doctor` checks |
-| **xAI (Grok)** | Yes | Native live X search and xAI image/STT/TTS integrations, including Custom Voices |
-| **Xiaomi MiMo** | Yes | Native reasoning modes (`low`/`medium`/`high`) exposed as config |
-| **Kimi / Moonshot** | Yes | 200K+ context, great for LightRAG entity extraction (see [Part 3](./README.md#part-3-lightrag--graph-rag-that-actually-works)) |
-| **z.ai / GLM** | Yes | Strong open-weight tool-use models; good cheap fallback for planning/exploration |
-| **Google Gemini (direct)** | Yes | 1M context; native prompt caching on Pro; image/video-capable model routing |
-| **Google Gemini (OAuth)** | Yes | Browser PKCE login via `hermes model`; free tier supported; no external `gemini` install |
-| **MiniMax** | Yes | API key or OAuth; native streaming and TTS |
-| **GMI Cloud** | Yes | Hosted open models behind a native provider |
-| **Tencent TokenHub** | Yes | Tencent model routing through TokenHub aliases |
-| **Arcee** | Yes | AFM-4.5 function-calling specialist, cheap |
-| **Cerebras** | Yes | 2000+ tok/s inference |
-| **Groq** | Yes | Fast hosted Llama / Qwen |
-| **Fireworks** | Yes | Qwen3-Embedding-8B (recommended for LightRAG) |
-| **Vercel AI Gateway** | Yes | Dynamic model discovery, pricing metadata, attribution |
-| **Hugging Face** | Yes | Any TGI / TEI endpoint (self-hosted or Inference Endpoints) |
-| **OpenRouter** | Yes | Pass-through to 200+ models; respects native adapter quirks when downstream is one |
-| **Ollama** (local) | Generic | OpenAI-compatible, zero auth |
-| **Provider plugin** | Plugin | Drop in a `ProviderProfile` without patching Hermes core |
-| **Anything else** | Generic | Any OpenAI-compatible `base_url` |
+| **Nous Portal** | Да | Auth через `hermes model` (без голого API ключа). Разблокирует [Tool Gateway](./part13-tool-gateway.md). |
+| **Anthropic** | Да | Нативное кэширование промптов, extended thinking, `/fast` приоритет |
+| **OpenAI** | Да | Нативный responses API, уровни reasoning effort, `/fast` приоритет |
+| **OpenAI Codex OAuth** | Да | ChatGPT/Codex логин через `hermes model`, без API ключа |
+| **AWS Bedrock** | Да | Converse API, IAM credentials, cross-region inference profiles, Bedrock Guardrails |
+| **Azure AI Foundry** | Да | Автоопределяет OpenAI-style vs Anthropic-style деплойменты и длину контекста |
+| **LM Studio** | Да | Локальное обнаружение `/models`, опциональный auth, reasoning transport, проверки `hermes doctor` |
+| **xAI (Grok)** | Да | Нативный live X поиск и интеграции xAI image/STT/TTS, включая Custom Voices |
+| **Xiaomi MiMo** | Да | Нативные режимы reasoning (`low`/`medium`/`high`) доступные как конфиг |
+| **Kimi / Moonshot** | Да | 200K+ контекст, отлично подходит для извлечения сущностей LightRAG (см. [Часть 3](./README.md#part-3-lightrag--graph-rag-that-actually-works)) |
+| **z.ai / GLM** | Да | Сильные open-weight модели для использования инструментов; хороший дешёвый fallback для планирования/исследования |
+| **Google Gemini (direct)** | Да | 1M контекст; нативное кэширование промптов на Pro; роутинг моделей с поддержкой image/video |
+| **Google Gemini (OAuth)** | Да | Browser PKCE логин через `hermes model`; бесплатный tier поддерживается; внешняя установка `gemini` не нужна |
+| **MiniMax** | Да | API ключ или OAuth; нативный streaming и TTS |
+| **GMI Cloud** | Да | Хостинг open моделей через нативный провайдер |
+| **Tencent TokenHub** | Да | Роутинг моделей Tencent через TokenHub алиасы |
+| **Arcee** | Да | AFM-4.5 специалист по function-calling, дёшево |
+| **Cerebras** | Да | 2000+ tok/s инференс |
+| **Groq** | Да | Быстрый хостинг Llama / Qwen |
+| **Fireworks** | Да | Qwen3-Embedding-8B (рекомендуется для LightRAG) |
+| **Vercel AI Gateway** | Да | Динамическое обнаружение моделей, метаданные ценообразования, атрибуция |
+| **Hugging Face** | Да | Любой TGI / TEI endpoint (self-hosted или Inference Endpoints) |
+| **OpenRouter** | Да | Pass-through к 200+ моделям; уважает особенности нативного адаптера, когда downstream — это он |
+| **Ollama** (локально) | Generic | OpenAI-совместимый, нулевой auth |
+| **Плагин провайдера** | Плагин | Вставьте `ProviderProfile` без патчинга ядра Hermes |
+| **Всё остальное** | Generic | Любой OpenAI-совместимый `base_url` |
 
-Pick the native adapter when one exists — you get the provider-specific features for free. Fall back to the generic OpenAI-compatible path only for endpoints that don't have a native adapter yet.
+Выбирайте нативный адаптер, когда он существует — вы получаете специфичные для провайдера функции бесплатно. Используйте generic OpenAI-совместимый путь только для эндпоинтов, у которых ещё нет нативного адаптера.
 
-### Provider Cheat Sheet (May 14, 2026)
+### Шпаргалка по провайдерам (14 мая 2026)
 
-The exact "best model" moves weekly, so treat this as a routing posture rather than a leaderboard. Use `hermes model` for live picker data, then pin only what you need reproducible.
+Точная "лучшая модель" меняется еженедельно, поэтому воспринимайте это как позицию роутинга, а не лидерборд. Используйте `hermes model` для live данных выбора, затем закрепите только то, что вам нужно воспроизводимым.
 
-| Need | Start here | Why |
-|------|------------|-----|
-| Default coding / refactors | Anthropic Sonnet 5, Claude Code, or Codex OAuth | Best reliability for patch-heavy work; Codex OAuth avoids API-key churn |
-| Deep reasoning / high stakes | GPT-5.5 reasoning or Anthropic Opus 4.7 | Use explicitly; do not make it the default for cron/bulk tasks |
-| Long-context repo or document reads | Gemini 3.1 Pro/Flash or OpenRouter equivalent | Huge window, cheap enough for map/reduce, video, and summarization |
-| Cheap daily driver | Gemini OAuth + Kimi K2.6 + z.ai/GLM | Good quality/cost mix, especially with auxiliary routing |
-| Enterprise / VPC / compliance | AWS Bedrock or Azure AI Foundry | IAM/Azure auth, guardrails, private deployments, audit controls |
-| Local/privacy/offline | LM Studio or Ollama | No cloud egress; great for extraction, embeddings, and drafts |
-| Ultra-fast interactive turns | Cerebras or Groq | Very high tokens/sec; useful for classification and short-form chat |
-| Current-events search | xAI Grok 4.x or tool-backed web search | Grok has native live-X search; Tool Gateway can cover broader web |
+| Потребность | Начните здесь | Почему |
+|------|-------------|-----|
+| Кодинг по умолчанию / рефакторинг | Anthropic Sonnet 5, Claude Code, или Codex OAuth | Лучшая надёжность для работы с множеством патчей; Codex OAuth избегает API-key churn |
+| Глубокий reasoning / высокие ставки | GPT-5.5 reasoning или Anthropic Opus 4.7 | Используйте явно; не делайте по умолчанию для cron/массовых задач |
+| Длинный контекст чтение репо или документов | Gemini 3.1 Pro/Flash или эквивалент OpenRouter | Огромное окно, достаточно дёшево для map/reduce, video и суммирования |
+| Дешёвый ежедневный драйвер | Gemini OAuth + Kimi K2.6 + z.ai/GLM | Хорошее соотношение качество/стоимость, особенно с auxiliary роутингом |
+| Enterprise / VPC / compliance | AWS Bedrock или Azure AI Foundry | IAM/Azure auth, guardrails, private деплойменты, аудит контроли |
+| Локально/приватно/офлайн | LM Studio или Ollama | Нет облачного egress; отлично для извлечения, эмбеддингов и черновиков |
+| Сверхбыстрые интерактивные ходы | Cerebras или Groq | Очень высокие tok/s; полезно для классификации и коротких чатов |
+| Поиск текущих событий | xAI Grok 4.x или веб-поиск через инструменты | Grok имеет нативный live-X поиск; Tool Gateway может покрыть более широкий веб |
 
-> Pricing and context windows change too quickly to hardcode. Hermes now pulls OpenRouter and Nous Portal picker lists from a remote manifest, while provider APIs supply pricing/context metadata where available.
+> Ценообразование и контекстные окна меняются слишком быстро, чтобы хардкодить. Hermes теперь тянет списки выбора моделей OpenRouter и Nous Portal из удалённого манифеста, а провайдеры API предоставляют метаданные ценообразования/контекста там, где доступно.
 
 ---
 
-### Nous Portal — OAuth, Not an API Key
+### Nous Portal — OAuth, Не API Ключ
 
-Nous Portal uses an OAuth flow via `hermes model` instead of a bare API key. After auth, credentials live in `~/.hermes/auth.json` (never in `.env`). Re-auth when it expires:
-
-```bash
-hermes model
-# Pick "Nous Portal" → complete the browser OAuth flow
-```
-
-If you're on a paid subscription, the setup also offers to enable the [Tool Gateway](./part13-tool-gateway.md) — web search, image gen, TTS, and browser automation through your subscription, no extra keys needed.
-
-### Gemini OAuth — Free-Tier Friendly
-
-If you have a Google account, skip the API key entirely and sign in from Hermes:
+Nous Portal использует OAuth поток через `hermes model` вместо голого API ключа. После auth учётные данные живут в `~/.hermes/auth.json` (никогда в `.env`). Re-auth когда истекает:
 
 ```bash
 hermes model
-# Pick "Google Gemini (OAuth)" → complete the browser PKCE flow
+# Выберите "Nous Portal" → завершите browser OAuth поток
 ```
 
-Tokens are stored under `~/.hermes/auth/google_oauth.json` with 0600 permissions and automatic refresh. On headless SSH boxes, Hermes falls back to paste-mode auth.
+Если у вас платная подписка, настройка также предлагает включить [Tool Gateway](./part13-tool-gateway.md) — веб-поиск, генерация изображений, TTS и browser automation через вашу подписку, без дополнительных ключей.
 
-### AWS Bedrock and Azure AI Foundry — Enterprise Routing Without Proxy Glue
+### Gemini OAuth — Для Бесплатного Тира
 
-Bedrock uses the native Converse API and the normal boto3 credential chain:
+Если у вас есть Google аккаунт, полностью пропустите API ключ и войдите из Hermes:
+
+```bash
+hermes model
+# Выберите "Google Gemini (OAuth)" → завершите browser PKCE поток
+```
+
+Токены хранятся в `~/.hermes/auth/google_oauth.json` с правами 0600 и автоматическим обновлением. На headless SSH боксах Hermes падает обратно на paste-mode auth.
+
+### AWS Bedrock и Azure AI Foundry — Роутинг Для Предприятий Без Прокси
+
+Bedrock использует нативный Converse API и обычную boto3 цепочку учётных данных:
 
 ```bash
 pip install 'hermes-agent[bedrock]'
 hermes model
-# Choose "AWS Bedrock" → region → model/profile
+# Выберите "AWS Bedrock" → region → model/profile
 ```
 
-Use this when you want IAM roles, Bedrock Guardrails, and cross-region inference profiles instead of direct vendor API keys.
+Используйте это, когда хотите IAM роли, Bedrock Guardrails и cross-region inference профили вместо прямых API ключей вендора.
 
-Azure AI Foundry handles both endpoint styles:
+Azure AI Foundry обрабатывает оба стиля эндпоинтов:
 
 ```bash
 hermes model
-# Choose "Azure Foundry" → paste endpoint + key
+# Выберите "Azure Foundry" → вставьте endpoint + key
 ```
 
-Hermes probes the endpoint, detects OpenAI-style `/chat/completions` vs Anthropic-style `/messages`, discovers deployments when possible, and stores the right `api_mode` in `config.yaml`.
+Hermes зондирует эндпоинт, определяет OpenAI-style `/chat/completions` vs Anthropic-style `/messages`, обнаруживает деплойменты когда возможно, и хранит правильный `api_mode` в `config.yaml`.
 
-### Remote Model Catalog: Stop Hardcoding This Week's Winner
+### Удалённый Каталог Моделей: Перестаньте Хардкодить Победителя Этой Недели
 
-OpenRouter and Nous Portal model pickers now fetch:
+Выборщики моделей OpenRouter и Nous Portal теперь получают:
 
 ```text
 https://hermes-agent.nousresearch.com/docs/api/model-catalog.json
 ```
 
-The cache lives at `~/.hermes/cache/model_catalog.json`. If the manifest is down, Hermes falls back to the disk cache or the bundled snapshot, so model selection still works offline.
+Кэш живёт в `~/.hermes/cache/model_catalog.json`. Если манифест недоступен, Hermes падает на дисковый кэш или bundled снапшот, так что выбор моделей всё ещё работает офлайн.
 
 ### Gemini TTS
 
-Gemini is now one of the practical voice backends alongside Edge, ElevenLabs, OpenAI, MiniMax, Mistral, NeuTTS, and xAI:
+Gemini теперь один из практических voice бэкендов наряду с Edge, ElevenLabs, OpenAI, MiniMax, Mistral, NeuTTS и xAI:
 
 ```yaml
 tts:
@@ -124,22 +124,22 @@ tts:
     voice: Kore
 ```
 
-`GEMINI_API_KEY` or `GOOGLE_API_KEY` is enough. Output comes back as PCM, wrapped in WAV natively (no extra deps), optionally converted to mp3/ogg via `ffmpeg`. Works for Telegram voice bubbles out of the box.
+`GEMINI_API_KEY` или `GOOGLE_API_KEY` достаточно. Вывод приходит как PCM, обёрнутый в WAV нативно (без доп. зависимостей), опционально конвертируется в mp3/ogg через `ffmpeg`. Работает для Telegram voice bubbles из коробки.
 
 ---
 
-## config.yaml Structure
+## Структура config.yaml
 
-Models are configured in `~/.hermes/config.yaml`:
+Модели настраиваются в `~/.hermes/config.yaml`:
 
-> **Security note:** Never put real API keys directly in `config.yaml`. Use environment variable references so keys stay in `~/.hermes/.env` (which should be `chmod 600` and never committed to git).
+> **Заметка по безопасности:** Никогда не кладите реальные API ключи напрямую в `config.yaml`. Используйте ссылки на переменные окружения, чтобы ключи оставались в `~/.hermes/.env` (который должен быть `chmod 600` и никогда не коммититься в git).
 
 ```yaml
-# Default model
+# Модель по умолчанию
 model: claude-sonnet
 provider: anthropic
 
-# Provider configurations
+# Конфигурации провайдеров
 providers:
   anthropic:
     api_key: ${ANTHROPIC_API_KEY}
@@ -148,20 +148,20 @@ providers:
     api_key: ${OPENAI_API_KEY}
 
   bedrock:
-    region: us-east-2                  # Auth via AWS_PROFILE, env vars, or instance role
+    region: us-east-2                  # Auth через AWS_PROFILE, env vars или instance role
 
   azure-foundry:
     api_key: ${AZURE_FOUNDRY_API_KEY}
     base_url: ${AZURE_FOUNDRY_ENDPOINT}
-    api_mode: chat_completions         # Or anthropic_messages; wizard auto-detects
+    api_mode: chat_completions         # Или anthropic_messages; wizard автоопределяет
 
   lmstudio:
     base_url: http://127.0.0.1:1234/v1
-    api_key: ${LM_API_KEY}             # Optional if your LM Studio server requires auth
+    api_key: ${LM_API_KEY}             # Опционально, если ваш LM Studio сервер требует auth
 
   xai:
     api_key: ${XAI_API_KEY}
-    live_search: true                 # Grok's live X/Twitter search
+    live_search: true                 # Grok's live X/Twitter поиск
 
   xiaomi:
     api_key: ${XIAOMI_API_KEY}
@@ -195,12 +195,12 @@ providers:
 
   local:
     base_url: http://localhost:11434/v1
-    api_key: ollama  # Ollama doesn't require a real key
+    api_key: ollama  # Ollama не требует реального ключа
 ```
 
-## Adding a Custom Provider
+## Добавление Кастомного Провайдера
 
-Any provider that implements the OpenAI chat completions API works:
+Любой провайдер, реализующий OpenAI chat completions API, работает:
 
 ```yaml
 providers:
@@ -209,22 +209,22 @@ providers:
     base_url: https://api.your-provider.com/v1
 ```
 
-Add the actual key to your `.env` file:
+Добавьте реальный ключ в ваш файл `.env`:
 
 ```bash
 echo "MY_CUSTOM_API_KEY=<your-key-here>" >> ~/.hermes/.env
 chmod 600 ~/.hermes/.env
 ```
 
-Then use it:
+Затем используйте:
 
 ```bash
 hermes --provider my-custom --model their-model-name
 ```
 
-## Model Aliases (Quick Switching)
+## Алиасы Моделей (Быстрое Переключение)
 
-Add aliases to switch models without typing full names:
+Добавьте алиасы для переключения моделей без ввода полных имён:
 
 ```yaml
 model_aliases:
@@ -239,54 +239,54 @@ model_aliases:
     provider: local
 ```
 
-Use in chat:
+Используйте в чате:
 
 ```
-/model fast      # Switch to Cerebras Llama 70B
-/model smart     # Switch to Claude Opus
-/model local     # Switch to local Ollama model
+/model fast      # Переключить на Cerebras Llama 70B
+/model smart     # Переключить на Claude Opus
+/model local     # Переключить на локальную модель Ollama
 ```
 
-## Provider Comparison (What We Actually Use)
+## Сравнение Провайдеров (Что Мы Действительно Используем)
 
-| Provider | Speed | Cost | Best For |
+| Провайдер | Скорость | Стоимость | Лучше всего для |
 |----------|-------|------|----------|
-| Cerebras | 3000+ tok/s | Cheap | Fast inference, bulk tasks, coding |
-| Anthropic | ~100 tok/s | Premium | Complex reasoning, long context |
-| OpenRouter | Varies | Varies | Model variety, fallback provider |
-| Fireworks | Fast | Cheap | Embeddings, specialized models |
-| Ollama (local) | Varies | Free | Privacy, offline, experimenting |
+| Cerebras | 3000+ tok/s | Дёшево | Быстрый инференс, массовые задачи, кодинг |
+| Anthropic | ~100 tok/s | Премиум | Сложный reasoning, длинный контекст |
+| OpenRouter | Варьируется | Варьируется | Разнообразие моделей, fallback провайдер |
+| Fireworks | Быстро | Дёшево | Эмбеддинги, специализированные модели |
+| Ollama (локально) | Варьируется | Бесплатно | Приватность, офлайн, эксперименты |
 
-**Our setup:** Cerebras for speed, Anthropic for quality, Ollama for local models and embeddings.
+**Наша настройка:** Cerebras для скорости, Anthropic для качества, Ollama для локальных моделей и эмбеддингов.
 
-## Routing Cheat Sheet by Task Type
+## Шпаргалка По Роутингу По Типу Задачи
 
-Use these as opinionated defaults, then tune with [Part 20's cost-routing playbook](./part20-observability.md#cost-routing-playbook-the-one-that-actually-saves-money):
+Используйте это как авторские умолчания, затем настраивайте с помощью [роутинга стоимости из Части 20](./part20-observability.md#cost-routing-playbook-the-one-that-actually-saves-money):
 
-| Task | First choice | Fallback (cheaper) | Fallback (fastest) |
+| Задача | Первый выбор | Fallback (дешевле) | Fallback (быстрее) |
 |------|--------------|--------------------|--------------------|
-| Daily conversation | Anthropic Sonnet 5 | Gemini OAuth or z.ai/GLM | Cerebras Llama/Qwen |
-| Coding delegation | Claude Code / Codex OAuth | OpenCode + Kimi K2.6 | OpenCode + Cerebras |
-| Long-context reads (>200K) | Gemini 3.1 Pro | Gemini Flash | — |
-| Classification / triage | Gemini Flash | Cerebras Qwen3 32B | Arcee AFM-4.5 |
-| Reasoning (math, planning) | GPT-5.5 reasoning | Anthropic Opus 4.7 | z.ai/GLM |
-| Current events / live search | xAI Grok 4.x | Gemini with grounding | Tool Gateway web search |
-| Embeddings (LightRAG) | Qwen3-Embedding-8B (Fireworks) | nomic-embed-text (Ollama) | OpenAI `text-embedding-3-small` |
-| TTS (Telegram voice) | xAI Custom Voices or Tool Gateway TTS | Gemini Flash TTS | Edge TTS (free) |
-| Vision / video | Gemini 3.1 Pro/Flash | GPT-5.5 multimodal | Claude Sonnet 5 |
+| Ежедневный разговор | Anthropic Sonnet 5 | Gemini OAuth или z.ai/GLM | Cerebras Llama/Qwen |
+| Делегирование кодинга | Claude Code / Codex OAuth | OpenCode + Kimi K2.6 | OpenCode + Cerebras |
+| Длинный контекст чтение (>200K) | Gemini 3.1 Pro | Gemini Flash | — |
+| Классификация / сортировка | Gemini Flash | Cerebras Qwen3 32B | Arcee AFM-4.5 |
+| Reasoning (математика, планирование) | GPT-5.5 reasoning | Anthropic Opus 4.7 | z.ai/GLM |
+| Текущие события / live поиск | xAI Grok 4.x | Gemini с grounding | Tool Gateway веб-поиск |
+| Эмбеддинги (LightRAG) | Qwen3-Embedding-8B (Fireworks) | nomic-embed-text (Ollama) | OpenAI `text-embedding-3-small` |
+| TTS (голос в Telegram) | xAI Custom Voices или Tool Gateway TTS | Gemini Flash TTS | Edge TTS (бесплатно) |
+| Vision / video | Gemini 3.1 Pro/Flash | GPT-5.5 мультимодальный | Claude Sonnet 5 |
 
 ---
 
-## Cerebras Gotchas
+## Подводные камни Cerebras
 
-Cerebras is fast but has quirks:
+Cerebras быстрый, но есть особенности:
 
-1. **No system prompt caching.** Every request re-sends the full system prompt. Keep it short.
-2. **Rate limits are per-minute, not per-request.** Batch carefully.
-3. **Some models don't support tool calling.** Check before using as the main agent model.
-4. **Streaming is fast but chunky.** Large responses come in big bursts, not smooth streams.
+1. **Нет кэширования системного промпта.** Каждый запрос заново отправляет полный системный промпт. Держите его коротким.
+2. **Rate limits в минуту, не за запрос.** Батчите аккуратно.
+3. **Некоторые модели не поддерживают tool calling.** Проверьте перед использованием как основную модель агента.
+4. **Стриминг быстрый, но чанки.** Большие ответы приходят большими всплесками, не плавными потоками.
 
-Config:
+Конфиг:
 
 ```yaml
 providers:
@@ -296,9 +296,9 @@ providers:
     # Models: llama-3.3-70b, llama-4-scout-17b-16e-instruct, qwen-3-32b
 ```
 
-## Local Models (Ollama)
+## Локальные Модели (Ollama)
 
-Run models locally for free inference:
+Запускайте модели локально для бесплатного инференса:
 
 ```yaml
 providers:
@@ -307,13 +307,13 @@ providers:
     api_key: ollama
 ```
 
-**Best local/open models for Hermes:**
-- **Qwen3-Coder-Next** — strongest local coding lane if you have 24GB+ VRAM
-- **DeepSeek V4-Flash / V4-Pro** — strong open-weight reasoning/coding if you can host MoE comfortably
-- **Qwen3.6-27B / 32B** — practical single-workstation reasoning/coding balance
-- **Nemotron 30B** — good all-around fallback, fits in 24GB VRAM
+**Лучшие локальные/открытые модели для Hermes:**
+- **Qwen3-Coder-Next** — сильнейшая локальная кодовая дорожка, если у вас 24GB+ VRAM
+- **DeepSeek V4-Flash / V4-Pro** — сильный open-weight reasoning/кодинг, если можете удобно хостить MoE
+- **Qwen3.6-27B / 32B** — практичный баланс reasoning/кодинг на одной рабочей станции
+- **Nemotron 30B** — хороший универсальный fallback, помещается в 24GB VRAM
 
-**For embeddings (free):**
+**Для эмбеддингов (бесплатно):**
 
 ```yaml
 embedding:
@@ -322,55 +322,55 @@ embedding:
   base_url: http://localhost:11434
 ```
 
-## Switching at Runtime
+## Переключение на лету
 
 ```
-/model cerebras/llama-3.3-70b    # Full model path
-/model fast                       # Alias
-/model                            # Show current model
+/model cerebras/llama-3.3-70b    # Полный путь модели
+/model fast                       # Алиас
+/model                            # Показать текущую модель
 ```
 
-## Auxiliary Models (Task-Specific Models)
+## Вспомогательные Модели (Модели Для Конкретных Задач)
 
-Hermes supports dedicated models for eight task types. Each can have its own provider, model, base_url, api_key, and timeout.
+Hermes поддерживает выделенные модели для восьми типов задач. Каждая может иметь своего провайдера, модель, base_url, api_key и timeout.
 
-| Task Type | What It Does | Default |
+| Тип задачи | Что делает | По умолчанию |
 |-----------|-------------|---------|
-| `vision` | Image/video analysis, screenshot understanding | auto |
-| `web_extract` | Summarizing scraped web pages | auto |
-| `compression` | Context compression (summarizing old messages) | auto |
-| `session_search` | Searching past conversation transcripts | auto |
-| `approval` | Deciding whether to auto-approve tool calls | auto |
-| `skills_hub` | Skill discovery and matching | auto |
-| `mcp` | MCP tool routing | auto |
-| `flush_memories` | Memory consolidation and cleanup | auto |
+| `vision` | Анализ изображений/видео, понимание скриншотов | auto |
+| `web_extract` | Суммирование скачанных веб-страниц | auto |
+| `compression` | Сжатие контекста (суммирование старых сообщений) | auto |
+| `session_search` | Поиск в прошлых транскриптах разговоров | auto |
+| `approval` | Решение об авто-approve вызовов инструментов | auto |
+| `skills_hub` | Обнаружение и сопоставление навыков | auto |
+| `mcp` | Роутинг MCP инструментов | auto |
+| `flush_memories` | Консолидация и очистка памяти | auto |
 
-When set to `"auto"` (default), Hermes walks a provider resolution chain: OpenRouter → Nous Portal → Custom endpoint → etc.
+Когда установлено в `"auto"` (по умолчанию), Hermes проходит цепочку разрешения провайдеров: OpenRouter → Nous Portal → Custom endpoint → и т.д.
 
-**Configure in `~/.hermes/config.yaml`:**
+**Настройте в `~/.hermes/config.yaml`:**
 
 ```yaml
 auxiliary_models:
-  # Use a fast cheap model for compression — it's just summarizing
+  # Используйте быструю дешёвую модель для сжатия — она просто суммирует
   compression:
     provider: cerebras
     model: llama-3.3-70b
     timeout: 30
 
-  # Use a multimodal model for image/video analysis
+  # Используйте мультимодальную модель для анализа изображений/видео
   vision:
     provider: openrouter
     model: google/gemini-3.1-flash
     timeout: 60
 
-  # Use local model for session search (free, frequent calls)
+  # Используйте локальную модель для поиска сессий (бесплатно, частые вызовы)
   session_search:
     provider: local
     model: nemotron:latest
     base_url: http://localhost:11434/v1
     api_key: ollama
 
-  # Everything else stays on auto
+  # Всё остальное остаётся на auto
   web_extract: auto
   approval: auto
   skills_hub: auto
@@ -378,15 +378,15 @@ auxiliary_models:
   flush_memories: auto
 ```
 
-**Why bother:**
-- **Compression** runs on every long session. Using a cheap/fast model saves money without affecting quality (summarization doesn't need Opus).
-- **Vision/video** needs a multimodal model. If your main model doesn't do media, set this to one that does.
-- **Session search** is called frequently. A local model makes it free.
-- **Approval** controls auto-execution. A fast model here means less latency on every tool call.
+**Зачем беспокоиться:**
+- **Compression** запускается на каждой долгой сессии. Использование дешёвой/быстрой модели экономит деньги без влияния на качество (суммированию не нужен Opus).
+- **Vision/video** нуждается в мультимодальной модели. Если ваша основная модель не поддерживает медиа, установите эту на ту, которая поддерживает.
+- **Session_search** вызывается часто. Локальная модель делает его бесплатным.
+- **Approval** контролирует авто-выполнение. Быстрая модель здесь означает меньше латентности на каждом вызове инструмента.
 
-## Fallback Chain
+## Цепочка Fallback
 
-Configure automatic fallback if the primary model fails:
+Настройте автоматический fallback, если основная модель падает:
 
 ```yaml
 model_fallback:
@@ -398,8 +398,8 @@ model_fallback:
     model: nemotron:latest
 ```
 
-Hermes tries each in order. If Cerebras is down, it falls back to OpenRouter, then local.
+Hermes пробует каждую по порядку. Если Cerebras упала, падает на OpenRouter, затем на локальную.
 
 ---
 
-*Don't lock yourself into one provider. The best model is the one that's fast enough and cheap enough for the task at hand.*
+*Не запирайте себя в одного провайдера. Лучшая модель — та, которая достаточно быстрая и достаточно дешёвая для текущей задачи.*

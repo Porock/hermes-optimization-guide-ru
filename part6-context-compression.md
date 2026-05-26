@@ -1,77 +1,77 @@
-# Part 6: Context Compression (Don't Lose Your Context Silently)
+# Часть 6: Сжатие контекста (Не теряйте контекст молча)
 
-*Long sessions degrade. Context compression fixes this — but only if it works correctly.*
+*Долгие сессии деградируют. Сжатие контекста это исправляет — но только если работает правильно.*
 
 ---
 
-## The Problem
+## Проблема
 
-Hermes injects context every message: memory, skills, tool results, conversation history. In long sessions, this grows until you hit the context window limit and the agent freezes or starts forgetting.
+Hermes внедряет контекст в каждое сообщение: память, навыки (skills), результаты инструментов, историю разговора. В долгих сессиях это растёт, пока вы не достигнете лимита контекстного окна и агент не замёрзнет или не начнёт забывать.
 
-Context compression automatically summarizes older messages to keep the context lean. But there's a bug in the default implementation that can silently drop context.
+Сжатие контекста автоматически суммирует старые сообщения, чтобы контекст оставался компактным. Но есть баг в реализации по умолчанию, который может молча терять контекст.
 
-## The Bug
+## Баг
 
-In `context_compressor.py`, when summarization fails (API timeout, model error, rate limit), the compressor **silently discards the messages it was trying to summarize** instead of preserving them. You lose context with no warning.
+В `context_compressor.py`, когда суммирование не удаётся (API timeout, ошибка модели, rate limit), компрессор **молча выбрасывает сообщения**, которые пытался суммировать, вместо того чтобы сохранить их. Вы теряете контекст без предупреждения.
 
-**Symptoms:**
-- Agent suddenly "forgets" something it knew 20 messages ago
-- Long sessions degrade faster than expected
-- No error messages — it just quietly loses data
+**Симптомы:**
+- Агент внезапно "забывает" что-то, что знал 20 сообщений назад
+- Долгие сессии деградируют быстрее, чем ожидается
+- Нет сообщений об ошибках — данные просто тихо теряются
 
-## The Fix
+## Исправление
 
-Find your `context_compressor.py`:
+Найдите ваш `context_compressor.py`:
 
 ```bash
 find ~/.hermes -name "context_compressor.py" -type f
 ```
 
-Look for the compression function. The bug is in the error handling around the summarization call. It should look something like:
+Найдите функцию сжатия. Баг в обработке ошибок вокруг вызова суммирования. Должно выглядеть примерно так:
 
 ```python
-# BROKEN — silently drops context on failure
+# СЛОМАНО — молча теряет контекст при ошибке
 try:
     summary = await summarize_messages(messages_to_compress)
     compressed_context = summary
 except Exception:
-    compressed_context = ""  # THIS IS THE BUG — empty string = data lost
+    compressed_context = ""  # ЭТО БАГ — пустая строка = данные потеряны
 ```
 
-Fix it by **aborting compression on failure** instead:
+Исправьте это, **прервав сжатие при ошибке**:
 
 ```python
-# FIXED — preserves original context if compression fails
+# ИСПРАВЛЕНО — сохраняет оригинальный контекст при ошибке сжатия
 try:
     summary = await summarize_messages(messages_to_compress)
     compressed_context = summary
 except Exception as e:
-    logger.warning(f"Context compression failed: {e}, preserving original context")
-    return original_context  # Don't compress, don't lose data
+    logger.warning(f"Сжатие контекста не удалось: {e}, сохраняю оригинальный контекст")
+    return original_context  # Не сжимай, не теряй данные
 ```
 
-**The rule:** If compression can't succeed, keep the uncompressed context. A slower response is better than a wrong one.
+**Правило:** Если сжатие не может выполниться, сохраните несжатый контекст. Медленный ответ лучше, чем неправильный.
 
-## When Compression Triggers
+## Когда срабатывает сжатие
 
-- Default: when context reaches ~80% of the model's window
-- Configurable in `~/.hermes/.env`:
+- По умолчанию: когда контекст достигает ~80% окна модели
+- Настраивается в `~/.hermes/.env`:
 
 ```bash
-# Percentage of context window to trigger compression (default: 80)
+# Процент контекстного окна для запуска сжатия (по умолчанию: 80)
 CONTEXT_COMPRESSION_THRESHOLD=80
 
-# Minimum messages before compression activates (default: 20)
+# Минимум сообщений до активации сжатия (по умолчанию: 20)
 CONTEXT_COMPRESSION_MIN_MESSAGES=20
 ```
 
-## Best Practices
+## Лучшие практики
 
-- **Let it compress.** Don't set the threshold to 99% — compression needs headroom to work.
-- **Monitor long sessions.** If the agent starts forgetting things mid-conversation, check if compression silently failed.
-- **Restart fresh for critical work.** If you're doing something important, start a new session rather than running on a 100-message compressed context.
-- **Use `session_search` to recall.** If you lost context to compression, `session_search` can find it in past transcripts.
+- **Дайте ему сжиматься.** Не ставьте порог на 99% — сжатию нужно место для работы.
+- **Мониторьте долгие сессии.** Если агент начинает забывать вещи посреди разговора, проверьте, не молча ли сжатие не удалось.
+- **Перезапускайте для важной работы.** Если вы делаете что-то важное, начните новую сессию вместо работы на сжатом контексте из 100 сообщений.
+- **Используйте `session_search` для восстановления.** Если вы потеряли контекст из-за сжатия, `session_search` может найти его в прошлых транскриптах.
 
 ---
 
-*This bug affects all Hermes versions before the fix. Patch it immediately if you run long sessions.*
+*Этот баг затрагивает все версии Hermes до исправления. Патчите немедленно, если запускаете долгие сессии.*

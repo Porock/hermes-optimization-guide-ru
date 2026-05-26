@@ -1,20 +1,20 @@
-# Reference Architecture: Homelab
+# Эталонная архитектура (Reference Architecture): Homelab
 
-**Fully private, on your own hardware.** Nothing leaves your LAN except provider-bound LLM traffic (and optionally, none of that either if you run local models).
+**Полностью приватно, на вашем собственном железе.** Ничто не покидает вашу LAN, кроме LLM-трафика к провайдеру (provider) — и опционально даже его нет, если вы запускаете локальные модели.
 
-## Who this is for
+## Для кого это
 
-- You own a homelab / NAS / dedicated box
-- Privacy-first — you don't want recipe data / PRs / messages in a third-party cloud
-- Willing to trade off convenience (dynamic DNS, patching) for control
+- У вас есть homelab / NAS / выделенный сервер
+- Приватность превыше всего — вы не хотите отправлять рецепты / PR / сообщения в стороннее облако
+- Готовы пожертвовать удобством (динамический DNS, обновления) ради контроля
 
-## Cost
+## Стоимость
 
-- **Infra:** electricity + existing hardware
-- **LLM:** $0 if you go all-Ollama; otherwise retail API for a curated subset
-- **External:** $0 (no Tailscale Pro required for 1–3 nodes)
+- **Инфраструктура:** электричество + существующее железо
+- **LLM:** $0 если всё через Ollama; иначе розничные API для выбранного подмножества
+- **Внешние сервисы:** $0 (Tailscale Pro не требуется для 1–3 узлов)
 
-## Architecture
+## Архитектура (Architecture)
 
 ```
                     ┌──────────────────────────────────────┐
@@ -36,16 +36,16 @@
                           Anthropic / Google / OpenAI
 ```
 
-## Parts list
+## Состав
 
-- **1× Linux box** (16GB+ RAM, any x86_64 or Apple Silicon VM) — runs Hermes, LightRAG, Langfuse
-- **1× GPU box** (optional; 16GB+ VRAM) — runs Ollama. Can be the same box if you have one GPU.
-- **Tailscale** (free tier, up to 3 users / 100 devices) — mesh VPN; no port-forwarding
-- **Domain** (optional; `hermes.lan` works fine with Tailscale MagicDNS)
+- **1× Linux-сервер** (16GB+ RAM, любой x86_64 или Apple Silicon VM) — запускает Hermes, LightRAG, Langfuse
+- **1× GPU-сервер** (опционально; 16GB+ VRAM) — запускает Ollama. Может быть тем же сервером, если у вас один GPU.
+- **Tailscale** (бесплатный тариф, до 3 пользователей / 100 устройств) — mesh VPN; без проброса портов
+- **Домен** (опционально; `hermes.lan` отлично работает с Tailscale MagicDNS)
 
-## Install steps
+## Установка
 
-### 1. Base box
+### 1. Базовый сервер
 
 ```bash
 # On the Linux box (as root, Debian 12 or Ubuntu 24.04)
@@ -60,7 +60,7 @@ tailscale up --accept-routes
 tailscale cert hermes.$(tailscale status --json | jq -r '.MagicDNSSuffix')
 ```
 
-### 3. Ollama (optional — local models)
+### 3. Ollama (опционально — локальные модели)
 
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
@@ -68,9 +68,9 @@ ollama pull llama3.1:70b-instruct-q4_K_M
 ollama pull qwen2.5-coder:32b
 ```
 
-### 4. Config
+### 4. Конфигурация
 
-Start from [`templates/config/production.yaml`](../../templates/config/production.yaml), then:
+Начните с [`templates/config/production.yaml`](../../templates/config/production.yaml), затем:
 
 ```yaml
 models:
@@ -106,7 +106,7 @@ memory:
     embedding_model: openai/text-embedding-3-small  # or local (bge-m3)
 ```
 
-### 5. Langfuse self-host (observability inside the LAN)
+### 5. Langfuse self-host (observability внутри LAN)
 
 ```bash
 cp templates/compose/langfuse-stack.yml /opt/
@@ -115,9 +115,9 @@ cp templates/compose/.env.langfuse.example /opt/.env.langfuse
 docker compose -f /opt/langfuse-stack.yml --env-file /opt/.env.langfuse up -d
 ```
 
-Point Hermes `telemetry.langfuse.host` at `http://127.0.0.1:3000`.
+Укажите в Hermes `telemetry.langfuse.host` на `http://127.0.0.1:3000`.
 
-### 6. Skills
+### 6. Навыки (Skills)
 
 ```bash
 for skill in /opt/hermes-optimization-guide/skills/*/*/; do
@@ -126,25 +126,25 @@ done
 hermes /reload
 ```
 
-## Honest tradeoffs
+## Честные компромиссы
 
-- **Latency.** Local 70B Q4 ≈ 20–40 tok/s on a 3090. Flagship Sonnet ≈ 60–90 tok/s. Most "work" queries you won't notice; coding/deep reasoning you will.
-- **Quality.** Current open/local models (Qwen Coder, Llama, Kimi-class local models) are *close* on many tasks, *behind* on long-context + nuanced reasoning. Routing lets you hand the hard stuff to Sonnet.
-- **Patching.** You maintain the box. Enable unattended-upgrades (the bootstrap script does) and schedule monthly reboots.
-- **Reachability.** Tailscale is solid but means "no Tailscale = no Hermes". Keep a cellphone backup admin bot, or run a tiny cloud relay.
-- **Backups.** Set [`nightly-backup`](../../skills/ops/nightly-backup/SKILL.md) to write encrypted archives to a second physical disk — not the same RAID array.
+- **Задержка.** Локальный 70B Q4 ≈ 20–40 токен/с на 3090. Флагманский Sonnet ≈ 60–90 токен/с. Большинство «рабочих» запросов вы не заметите; программирование/глубокие рассуждения — заметите.
+- **Качество.** Текущие открытые/локальные модели (Qwen Coder, Llama, модели класса Kimi) *близки* по многим задачам, *отстают* в длинном контексте + нюансированных рассуждениях. Маршрутизация позволяет отдавать сложные задачи Sonnet'у.
+- **Обслуживание.** Вы поддерживаете сервер. Включите unattended-upgrades (bootstrap-скрипт это делает) и запланируйте ежемесячные перезагрузки.
+- **Доступность.** Tailscale надёжен, но означает «нет Tailscale = нет Hermes». Держите резервный административный бот на телефоне или запустите крошечное облачное реле.
+- **Резервное копирование.** Настройте [`nightly-backup`](../../skills/ops/nightly-backup/SKILL.md) на запись зашифрованных архивов на второй физический диск — не на тот же RAID-массив.
 
-## What to skip
+## Что можно пропустить
 
-- Cloudflare / public TLS — Tailscale handles that
-- UFW rules for 80/443 — no public ports
-- Paid Langfuse — self-host is free for any reasonable single-user volume
+- Cloudflare / публичный TLS — Tailscale справляется с этим
+- UFW-правила для 80/443 — нет публичных портов
+- Платный Langfuse — self-host бесплатен для любого разумного объёма одного пользователя
 
-## When to graduate
+## Когда переходить на следующий уровень
 
-You hit this setup's ceiling when:
-- You want more than 1–2 humans using it (permissioning local models gets awkward)
-- You need world-reachable webhooks (Stripe, GitHub, etc.)
-- Your LightRAG graph exceeds ~200K entities (it'll still work, but merges slow down)
+Вы достигаете предела этой конфигурации когда:
+- Вам нужно больше 1–2 человек, использующих её (разграничение прав с локальными моделями становится неудобным)
+- Вам нужны вебхуки, доступные из интернета (Stripe, GitHub и т.д.)
+- Ваш граф LightRAG превышает ~200K сущностей (он всё ещё будет работать, но слияния замедлятся)
 
-Graduate to [Solo Developer](./solo-developer.md) (add a tiny VPS) or [Small Agency](./small-agency.md).
+Переходите на [Solo Developer](./solo-developer.md) (добавьте tiny VPS) или [Small Agency](./small-agency.md).

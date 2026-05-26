@@ -1,25 +1,25 @@
-# Code of Conduct
+# Кодекс поведения
 
-## Short version
+## Краткая версия
 
-Be kind. Assume good faith. Focus on the work.
+Будьте добры. Исходите из добрых намерений. Сосредоточьтесь на работе.
 
-## Longer version
+## Полная версия
 
-This project follows the [Contributor Covenant](https://www.contributor-covenant.org/version/2/1/code_of_conduct/) v2.1. TL;DR:
+Этот проект следует [Contributor Covenant](https://www.contributor-covenant.org/version/2/1/code_of_conduct/) v2.1. Кратко:
 
-- ✅ **Welcome, curious, constructive feedback** is the baseline.
-- ✅ Assume good intent on the other side of every review comment.
-- ✅ Disagree in public, but argue the technical merits, not the person.
-- ❌ No harassment, doxxing, sexualized content, or personal attacks.
-- ❌ No political gotchas or baiting — it wastes everyone's time.
+- ✅ **Доброжелательная, заинтересованная, конструктивная обратная связь** — это база.
+- ✅ Предполагайте добрые намерения с другой стороны каждого ревью-комментария.
+- ✅ Не соглашайтесь публично, но спорьте по техническим достоинствам, а не по личности.
+- ❌ Никаких домогательств, доксинга, контента сексуального характера или личных нападок.
+- ❌ Никаких политических подколов и троллинга — это тратит время всех.
 
-Enforcement: issues go to onerobby@gmail.com or any repo maintainer. Actions range from a warning to a permanent ban depending on severity and pattern.
+Применение: вопросы направляйте на onerobby@gmail.com или любому мейнтейнеру репозитория. Меры — от предупреждения до перманентного бана в зависимости от серьёзности и характера нарушений.
 
-## Scope
+## Область действия
 
-This CoC applies in all project-managed spaces: GitHub repo, PRs, issues, discussions, linked chat channels, and any public event where a maintainer represents the project.
+Настоящий кодекс поведения действует во всех пространствах проекта: репозиторий на GitHub, PR, issues, обсуждения, связанные чаты, а также любые публичные мероприятия, где мейнтейнер представляет проект.
 
-## Full text
+## Полный текст
 
-See https://www.contributor-covenant.org/version/2/1/code_of_conduct/
+См. https://www.contributor-covenant.org/version/2/1/code_of_conduct/
